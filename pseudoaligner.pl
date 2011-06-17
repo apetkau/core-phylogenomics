@@ -17,22 +17,23 @@ open REPORT, ">$outputreport";
 my @ids = sort {$a <=> $b } map {/(\d+)/;$1} grep {/snps\d+\.aln\.trimmed/} <snps*.aln.trimmed>;
 my @files = map {my $file = "snps" . $_ . ".aln.trimmed";$file} @ids;
 my @columns;
-my @qualumns;
+#my @qualumns;
 my %longseq;
 my %longqual;
 my @seqlengths;
 for my $locusid (@ids) {
     my $file = "snps".$locusid.".aln.trimmed"; 
 	print "Working on $file\n";
-	my %qualmap;
-	my $qualfile = "quals". $locusid . ".aln.trimmed";
-	open QUAL , $qualfile || die "Foo! Qualfile $qualfile: $!\n";
-	my @quals = <QUAL>;
-	for my $row (@quals) {
-		my @quals = split /\s+/, $row;
-		my $strain = shift @quals;
-		$qualmap{$strain} = \@quals;
-	}
+#	my %qualmap;
+
+#	my $qualfile = "quals". $locusid . ".aln.trimmed";
+#	open QUAL , $qualfile || die "Foo! Qualfile $qualfile: $!\n";
+#	my @quals = <QUAL>;
+#	for my $row (@quals) {
+#		my @quals = split /\s+/, $row;
+#		my $strain = shift @quals;
+#		$qualmap{$strain} = \@quals;
+#	}
 	my $in = new Bio::AlignIO(-file=>"$file", -format=>"clustalw");
 	my $aln = $in->next_aln;
 	for my $seq ($aln->each_alphabetically) {
@@ -40,8 +41,8 @@ for my $locusid (@ids) {
 		$longseq{$seq->display_id} .= $seq->seq;
 		$longseq{$seq->display_id} .= "*";
 		
-		push @{$longqual{$seq->display_id}}, @{$qualmap{$seq->display_id}}; 
-		push @{$longqual{$seq->display_id}}, "*";
+#		push @{$longqual{$seq->display_id}}, @{$qualmap{$seq->display_id}}; 
+#		push @{$longqual{$seq->display_id}}, "*";
 	}
 }
 
@@ -49,10 +50,10 @@ for my $locusid (@ids) {
 my @accessions = sort {$a cmp $b } keys %longseq;
 for my $acc (sort {$a cmp $b } keys %longseq) {
 	my @chars  = split undef, $longseq{$acc};
-	my @quals = @{$longqual{$acc}};
+#	my @quals = @{$longqual{$acc}};
 	for (my $x=0;$x<@chars;$x++) {
 		$columns[$x] .= $chars[$x];
-		push @{$qualumns[$x]} , $quals[$x];
+#		push @{$qualumns[$x]} , $quals[$x];
 	}
 }
 # write out qualumns and columns for a check
@@ -67,10 +68,10 @@ my @minors;
 my @pseudoalign;
 my $columncounter = 1;
 my $locus = shift @files;
-open PQUAL, ">pseudoquals.txt";
+#open PQUAL, ">pseudoquals.txt";
 my $locuscount=1;
 column: for my $column (@columns) {
-	my $quals = join " " , @{shift @qualumns};
+#	my $quals = join " " , @{shift @qualumns};
 	my @chars = split undef, $column;
 	my %char;
 	map {$char{$_}++} @chars;
@@ -95,7 +96,7 @@ column: for my $column (@columns) {
 			push @strains, $accessions[pos($column)-1];	
 		}
 		my $strains = join "\t", @strains;
-		print REPORT "column $columncounter: $minorsnp($majorsnp) from $locus in:\t $strains\t$quals\n"; 
+		print REPORT "column $columncounter: $minorsnp($majorsnp) from $locus in:\t $strains\n"; 
 		$columncounter++;
 }
 }

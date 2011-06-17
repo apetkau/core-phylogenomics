@@ -1,6 +1,6 @@
 #!/bin/sh
 # Tell the SGE that this is an array job, with "tasks" to be numbered 1 to 256
-#$ -t 1-1456
+#$ -t 1-1502
 # When a single command in the array job is sent to a compute node,
 # its task number is stored in the variable SGE_TASK_ID,
 # so we can use the value of that variable to get the results we want:

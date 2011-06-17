@@ -17,14 +17,14 @@ locus: for my $locusid (@ids) {
     my $in = Bio::AlignIO->new(-file =>$alignfile, -format=>"clustalw");
 	my $aln = $in->next_aln;
 	my $qualfile = "quals". $locusid . ".aln";
-	open QUAL , $qualfile || die "Foo! Qualfile $qualfile: $!\n";
-	my @quals = <QUAL>;
-	my %qualmap;
-	for my $row (@quals) {
-		my @quals = split /\s+/, $row;
-	    my $strain = shift @quals;
-	    $qualmap{$strain} = \@quals;
-	}
+#	open QUAL , $qualfile || die "Foo! Qualfile $qualfile: $!\n";
+#	my @quals = <QUAL>;
+#	my %qualmap;
+#	for my $row (@quals) {
+#		my @quals = split /\s+/, $row;
+#	    my $strain = shift @quals;
+#	    $qualmap{$strain} = \@quals;
+#	}
 
 	my @starts;
 	my @ends;
@@ -33,8 +33,8 @@ locus: for my $locusid (@ids) {
 	for my $seq ($aln->each_alphabetically) {
 		my $seqstr = $seq->seq;
 		$seqstr =~ /(^\-{0,}).*?(\-{0,}$)/;
-		push @starts, length ($1)+1;
-		push @ends, $seq->length - length ($2) -20; # for good measure
+		push @starts, length ($1)+5;
+		push @ends, $seq->length - length ($2) -5; # for good measure
 	}
 	@starts = sort {$b <=> $a} @starts; # largest number in pos 0
 	@ends = sort {$a <=> $b} @ends; # smallest number in pos 0
@@ -43,18 +43,18 @@ locus: for my $locusid (@ids) {
 	next locus unless $start < $end;
 	my $newalign = new Bio::SimpleAlign;
 	my $counter = 1;
-	open QUAL, ">quals" . $locusid . ".aln.trimmed";
+#	open QUAL, ">quals" . $locusid . ".aln.trimmed";
 	for my $seq ($aln->each_alphabetically) {
     	# trim the alignments
     	my $newstr = $seq->subseq($start, $end);
 		$seq->seq($newstr);
 		$seq->end(length( $newstr) - scalar (@{[$newstr =~ /(-)/g]}));
 		$newalign->add_seq($seq);		
-		my @quals = @{$qualmap{$seq->display_id}};
-		my @trimquals = @quals[$start..$end -1];
-		my $newqualline = join " ", $seq->display_id, @trimquals, "\n";
-		print QUAL $newqualline;
+#		my @quals = @{$qualmap{$seq->display_id}};
+#		my @trimquals = @quals[$start..$end -1];
+#		my $newqualline = join " ", $seq->display_id, @trimquals, "\n";
+#		print QUAL $newqualline;
 	}
-	close QUAL;
+#	close QUAL;
 	new Bio::AlignIO(-file=>">$alignfile".".trimmed", -format=>"clustalw")->write_aln($newalign);
 }
