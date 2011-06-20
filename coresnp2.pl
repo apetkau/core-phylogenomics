@@ -10,6 +10,7 @@ my $index = shift @ARGV;
 my $STRAIN_COUNT = shift @ARGV; 
 my $cutoff = shift;
 my $minhsplength = shift;
+my $output_dir = shift;
 my %hit_recorder;
 my %pid_recorder;
 my $inx = Bio::Index::Fasta->new( -filename   => $index);
@@ -70,7 +71,7 @@ for my $query (@query_loci) {
 my $ids = join " ", @{$pid_recorder{$query}};
     next unless $smallest_pid <100;
     next unless @strains ==$STRAIN_COUNT;
-my $out = new Bio::SeqIO(-file=>">core.$query.ffn", -format=>"fasta");
+my $out = new Bio::SeqIO(-file=>">$output_dir/core.$query.ffn", -format=>"fasta");
 $filecounter++;
 
 # print $ids, "\n";
