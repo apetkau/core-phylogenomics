@@ -108,6 +108,7 @@ sub print_sge_script
     print $sge_fh "#!/bin/sh\n";
     print $sge_fh "#\$ -t 1-$processors\n";
     print $sge_fh $command;
+    print $sge_fh "\n";
     close($sge_fh);
 }
 
@@ -158,6 +159,8 @@ sub perform_id_snps
     die "Pid cutoff is invalid" if (not defined ($pid_cutoff) or $pid_cutoff <= 0 or $pid_cutoff > 100);
     die "HSP length is invalid" if (not defined ($hsp_length) or $hsp_length <= 0);
 
+    my $core_snp_base_path = "$snps_output/snps";
+
     my $core_sge = "$snps_output/core.sge";
     print "\tWriting $core_sge script ...\n";
     my $sge_command = "$script_dir/coresnp2.pl \"$blast_input_base.\$SGE_TASK_ID\" \"$bioperl_index\" $strain_count $pid_cutoff $hsp_length \"$snps_output\"\n";
@@ -181,14 +184,43 @@ sub perform_id_snps
     system($rename_command) == 0 or die "Error renaming snp files: $!";
     print "\t...done\n";
 
-    my $count_command = "ls -l \"$snps_output/*\" | wc -l";
+    my $count_command = "ls -l \"$core_snp_base_path\"* | wc -l";
     my $count = undef;
     print "\tCounting SNP files...\n";
     print "\t\t$count_command\n" if ($verbose);
     $count = `$count_command`;
+    die "Error counting snp files" if (not defined $count);
+    die "Error counting snp files, $count not a number" if ($count !~ /^\d+$/);
+    die "Error counting snp files, $count <= 0" if ($count <= 0);
     print "\t...done\n";
 
-    return $count;
+    return ($core_snp_base_path, $count);
+}
+
+sub align_orthologs
+{
+    my ($input_task_base, $output_dir, $snp_count) = @_;
+
+    die "Input files ${input_task_base}x do not exist" if (not -e "${input_task_base}1");
+    die "Output directory $output_dir does not exist" if (not -e $output_dir);
+    die "SNP count is invalid" if (not defined $snp_count or $snp_count <= 0);
+
+    my $job_name = get_job_id;
+
+    my $clustalw_sge = "$output_dir/clustalw.sge";
+    print "\tWriting $clustalw_sge script ...\n";
+    my $sge_command = "clustalw2 -infile=${input_task_base}\$SGE_TASK_ID";
+    print_sge_script($snp_count, $clustalw_sge, $sge_command);
+    print "\t...done\n";
+
+    my $submission_command = "qsub -N $job_name -cwd -S /bin/sh -e /dev/null -o /dev/null \"$clustalw_sge\"";
+    print "\tSubmitting $clustalw_sge for execution ...\n";
+    print "\tRun 'watch -n1 qstat' for status\n";
+    print "\t\t$submission_command\n" if ($verbose);
+    system($submission_command) == 0 or die "Error submitting $submission_command: $!\n";
+    print "\t\tWaiting for completion of clustalw job array $job_name";
+    wait_until_completion($job_name);
+    print "done\n";
 }
 
 sub usage
@@ -311,6 +343,7 @@ my $database_file;
 my $bioperl_index;
 my $split_base_path;
 my $blast_base_path;
+my $core_snp_base_path;
 
 my $job_id = time;
 my $root_data_dir = "$script_dir/data";
@@ -321,6 +354,9 @@ my $database_output = "$job_dir/database";
 my $split_output = "$job_dir/split";
 my $blast_output = "$job_dir/blast";
 my $core_snp_output = "$job_dir/core";
+my $align_output = "$job_dir/align";
+
+my $snps_count;
 
 print "Running core SNP phylogenomic pipeline.  Storing all data under $job_dir\n";
 mkdir ($root_data_dir) if (not -e $root_data_dir);
@@ -343,5 +379,10 @@ print "...done\n";
 
 print "Performing core genome SNP identification ...\n";
 mkdir "$core_snp_output" if (not -e $core_snp_output);
-perform_id_snps($blast_base_path, $core_snp_output, $bioperl_index, $processors, $strain_count, $pid_cutoff, $hsp_length);
+($core_snp_base_path, $snps_count) = perform_id_snps($blast_base_path, $core_snp_output, $bioperl_index, $processors, $strain_count, $pid_cutoff, $hsp_length);
+print "...done\n";
+
+print "Performing multiple alignment of orthologs ...\n";
+mkdir $align_output if (not -e $align_output);
+align_orthologs($core_snp_base_path, $align_output, $snps_count);
 print "...done\n";
