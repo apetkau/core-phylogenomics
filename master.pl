@@ -174,6 +174,21 @@ sub perform_id_snps
     print "\t\tWaiting for completion of core sge job array $job_name";
     wait_until_completion($job_name);
     print "done\n";
+
+    my $rename_command = "perl $script_dir/rename.pl \"$snps_output\" \"$snps_output\"";
+    print "\tRenaming SNP output files...\n";
+    print "\t\t$rename_command\n" if ($verbose);
+    system($rename_command) == 0 or die "Error renaming snp files: $!";
+    print "\t...done\n";
+
+    my $count_command = "ls -l \"$snps_output/*\" | wc -l";
+    my $count = undef;
+    print "\tCounting SNP files...\n";
+    print "\t\t$count_command\n" if ($verbose);
+    $count = `$count_command`;
+    print "\t...done\n";
+
+    return $count;
 }
 
 sub usage
@@ -298,15 +313,18 @@ my $split_base_path;
 my $blast_base_path;
 
 my $job_id = time;
-my $root_data_dir = "$script_dir/$job_id";
+my $root_data_dir = "$script_dir/data";
 
-my $database_output = "$root_data_dir/database";
-my $split_output = "$root_data_dir/split";
-my $blast_output = "$root_data_dir/blast";
-my $core_snp_output = "$root_data_dir/core";
+my $job_dir = "$root_data_dir/$job_id";
 
-print "Running core SNP phylogenomic pipeline.  Storing all data under $root_data_dir\n";
-mkdir $root_data_dir if (not -e $root_data_dir);
+my $database_output = "$job_dir/database";
+my $split_output = "$job_dir/split";
+my $blast_output = "$job_dir/blast";
+my $core_snp_output = "$job_dir/core";
+
+print "Running core SNP phylogenomic pipeline.  Storing all data under $job_dir\n";
+mkdir ($root_data_dir) if (not -e $root_data_dir);
+mkdir $job_dir if (not -e $job_dir);
 
 print "Creating initial databases ...\n";
 mkdir $database_output if (not -e $database_output);

@@ -71,7 +71,8 @@ for my $query (@query_loci) {
 my $ids = join " ", @{$pid_recorder{$query}};
     next unless $smallest_pid <100;
     next unless @strains ==$STRAIN_COUNT;
-my $out = new Bio::SeqIO(-file=>">$output_dir/core.$query.ffn", -format=>"fasta");
+my $out_file_path = (defined $output_dir) ? "$output_dir/core.$query.ffn" : "core.$query.ffn";
+my $out = new Bio::SeqIO(-file=>">$out_file_path", -format=>"fasta");
 $filecounter++;
 
 # print $ids, "\n";
