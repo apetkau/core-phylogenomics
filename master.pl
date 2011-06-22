@@ -161,9 +161,11 @@ sub perform_blast
     print_sge_script($processors, $blast_sge, $sge_command);
     print "\t...done\n";
 
-    my $submission_command = "qsub -N $job_name -cwd -S /bin/sh -e /dev/null -o /dev/null \"$blast_sge\"";
+    my $error = "$output_dir/error.sge";
+    my $out = "$output_dir/out.sge";
+    my $submission_command = "qsub -N $job_name -cwd -S /bin/sh -e \"$error\" -o \"$out\" \"$blast_sge\" 1>/dev/null";
     print "\tSubmitting $blast_sge for execution ...\n";
-    print "\tRun 'watch -n1 qstat' for status\n";
+    print "\t\tSee ($out) and ($error) for details.\n";
     print "\t\t$submission_command\n" if ($verbose);
     system($submission_command) == 0 or die "Error submitting $submission_command: $!\n";
     print "\t\tWaiting for completion of blast job array $job_name";
@@ -194,9 +196,11 @@ sub perform_id_snps
 
     my $job_name = get_job_id;
 
-    my $submission_command = "qsub -N $job_name -cwd -S /bin/sh -e /dev/null -o /dev/null \"$core_sge\"";
+    my $error = "$snps_output/error.sge";
+    my $out = "$snps_output/out.sge";
+    my $submission_command = "qsub -N $job_name -cwd -S /bin/sh -e \"$error\" -o \"$out\" \"$core_sge\" 1>/dev/null";
     print "\tSubmitting $core_sge for execution ...\n";
-    print "\tRun 'watch -n1 qstat' for status\n";
+    print "\t\tSee ($out) and ($error) for details.\n";
     print "\t\t$submission_command\n" if ($verbose);
     system($submission_command) == 0 or die "Error submitting $submission_command: $!\n";
     print "\t\tWaiting for completion of core sge job array $job_name";
@@ -240,9 +244,11 @@ sub align_orthologs
     print_sge_script($snp_count, $clustalw_sge, $sge_command);
     print "\t...done\n";
 
-    my $submission_command = "qsub -N $job_name -cwd -S /bin/sh -e /dev/null -o /dev/null \"$clustalw_sge\"";
+    my $error = "$output_dir/error.sge";
+    my $out = "$output_dir/out.sge";
+    my $submission_command = "qsub -N $job_name -cwd -S /bin/sh -e \"$error\" -o \"$out\" \"$clustalw_sge\" 1>/dev/null";
     print "\tSubmitting $clustalw_sge for execution ...\n";
-    print "\tRun 'watch -n1 qstat' for status\n";
+    print "\t\tSee ($out) and ($error) for details.\n";
     print "\t\t$submission_command\n" if ($verbose);
     system($submission_command) == 0 or die "Error submitting $submission_command: $!\n";
     print "\t\tWaiting for completion of clustalw job array $job_name";
@@ -584,3 +590,6 @@ print "Creating pseudoalignment ...\n";
 mkdir $pseudoalign_output if (not -e $pseudoalign_output);
 pseudoalign($align_output, $pseudoalign_output);
 print "...done\n";
+
+print "\n\nPseudoalignment and snp report generated.\n";
+print "Files can be found in $pseudoalign_output\n";
