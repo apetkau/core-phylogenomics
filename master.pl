@@ -56,6 +56,38 @@ sub perform_split
     return "$output_dir/".basename($input_file);
 }
 
+# Counts duplicate ids for genes in fasta formatted files
+# Input:  $input_file  If file is regular file, counts only in file.
+#          if file is directory, counts all files in directory
+sub duplicate_count
+{
+    my ($input_file) = @_;
+
+    die "Invalid input dir" if (not -e $input_file);
+
+    my $is_dir = (-d $input_file);
+
+    my $duplicate_count_command;
+
+    if ($is_dir)
+    {
+        $duplicate_count_command = "grep --only-match --no-filename '^>\\S*' \"$input_file\"/* | sort | uniq --count | grep --invert-match '^[ ^I]*1[ ^I]>' | wc -l";
+    }
+    else
+    {
+        $duplicate_count_command = "grep --only-match --no-filename '^>\\S*' \"$input_file\" | sort | uniq --count | grep --invert-match '^[ ^I]*1[ ^I]>' | wc -l";
+    }
+
+    print "$duplicate_count_command\n" if ($verbose);
+
+    my $duplicate_count = `$duplicate_count_command`;
+    chomp $duplicate_count;
+
+    die "Error in duplicate id command, output \"$duplicate_count\" not a number" if ($duplicate_count !~ /^\d+$/);
+
+    return $duplicate_count;
+}
+
 # returns database file path, bioperl index path
 sub create_input_database
 {
@@ -68,14 +100,7 @@ sub create_input_database
     die "Output directory: $database_output does not exist" if (not -e $database_output);
 
     print "\tChecking for features in $input_file with duplicate ids...\n";
-
-    # Gives the number of features in input fasta file with duplicate ids
-    my $check_unique_ids_command = "grep --only-match --no-filename '^>\\S*' \"$input_file\" | sort | uniq --count | grep --invert-match '^[ ^I]*1[ ^I]>' | wc -l";
-
-    print "\t$check_unique_ids_command\n" if ($verbose);
-    my $duplicate_count = `$check_unique_ids_command`;
-    chomp $duplicate_count;
-
+    my $duplicate_count = duplicate_count($input_file);
     print "\t\tDuplicate ids: $duplicate_count\n" if ($verbose);
     print "\t...done\n";
 
@@ -258,12 +283,92 @@ sub pseudoalign
     print "\t...done\n";
 }
 
+# returns main input file and count of strains
+sub build_input_fasta
+{
+    my ($input_dir, $output_dir) = @_;
+
+    die "Input directory is invalid" if (not -d $input_dir);
+    die "Output directory is invalid" if (not -d $output_dir);
+
+    my $prepended = 0;
+
+    print "\tChecking for unique genes...\n";
+    my $count = duplicate_count($input_dir);
+    if ($count > 0)
+    {
+        $prepended = 1;
+        print "\t\t$count duplicate genes found, attempting to fix...\n";
+
+        opendir(my $input_dh, $input_dir) or die "Could not open $input_dir: $!";
+        my @files = grep {/fasta$/i} readdir($input_dh);
+        close($input_dh);
+
+        die "No input fasta files found in $input_dir" if (scalar(@files) <= 0);
+        foreach my $file (@files)
+        {
+            my ($name) = ($file =~ /^([^\.]+)\./);
+
+            die "Cannot take id from file name for $input_dir/$file" if (not defined $name);
+            my $input_path = "$input_dir/$file";
+            my $output_path = "$output_dir/$name.prepended.fasta";
+            my $uniquify_command = "sed \"s/>/>$file\|/\" \"$input_path\" > \"$output_path\"";
+            print "\t\t$uniquify_command\n" if ($verbose);
+            system($uniquify_command) == 0 or die "Error attempting to create unique gene ids: $!";
+        }
+
+        print "\t\t...done\n";
+    }
+    print "\t...done\n";
+
+    my $main_input_file = "$output_dir/all.fasta";
+    my $strain_count = 0;
+
+    my @files;
+    if ($prepended)
+    {
+        opendir(my $input_dh, $output_dir) or die "Could not open $output_dir: $!";
+        @files = grep {/prepended\.fasta$/} readdir($input_dh);
+        close($input_dh);
+    }
+    else
+    {
+        opendir(my $input_dh, $input_dir) or die "Could not open $input_dir: $!";
+        @files = grep {/fasta$/} readdir($input_dh);
+        close($input_dh);
+    }
+
+    $strain_count = scalar(@files);
+
+    my $cat_command = "cat ";
+    foreach my $file (@files)
+    {
+        if ($prepended)
+        {
+            $cat_command .= "\"$output_dir/$file\" ";
+        }
+        else
+        {
+            $cat_command .= "\"$input_dir/$file\" ";
+        }
+    }
+    $cat_command .= " 1> $main_input_file";
+
+    print "\tBuilding single multi-fasta file $main_input_file ...\n";
+    print "\t\t$cat_command\n" if ($verbose);
+    system($cat_command) == 0 or die "Could not build single multi-fasta file: $!";
+    print "\t...done\n";
+
+    return ($main_input_file,$strain_count);
+}
+
 sub usage
 {
     print "Usage: ".basename($0)." [Options]\n\n";
     print "Options:\n";
     print "\t-c|--strain-count:  The number of strains we are working with.\n";
     print "\t-i|--input-fasta:  The input fasta file.\n";
+    print "\t-d|--input-dir:  The directory containing the input fasta files.\n";
     print "\t-p|--processors:  The number of processors to use.\n";
     print "\t-s|--split-file:  The file to use for initial split.\n";
     print "\t-v|--verbose:  Print extra information.\n";
@@ -280,15 +385,18 @@ my $split_file_opt;
 my $input_fasta_opt;
 my $help_opt;
 my $strain_count_opt;
+my $input_dir_opt;
 
-my $processors = 1;
-my $split_file = "";
-my $input_fasta = "";
-my $strain_count = 0;
+my $processors = undef;
+my $split_file = undef;
+my $input_fasta = undef;
+my $input_dir = undef;
+my $strain_count = undef;
 
 if (!GetOptions(
     'p|processors=i' => \$processors_opt,
     's|split-file=s' => \$split_file_opt,
+    'd|input-dir=s' => \$input_dir_opt,
     'i|input-fasta=s' => \$input_fasta_opt,
     'v|verbose' => \$verbose_opt,
     'h|help' => \$help_opt,
@@ -332,38 +440,68 @@ else
     $split_file = $split_file_opt;
 }
 
-if (not defined $input_fasta_opt)
+if (defined $input_dir_opt)
 {
-    print STDERR "Error: input fasta file must be defined\n";
-    usage;
-    exit 1;
-}
-elsif (not -e $input_fasta_opt)
-{
-    print STDERR "Error: input fasta file $input_fasta_opt does not exist\n";
-    usage;
-    exit 1;
-}
-else
-{
-    $input_fasta = $input_fasta_opt;
-}
+    if (not -d $input_dir_opt)
+    {
+        print STDERR "Error: input fasta directory $input_dir_opt is not a directory\n";
+        usage;
+        exit 1;
+    }
+    else
+    {
+        $input_dir = $input_dir_opt;
 
-if (not defined $strain_count_opt)
-{
-    print STDERR "Error: strain count must be defined\n";
-    usage;
-    exit 1;
-}
-elsif ($strain_count_opt <= 0)
-{
-    print STDERR "Error: strain count $strain_count_opt must be positive\n";
-    usage;
-    exit 1;
+        if (defined $strain_count_opt)
+        {
+            if ($strain_count_opt <= 0)
+            {
+                print STDERR "Error: strain count $strain_count_opt must be positive\n";
+                usage;
+                exit 1;
+            }
+            else
+            {
+                $strain_count = $strain_count_opt;
+            }
+        }
+    }
 }
 else
 {
-    $strain_count = $strain_count_opt;
+    if (not defined $input_fasta_opt)
+    {
+        print STDERR "Error: input fasta file must be defined\n";
+        usage;
+        exit 1;
+    }
+    elsif (not -e $input_fasta_opt)
+    {
+        print STDERR "Error: input fasta file $input_fasta_opt does not exist\n";
+        usage;
+        exit 1;
+    }
+    else
+    {
+        $input_fasta = $input_fasta_opt;
+    }
+    
+    if (not defined $strain_count_opt)
+    {
+        print STDERR "Error: strain count must be defined\n";
+        usage;
+        exit 1;
+    }
+    elsif ($strain_count_opt <= 0)
+    {
+        print STDERR "Error: strain count $strain_count_opt must be positive\n";
+        usage;
+        exit 1;
+    }
+    else
+    {
+        $strain_count = $strain_count_opt;
+    }
 }
 
 if (defined $verbose_opt and $verbose_opt)
@@ -385,6 +523,7 @@ my $root_data_dir = "$script_dir/data";
 
 my $job_dir = "$root_data_dir/$job_id";
 
+my $fasta_output = "$job_dir/fasta";
 my $database_output = "$job_dir/database";
 my $split_output = "$job_dir/split";
 my $blast_output = "$job_dir/blast";
@@ -397,6 +536,24 @@ my $snps_count;
 print "Running core SNP phylogenomic pipeline.  Storing all data under $job_dir\n";
 mkdir ($root_data_dir) if (not -e $root_data_dir);
 mkdir $job_dir if (not -e $job_dir);
+
+if (defined $input_dir)
+{
+    mkdir ($fasta_output) if (not -e $fasta_output);
+
+    print "Preparing files under $input_dir ...\n";
+    print "We assume all files under $input_dir are fasta-formatted and should be included in pipeline\n";
+    my ($input_fasta_auto, $strain_count_auto) = build_input_fasta($input_dir,$fasta_output);
+    print "...done\n";
+
+    die "Error creating input fasta file" if (not -e $input_fasta_auto);
+    die "Error getting strain count" if (not defined $strain_count_auto or $strain_count_auto !~ /\d+/);
+
+    $input_fasta = $input_fasta_auto;
+
+    # only set to auto-value if not already set
+    $strain_count = $strain_count_auto if (not defined $strain_count);
+}
 
 print "Creating initial databases ...\n";
 mkdir $database_output if (not -e $database_output);
