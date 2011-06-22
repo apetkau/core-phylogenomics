@@ -7,11 +7,13 @@ use FindBin;
 
 use File::Basename qw(basename dirname);
 use File::Copy qw(copy move);
+use File::Path qw(rmtree);
 use Getopt::Long;
 
 my $script_dir = $FindBin::Bin;
 
 my $verbose = 0;
+my $keep_files = 0;
 
 sub check_job_queue_for
 {
@@ -39,9 +41,9 @@ sub wait_until_completion
 # returns split file base path
 sub perform_split
 {
-    my ($input_file, $split_number, $output_dir) = @_;
+    my ($input_file, $split_number, $output_dir, $log_dir) = @_;
 
-    my $split_log = "$output_dir/split.log";
+    my $split_log = "$log_dir/split.log";
 
     my $command = "perl $script_dir/split.pl \"$input_file\" \"$split_number\" \"$output_dir\" 1> \"$split_log\" 2> \"$split_log\"";
 
@@ -91,10 +93,10 @@ sub duplicate_count
 # returns database file path, bioperl index path
 sub create_input_database
 {
-    my ($input_file,$database_output) = @_;
+    my ($input_file,$database_output,$log_dir) = @_;
 
     my $input_fasta_path = "$database_output/".basename($input_file);
-    my $formatdb_log = "$database_output/formatdb.log";
+    my $formatdb_log = "$log_dir/formatdb.log";
 
     die "Input file $input_file does not exist" if (not -e $input_file);
     die "Output directory: $database_output does not exist" if (not -e $database_output);
@@ -145,7 +147,7 @@ sub get_job_id
 # return blast output base path
 sub perform_blast
 {
-    my ($input_task_base, $output_dir, $processors, $database) = @_;
+    my ($input_task_base, $output_dir, $processors, $database,$log_dir) = @_;
 
     die "Input files $input_task_base.x do not exist" if (not -e "$input_task_base.1");
     die "Output directory $output_dir does not exist" if (not -e $output_dir);
@@ -161,8 +163,8 @@ sub perform_blast
     print_sge_script($processors, $blast_sge, $sge_command);
     print "\t...done\n";
 
-    my $error = "$output_dir/error.sge";
-    my $out = "$output_dir/out.sge";
+    my $error = "$log_dir/blast.error.sge";
+    my $out = "$log_dir/blast.out.sge";
     my $submission_command = "qsub -N $job_name -cwd -S /bin/sh -e \"$error\" -o \"$out\" \"$blast_sge\" 1>/dev/null";
     print "\tSubmitting $blast_sge for execution ...\n";
     print "\t\tSee ($out) and ($error) for details.\n";
@@ -177,7 +179,8 @@ sub perform_blast
 
 sub perform_id_snps
 {
-    my ($blast_input_base, $snps_output, $bioperl_index, $processors, $strain_count, $pid_cutoff, $hsp_length) = @_;
+    my ($blast_input_base, $snps_output, $bioperl_index, $processors,
+        $strain_count, $pid_cutoff, $hsp_length,$log_dir) = @_;
 
     die "Input files $blast_input_base.x do not exist" if (not -e "$blast_input_base.1");
     die "Output directory $snps_output does not exist" if (not -e $snps_output);
@@ -196,8 +199,8 @@ sub perform_id_snps
 
     my $job_name = get_job_id;
 
-    my $error = "$snps_output/error.sge";
-    my $out = "$snps_output/out.sge";
+    my $error = "$log_dir/core.error.sge";
+    my $out = "$log_dir/core.out.sge";
     my $submission_command = "qsub -N $job_name -cwd -S /bin/sh -e \"$error\" -o \"$out\" \"$core_sge\" 1>/dev/null";
     print "\tSubmitting $core_sge for execution ...\n";
     print "\t\tSee ($out) and ($error) for details.\n";
@@ -228,7 +231,7 @@ sub perform_id_snps
 
 sub align_orthologs
 {
-    my ($input_task_base, $output_dir, $snp_count) = @_;
+    my ($input_task_base, $output_dir, $snp_count, $log_dir) = @_;
 
     die "Input files ${input_task_base}x do not exist" if (not -e "${input_task_base}1");
     die "Output directory $output_dir does not exist" if (not -e $output_dir);
@@ -244,8 +247,8 @@ sub align_orthologs
     print_sge_script($snp_count, $clustalw_sge, $sge_command);
     print "\t...done\n";
 
-    my $error = "$output_dir/error.sge";
-    my $out = "$output_dir/out.sge";
+    my $error = "$log_dir/clustalw.error.sge";
+    my $out = "$log_dir/clustalw.out.sge";
     my $submission_command = "qsub -N $job_name -cwd -S /bin/sh -e \"$error\" -o \"$out\" \"$clustalw_sge\" 1>/dev/null";
     print "\tSubmitting $clustalw_sge for execution ...\n";
     print "\t\tSee ($out) and ($error) for details.\n";
@@ -265,7 +268,7 @@ sub align_orthologs
     }
     print "\t...done\n";
 
-    my $log = "$output_dir/trim.log";
+    my $log = "$log_dir/trim.log";
     my $trim_command = "$script_dir/trim.pl \"$output_dir\" \"$output_dir\" 1>\"$log\" 2>\"$log\"";
     print "\tTrimming alignments (see $log for details) ...\n";
     print "\t\t$trim_command\n" if ($verbose);
@@ -275,12 +278,12 @@ sub align_orthologs
 
 sub pseudoalign
 {
-    my ($align_input, $output_dir) = @_;
+    my ($align_input, $output_dir, $log_dir) = @_;
 
     die "Error: align_input directory does not exist" if (not -e $align_input);
     die "Error: pseudoalign output directory does not exist" if (not -e $output_dir);
 
-    my $log = "$output_dir/pseudoaligner.log";
+    my $log = "$log_dir/pseudoaligner.log";
 
     my $pseudoalign_command = "perl $script_dir/pseudoaligner.pl \"$align_input\" \"$output_dir\" 1>\"$log\" 2>\"$log\"";
     print "\tRunning pseudoaligner (see $log for details) ...\n";
@@ -374,6 +377,7 @@ sub usage
     print "Options:\n";
     print "\t-c|--strain-count:  The number of strains we are working with.\n";
     print "\t-i|--input-fasta:  The input fasta file.\n";
+    print "\t-k|--keep-files:  Keep intermediate files around.\n";
     print "\t-d|--input-dir:  The directory containing the input fasta files.\n";
     print "\t-p|--processors:  The number of processors to use.\n";
     print "\t-s|--split-file:  The file to use for initial split.\n";
@@ -392,6 +396,7 @@ my $input_fasta_opt;
 my $help_opt;
 my $strain_count_opt;
 my $input_dir_opt;
+my $keep_files_opt;
 
 my $processors = undef;
 my $split_file = undef;
@@ -404,6 +409,7 @@ if (!GetOptions(
     's|split-file=s' => \$split_file_opt,
     'd|input-dir=s' => \$input_dir_opt,
     'i|input-fasta=s' => \$input_fasta_opt,
+    'k|keep-files' => \$keep_files_opt,
     'v|verbose' => \$verbose_opt,
     'h|help' => \$help_opt,
     'c|strain-count=i' => \$strain_count_opt))
@@ -444,6 +450,11 @@ elsif (not -e $split_file_opt)
 else
 {
     $split_file = $split_file_opt;
+}
+
+if (defined $keep_files_opt and $keep_files_opt)
+{
+    $keep_files = 1;
 }
 
 if (defined $input_dir_opt)
@@ -529,6 +540,7 @@ my $root_data_dir = "$script_dir/data";
 
 my $job_dir = "$root_data_dir/$job_id";
 
+my $log_dir = "$job_dir/log";
 my $fasta_output = "$job_dir/fasta";
 my $database_output = "$job_dir/database";
 my $split_output = "$job_dir/split";
@@ -542,6 +554,7 @@ my $snps_count;
 print "Running core SNP phylogenomic pipeline.  Storing all data under $job_dir\n";
 mkdir ($root_data_dir) if (not -e $root_data_dir);
 mkdir $job_dir if (not -e $job_dir);
+mkdir $log_dir if (not -e $log_dir);
 
 if (defined $input_dir)
 {
@@ -563,33 +576,66 @@ if (defined $input_dir)
 
 print "Creating initial databases ...\n";
 mkdir $database_output if (not -e $database_output);
-($database_file, $bioperl_index) = create_input_database($input_fasta, $database_output);
+($database_file, $bioperl_index) = create_input_database($input_fasta, $database_output, $log_dir);
 print "...done\n";
 
 print "Performing split ...\n";
 mkdir "$split_output" if (not -e $split_output);
-$split_base_path = perform_split($split_file, $processors, $split_output);
+$split_base_path = perform_split($split_file, $processors, $split_output, $log_dir);
 print "...done\n";
+
+if (not $keep_files)
+{
+    if (defined $input_dir)
+    {
+        print "Cleaning $fasta_output\n" if ($verbose);
+        rmtree($fasta_output) or die "Error: could not delete $fasta_output";
+    }
+}
 
 print "Performing blast ...\n";
 mkdir "$blast_output" if (not -e $blast_output);
-$blast_base_path = perform_blast($split_base_path, $blast_output, $processors, $database_file);
+$blast_base_path = perform_blast($split_base_path, $blast_output, $processors, $database_file,$log_dir);
 print "...done\n";
 
 print "Performing core genome SNP identification ...\n";
 mkdir "$core_snp_output" if (not -e $core_snp_output);
-($core_snp_base_path, $snps_count) = perform_id_snps($blast_base_path, $core_snp_output, $bioperl_index, $processors, $strain_count, $pid_cutoff, $hsp_length);
+($core_snp_base_path, $snps_count) = perform_id_snps($blast_base_path, $core_snp_output, $bioperl_index, $processors, $strain_count, $pid_cutoff, $hsp_length,$log_dir);
 print "...done\n";
+
+if (not $keep_files)
+{
+    print "Cleaning $database_output\n" if ($verbose);
+    rmtree($database_output) or die "Error: could not delete $database_output";
+
+    print "Cleaning $split_base_path\n" if ($verbose);
+    rmtree($split_output) or die "Error: could not delete $split_output";
+
+    print "Cleaning $blast_output\n" if ($verbose);
+    rmtree($blast_output) or die "Error: could not delete $blast_output";
+}
 
 print "Performing multiple alignment of orthologs ...\n";
 mkdir $align_output if (not -e $align_output);
-align_orthologs($core_snp_base_path, $align_output, $snps_count);
+align_orthologs($core_snp_base_path, $align_output, $snps_count,$log_dir);
 print "...done\n";
+
+if (not $keep_files)
+{
+    print "Cleaning $core_snp_output\n" if ($verbose);
+    rmtree($core_snp_output) or die "Error: could not delete $core_snp_output";
+}
 
 print "Creating pseudoalignment ...\n";
 mkdir $pseudoalign_output if (not -e $pseudoalign_output);
-pseudoalign($align_output, $pseudoalign_output);
+pseudoalign($align_output, $pseudoalign_output,$log_dir);
 print "...done\n";
+
+if (not $keep_files)
+{
+    print "Cleaning $align_output\n" if ($verbose);
+    rmtree($align_output) or die "Error: could not delete $align_output";
+}
 
 print "\n\nPseudoalignment and snp report generated.\n";
 print "Files can be found in $pseudoalign_output\n";
