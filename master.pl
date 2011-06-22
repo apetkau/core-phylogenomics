@@ -608,7 +608,7 @@ if (not $keep_files)
     print "Cleaning $database_output\n" if ($verbose);
     rmtree($database_output) or die "Error: could not delete $database_output";
 
-    print "Cleaning $split_base_path\n" if ($verbose);
+    print "Cleaning $split_output\n" if ($verbose);
     rmtree($split_output) or die "Error: could not delete $split_output";
 
     print "Cleaning $blast_output\n" if ($verbose);
