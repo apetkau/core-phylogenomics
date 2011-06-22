@@ -5,18 +5,23 @@ use Bio::AlignIO;
 use Bio::SimpleAlign;
 use Cwd;
 use File::Copy;
-my $dir = getcwd; 
-opendir (DH, $dir);
+my $input_dir = shift;
+my $output_dir = shift; 
 
-# my @files = grep {/snps.*?\.aln/i} readdir(DH);
-my @ids = sort {$a <=> $b } map {/(\d+)/;$1} grep {/snps\d+\.aln/} <snps*.aln>;
-my @files = map {my $file = "snps" . $_ . ".aln";$file} @ids;
+$input_dir = getcwd if (not defined $input_dir);
+$output_dir = $input_dir if (not defined $output_dir);
+
+opendir (my $input_dh, $input_dir) or die "Could not open $input_dir: $!";
+my @ids = sort {$a <=> $b } map {/(\d+)/;$1} grep {/snps\d+\.aln/} readdir($input_dh);
+close($input_dh);
+
 locus: for my $locusid (@ids) {
-	my $alignfile = "snps" . $locusid . ".aln";
+	my $alignfile = "$input_dir/snps" . $locusid . ".aln";
+        my $alignfile_out = "$output_dir/snps${locusid}.aln.trimmed";
 	print "$alignfile\n";
-    my $in = Bio::AlignIO->new(-file =>$alignfile, -format=>"clustalw");
+        my $in = Bio::AlignIO->new(-file =>$alignfile, -format=>"clustalw");
 	my $aln = $in->next_aln;
-	my $qualfile = "quals". $locusid . ".aln";
+#	my $qualfile = "quals". $locusid . ".aln";
 #	open QUAL , $qualfile || die "Foo! Qualfile $qualfile: $!\n";
 #	my @quals = <QUAL>;
 #	my %qualmap;
@@ -56,5 +61,5 @@ locus: for my $locusid (@ids) {
 #		print QUAL $newqualline;
 	}
 #	close QUAL;
-	new Bio::AlignIO(-file=>">$alignfile".".trimmed", -format=>"clustalw")->write_aln($newalign);
+	new Bio::AlignIO(-file=>">$alignfile_out", -format=>"clustalw")->write_aln($newalign);
 }

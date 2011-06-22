@@ -6,15 +6,24 @@ use Bio::SimpleAlign;
 use Bio::LocatableSeq;
 use Cwd;
 use File::Copy;
-my $dir = getcwd;
-# $dir .= "/trimmed";
-# my $dir = getcwd; 
-opendir (DH, $dir);
-my $outputreport = "snp.report.txt";
+
+my $input_dir = shift;
+my $output_dir = shift;
+
+$input_dir = getcwd if (not defined $input_dir);
+$output_dir = $input_dir if (not defined $output_dir);
+
+die "Output directory $output_dir is not a directory" if (not -d $output_dir);
+die "Input directory $input_dir is not a directory" if (not -d $input_dir);
+
+my $outputreport = "$output_dir/snp.report.txt";
 open REPORT, ">$outputreport";
 # my @files = sort {$a cmp $b} grep { /trimmed$/i } readdir(DH);
 
-my @ids = sort {$a <=> $b } map {/(\d+)/;$1} grep {/snps\d+\.aln\.trimmed/} <snps*.aln.trimmed>;
+opendir (my $input_dh, $input_dir) or die "Could not open $input_dir: $!";
+my @ids = sort {$a <=> $b } map {/(\d+)/;$1} grep {/snps\d+\.aln\.trimmed/} readdir($input_dh);
+close($input_dh);
+
 my @files = map {my $file = "snps" . $_ . ".aln.trimmed";$file} @ids;
 my @columns;
 #my @qualumns;
@@ -22,7 +31,7 @@ my %longseq;
 my %longqual;
 my @seqlengths;
 for my $locusid (@ids) {
-    my $file = "snps".$locusid.".aln.trimmed"; 
+    my $file = "$input_dir/snps".$locusid.".aln.trimmed"; 
 	print "Working on $file\n";
 #	my %qualmap;
 
@@ -119,8 +128,9 @@ for my $seqstr (@newseqs) {
 	$pseudolength = length $seq->seq;
 }
 
-my $out = new Bio::AlignIO (-file=>">pseudoalign.phy", -format=>"phylip");
+my $pseudo_out = "$output_dir/pseudoalign.phy";
+my $out = new Bio::AlignIO (-file=>">$pseudo_out", -format=>"phylip");
 $out->write_aln($newaln);
-print "there are ", length($pseudoalign[0]), "strains in the pseudoalignment.\n";
+print "there are ", length($pseudoalign[0]), " strains in the pseudoalignment.\n";
 print "there are $pseudolength snps in the alignment\n";
 print "there are $locuscount loci in the alignment\n";

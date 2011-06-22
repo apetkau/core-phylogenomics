@@ -5,8 +5,8 @@ use warnings;
 
 use FindBin;
 
-use File::Basename qw(basename);
-use File::Copy qw(copy);
+use File::Basename qw(basename dirname);
+use File::Copy qw(copy move);
 use Getopt::Long;
 
 my $script_dir = $FindBin::Bin;
@@ -114,7 +114,7 @@ sub print_sge_script
 
 sub get_job_id
 {
-    return sprintf "j%08x", time;
+    return sprintf "x%08x", time;
 }
 
 # return blast output base path
@@ -205,6 +205,8 @@ sub align_orthologs
     die "Output directory $output_dir does not exist" if (not -e $output_dir);
     die "SNP count is invalid" if (not defined $snp_count or $snp_count <= 0);
 
+    my $input_dir = dirname($input_task_base);
+
     my $job_name = get_job_id;
 
     my $clustalw_sge = "$output_dir/clustalw.sge";
@@ -221,6 +223,39 @@ sub align_orthologs
     print "\t\tWaiting for completion of clustalw job array $job_name";
     wait_until_completion($job_name);
     print "done\n";
+
+    opendir(my $align_dh, $input_dir) or die "Could not open $input_dir: $!";
+    my @align_files = grep {/snps\d+\.aln/} readdir($align_dh);
+    close($align_dh);
+    print "\tMoving alignment files ...\n";
+    foreach my $file_in (@align_files)
+    {
+        move("$input_dir/$file_in", "$output_dir/".basename($file_in)) or die "Could not move file $file_in: $!";
+    }
+    print "\t...done\n";
+
+    my $log = "$output_dir/trim.log";
+    my $trim_command = "$script_dir/trim.pl \"$output_dir\" \"$output_dir\" 1>\"$log\" 2>\"$log\"";
+    print "\tTrimming alignments (see $log for details) ...\n";
+    print "\t\t$trim_command\n" if ($verbose);
+    system($trim_command) == 0 or die "Error trimming alignments: $!\n";
+    print "\t...done\n";
+}
+
+sub pseudoalign
+{
+    my ($align_input, $output_dir) = @_;
+
+    die "Error: align_input directory does not exist" if (not -e $align_input);
+    die "Error: pseudoalign output directory does not exist" if (not -e $output_dir);
+
+    my $log = "$output_dir/pseudoaligner.log";
+
+    my $pseudoalign_command = "perl $script_dir/pseudoaligner.pl \"$align_input\" \"$output_dir\" 1>\"$log\" 2>\"$log\"";
+    print "\tRunning pseudoaligner (see $log for details) ...\n";
+    print "\t\t$pseudoalign_command\n" if ($verbose);
+    system($pseudoalign_command) == 0 or die "Error running pseudoaligner: $!";
+    print "\t...done\n";
 }
 
 sub usage
@@ -355,6 +390,7 @@ my $split_output = "$job_dir/split";
 my $blast_output = "$job_dir/blast";
 my $core_snp_output = "$job_dir/core";
 my $align_output = "$job_dir/align";
+my $pseudoalign_output = "$job_dir/pseudoalign";
 
 my $snps_count;
 
@@ -385,4 +421,9 @@ print "...done\n";
 print "Performing multiple alignment of orthologs ...\n";
 mkdir $align_output if (not -e $align_output);
 align_orthologs($core_snp_base_path, $align_output, $snps_count);
+print "...done\n";
+
+print "Creating pseudoalignment ...\n";
+mkdir $pseudoalign_output if (not -e $pseudoalign_output);
+pseudoalign($align_output, $pseudoalign_output);
 print "...done\n";
