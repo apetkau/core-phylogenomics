@@ -15,6 +15,9 @@ my $script_dir = $FindBin::Bin;
 my $verbose = 0;
 my $keep_files = 0;
 
+my $pid_cutoff_default = 99;
+my $hsp_length_default = 400;
+
 sub check_job_queue_for
 {
     my ($job_name) = @_;
@@ -375,15 +378,21 @@ sub usage
 {
     print "Usage: ".basename($0)." [Options]\n\n";
     print "Options:\n";
-    print "\t-c|--strain-count:  The number of strains we are working with.\n";
-    print "\t-i|--input-fasta:  The input fasta file.\n";
-    print "\t-k|--keep-files:  Keep intermediate files around.\n";
-    print "\t-d|--input-dir:  The directory containing the input fasta files.\n";
-    print "\t-p|--processors:  The number of processors to use.\n";
-    print "\t-o|--output:  The directory to store output (optional).\n";
-    print "\t-s|--split-file:  The file to use for initial split.\n";
-    print "\t-v|--verbose:  Print extra information.\n";
+    print "\t-c|--strain-count [integer]:  The number of strains we are working with.\n";
+    print "\t-d|--input-diri [directory]:  The directory containing the input fasta files.\n";
     print "\t-h|--help:  Print help.\n";
+    print "\t-i|--input-fasta [file]:  The input fasta file.\n";
+    print "\t-k|--keep-files:  Keep intermediate files around.\n";
+    print "\t-o|--output [directory]:  The directory to store output (optional).\n";
+    print "\t-p|--processors [integer]:  The number of processors to use.\n";
+    print "\t--pid-cutoff [real]:  The pid cutoff to use (default $pid_cutoff_default).\n";
+    print "\t--hsp-length [integer]:   The hsp length to use (default $hsp_length_default).\n";
+    print "\t-s|--split-file [file]:  The file to use for initial split.\n";
+    print "\t-v|--verbose:  Print extra information.\n";
+
+    print "\nExample:\n";
+    print "\tmaster.pl --processors 480 --input-dir sample/ --split-file sample/ECO111.fasta --output data --keep-files\n";
+    print "\tRuns master.pl on data under sample/ with the passed split file and processors.\n\n";
 }
 
 ############
@@ -399,13 +408,17 @@ my $strain_count_opt;
 my $input_dir_opt;
 my $keep_files_opt;
 my $output_opt;
+my $pid_cutoff_opt;
+my $hsp_length_opt;
 
 my $processors = undef;
 my $split_file = undef;
 my $input_fasta = undef;
 my $input_dir = undef;
 my $strain_count = undef;
-my $output_dir;
+my $output_dir = undef;
+my $pid_cutoff = $pid_cutoff_default;
+my $hsp_length = $hsp_length_default;
 
 if (!GetOptions(
     'p|processors=i' => \$processors_opt,
@@ -414,6 +427,8 @@ if (!GetOptions(
     'o|output=s' => \$output_opt,
     'i|input-fasta=s' => \$input_fasta_opt,
     'k|keep-files' => \$keep_files_opt,
+    'pid-cutoff=f' => \$pid_cutoff_opt,
+    'hsp-length=i' => \$hsp_length_opt,
     'v|verbose' => \$verbose_opt,
     'h|help' => \$help_opt,
     'c|strain-count=i' => \$strain_count_opt))
@@ -529,16 +544,16 @@ if (defined $output_opt)
 {
     if (-e $output_opt)
     {
-        print "Warning: directory $output_opt already exists, are you sure you want to store data here [Y]?";
+        print "Warning: directory \"$output_opt\" already exists, are you sure you want to store data here [Y]? ";
         my $response = <>;
         chomp $response;
-        if ($response eq 'y' or $response eq 'Y')
+        if ($response eq 'y' or $response eq 'Y' or $response eq '')
         {
             $output_dir = $output_opt;
         }
         else
         {
-            die "Directory $output_opt already exists, could not continue.";
+            die "Directory \"$output_opt\" already exists, could not continue.";
         }
     }
     else
@@ -551,13 +566,50 @@ else
     $output_dir = sprintf "%08x",time;
 }
 
+if (defined $pid_cutoff_opt)
+{
+    if ($pid_cutoff_opt !~ /^\d+$/)
+    {
+        print STDERR "pid-cutoff value $pid_cutoff_opt is invalid\n";
+        usage;
+        exit 1;
+    }
+    elsif ($pid_cutoff_opt < 0 or $pid_cutoff_opt > 100)
+    {
+        print STDERR "pid-cutoff value $pid_cutoff_opt must be in [0,100]\n";
+        usage;
+        exit 1;
+    }
+    else
+    {
+        $pid_cutoff = $pid_cutoff_opt;
+    }
+}
+
+if (defined $hsp_length_opt)
+{
+    if ($hsp_length_opt !~ /^\d+$/)
+    {
+        print STDERR "hsp-length value $hsp_length_opt is invalid\n";
+        usage;
+        exit 1;
+    }
+    elsif ($hsp_length_opt < 0)
+    {
+        print STDERR "hsp-length value $hsp_length_opt must be > 0\n";
+        usage;
+        exit 1;
+    }
+    else
+    {
+        $hsp_length = $hsp_length_opt;
+    }
+}
+
 if (defined $verbose_opt and $verbose_opt)
 {
     $verbose = $verbose_opt;
 }
-
-my $pid_cutoff = 99;
-my $hsp_length = 400;
 
 my $database_file;
 my $bioperl_index;
@@ -578,7 +630,24 @@ my $pseudoalign_output = "$job_dir/pseudoalign";
 
 my $snps_count;
 
-print "Running core SNP phylogenomic pipeline.  Storing all data under $job_dir\n";
+print "Running core SNP phylogenomic pipeline.\n";
+
+if ($verbose)
+{
+    print "\nProperties:\n";
+    print "pid-cutoff: $pid_cutoff\n";
+    print "hsp-length: $hsp_length\n";
+    print "input-dir: $input_dir\n" if (defined $input_dir);
+    print "input-fasta: $input_fasta\n" if (defined $input_fasta);
+    print "output: $job_dir\n";
+    print "keep-files: ".($keep_files?'true':'false')."\n";
+    print "verbose: ".($verbose?'true':'false')."\n";
+    print "split-file: $split_file\n";
+    print "strain-count: ".(defined $strain_count?$strain_count:'auto')."\n";
+    print "processors: $processors\n\n";
+}
+
+print "Storing all data under $job_dir\n";
 mkdir $job_dir if (not -e $job_dir);
 mkdir $log_dir if (not -e $log_dir);
 
@@ -682,43 +751,51 @@ Input is in two forms, either a directory containing the fasta files to analyze,
 
 =head2 FASTA Directory
 
-Use I<--input-dir [name]> to define the fasta input directory.  The input files will be checked to see if all gene names are unique, and we will attempt to create unique names if this is not the case.  The count of the files in this directory will be used for the strain count (can be overridden with I<--strain-count>).
+Use B<--input-dir [name]> to define the fasta input directory.  The input files will be checked to see if all gene names are unique, and we will attempt to create unique names if this is not the case.  The count of the files in this directory will be used for the strain count (can be overridden with B<--strain-count>).
 
 =head2 Multi-FASTA
 
-Use I<--input-fasta [name]> to pass a multi-fasta formatted file containing all the strains to analyze.  The file will be checked for unique strain ids, and will fail if this is not the case.  This input option also requires passing the count of the number of strains I<--strain-count>.
+Use B<--input-fasta [name]> to pass a multi-fasta formatted file containing all the strains to analyze.  The file will be checked for unique strain ids, and will fail if this is not the case.  This input option also requires passing the count of the number of strains B<--strain-count>.
 
-=head1 Required
+=head1 OUTPUT
 
-=over 1
+Use B<--output [OUT_NAME]> to define an output directory, otherwise a directory will be created for you.  The output directory must be accessible by the cluster nodes.  Files for each stage will be written under the output directory.  In addition, a log/ directory will be written with log files for each stage.  The final results will be available under OUT_NAME/pseudoalign.
 
-=item --input-dir or --input-fasta:  The input file or directory to process.
+=head1 REQUIRED
 
-=item --strain-count (optional if --input-dir is used):  The count of the number of strains we are processing.
+=over 8
 
-=item --processors:  The number of processors we will run the SGE jobs with.
+=item B<--input-dir [directory]> or B<--input-fasta [file]>:  The input file or directory to process.
 
-=item --split-file:  The initial fasta file we split apart to run the SGE jobs with.
+=item B<--strain-count [integer]> (optional if --input-dir is used):  The count of the number of strains we are processing.
 
-=back
+=item B<--processors [integer]>:  The number of processors we will run the SGE jobs with.
 
-=head1 Optional
-
-=over 1
-
-=item --output:  The directory to store the analysis files under.
-
-=item --keep-files:  If set will keep intermediate files in analysis.
-
-=item --verbose:  Print more information.
+=item B<--split-file [file]>:  The initial fasta file we split apart to run the SGE jobs with.
 
 =back
 
-=head1 Dependencies
+=head1 OPTIONAL
 
-This script assumes you are running on a cluster environment.  Standard batch-queuing tools must be installed (qstat, qsub, etc).  As well, blast, and clustalw must be installed.
+=over 8
 
-=head1 Example
+=item B<--output [directory]>:  The directory to store the analysis files under.
+
+=item B<--keep-files>:  If set will keep intermediate files in analysis.
+
+=item B<--verbose>:  Print more information.
+
+=item B<--pid-cutoff [real]>:  The pid cutoff to use.
+
+=item B<--hsp-length [integer]>:  The hsp length to use.
+
+=back
+
+=head1 DEPENDENCIES
+
+This script assumes you are running on a cluster environment.  Standard batch-queuing tools must be installed (qstat, qsub, etc).  As well, blast, clustalw, and BioPerl must be installed.
+
+=head1 EXAMPLE
 
 =over 1
 
@@ -727,6 +804,12 @@ This script assumes you are running on a cluster environment.  Standard batch-qu
 =back
 
 This example will run the analysis on all fasta files under sample/, using sample/ECO111.fasta as the split file, and data/ as the directory to place all analysis files.  We will run the job using 480 processors on the cluster and keep all intermediate files around.
+
+=head1 AUTHOR
+
+Aaron Petkau - aaron.petkau@phac-aspc.gc.ca
+
+Gary Van Domselaar - gary_van_domselaar@phac-aspc.gc.ca
 
 =cut
 
