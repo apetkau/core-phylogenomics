@@ -541,6 +541,10 @@ if (defined $output_opt)
             die "Directory $output_opt already exists, could not continue.";
         }
     }
+    else
+    {
+        $output_dir = $output_opt;
+    }
 }
 else
 {
@@ -661,3 +665,69 @@ if (not $keep_files)
 
 print "\n\nPseudoalignment and snp report generated.\n";
 print "Files can be found in $pseudoalign_output\n";
+
+=pod
+
+=head1 NAME
+
+master.pl:  Script to automate running of core SNP analysis.
+
+=head1 DESCRIPTION
+
+Runs the core SNP phylogenomic analysis stages.  The input is either a directory containing the FASTA files to analyize, or the multi-fasta file to analyze.  The output is the pseudoalign.phy alignment file and the snpreport.txt. The intermediate files are kept under a directory (named using --output), and are by default cleaned out after they aren't needed (they can be kept using --keep-files).
+
+=head1 INPUT
+
+Input is in two forms, either a directory containing the fasta files to analyze, or a single multi-fasta file.
+
+=head2 FASTA Directory
+
+Use I<--input-dir [name]> to define the fasta input directory.  The input files will be checked to see if all gene names are unique, and we will attempt to create unique names if this is not the case.  The count of the files in this directory will be used for the strain count (can be overridden with I<--strain-count>).
+
+=head2 Multi-FASTA
+
+Use I<--input-fasta [name]> to pass a multi-fasta formatted file containing all the strains to analyze.  The file will be checked for unique strain ids, and will fail if this is not the case.  This input option also requires passing the count of the number of strains I<--strain-count>.
+
+=head1 Required
+
+=over 1
+
+=item --input-dir or --input-fasta:  The input file or directory to process.
+
+=item --strain-count (optional if --input-dir is used):  The count of the number of strains we are processing.
+
+=item --processors:  The number of processors we will run the SGE jobs with.
+
+=item --split-file:  The initial fasta file we split apart to run the SGE jobs with.
+
+=back
+
+=head1 Optional
+
+=over 1
+
+=item --output:  The directory to store the analysis files under.
+
+=item --keep-files:  If set will keep intermediate files in analysis.
+
+=item --verbose:  Print more information.
+
+=back
+
+=head1 Dependencies
+
+This script assumes you are running on a cluster environment.  Standard batch-queuing tools must be installed (qstat, qsub, etc).  As well, blast, and clustalw must be installed.
+
+=head1 Example
+
+=over 1
+
+=item master.pl --processors 480 --input-dir sample/ --split-file sample/ECO111.fasta --output data --keep-files
+
+=back
+
+This example will run the analysis on all fasta files under sample/, using sample/ECO111.fasta as the split file, and data/ as the directory to place all analysis files.  We will run the job using 480 processors on the cluster and keep all intermediate files around.
+
+=cut
+
+1;
