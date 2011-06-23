@@ -380,6 +380,7 @@ sub usage
     print "\t-k|--keep-files:  Keep intermediate files around.\n";
     print "\t-d|--input-dir:  The directory containing the input fasta files.\n";
     print "\t-p|--processors:  The number of processors to use.\n";
+    print "\t-o|--output:  The directory to store output (optional).\n";
     print "\t-s|--split-file:  The file to use for initial split.\n";
     print "\t-v|--verbose:  Print extra information.\n";
     print "\t-h|--help:  Print help.\n";
@@ -397,17 +398,20 @@ my $help_opt;
 my $strain_count_opt;
 my $input_dir_opt;
 my $keep_files_opt;
+my $output_opt;
 
 my $processors = undef;
 my $split_file = undef;
 my $input_fasta = undef;
 my $input_dir = undef;
 my $strain_count = undef;
+my $output_dir;
 
 if (!GetOptions(
     'p|processors=i' => \$processors_opt,
     's|split-file=s' => \$split_file_opt,
     'd|input-dir=s' => \$input_dir_opt,
+    'o|output=s' => \$output_opt,
     'i|input-fasta=s' => \$input_fasta_opt,
     'k|keep-files' => \$keep_files_opt,
     'v|verbose' => \$verbose_opt,
@@ -521,6 +525,28 @@ else
     }
 }
 
+if (defined $output_opt)
+{
+    if (-e $output_opt)
+    {
+        print "Warning: directory $output_opt already exists, are you sure you want to store data here [Y]?";
+        my $response = <>;
+        chomp $response;
+        if ($response eq 'y' or $response eq 'Y')
+        {
+            $output_dir = $output_opt;
+        }
+        else
+        {
+            die "Directory $output_opt already exists, could not continue.";
+        }
+    }
+}
+else
+{
+    $output_dir = sprintf "%08x",time;
+}
+
 if (defined $verbose_opt and $verbose_opt)
 {
     $verbose = $verbose_opt;
@@ -535,10 +561,7 @@ my $split_base_path;
 my $blast_base_path;
 my $core_snp_base_path;
 
-my $job_id = time;
-my $root_data_dir = "$script_dir/data";
-
-my $job_dir = "$root_data_dir/$job_id";
+my $job_dir = "$output_dir";
 
 my $log_dir = "$job_dir/log";
 my $fasta_output = "$job_dir/fasta";
@@ -552,7 +575,6 @@ my $pseudoalign_output = "$job_dir/pseudoalign";
 my $snps_count;
 
 print "Running core SNP phylogenomic pipeline.  Storing all data under $job_dir\n";
-mkdir ($root_data_dir) if (not -e $root_data_dir);
 mkdir $job_dir if (not -e $job_dir);
 mkdir $log_dir if (not -e $log_dir);
 
