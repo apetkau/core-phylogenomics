@@ -57,8 +57,6 @@ sub perform_split
     print "\t\t$command\n" if ($verbose);
     print "\t\tSee $split_log for more information.\n";
     system($command) == 0 or die "Error for command $command: $!";
-
-    return "$output_dir/".basename($input_file);
 }
 
 # Counts duplicate ids for genes in fasta formatted files
@@ -96,9 +94,8 @@ sub duplicate_count
 # returns database file path, bioperl index path
 sub create_input_database
 {
-    my ($input_file,$database_output,$log_dir) = @_;
+    my ($input_file,$database_output,$log_dir,$new_input_fasta) = @_;
 
-    my $input_fasta_path = "$database_output/".basename($input_file);
     my $formatdb_log = "$log_dir/formatdb.log";
 
     die "Input file $input_file does not exist" if (not -e $input_file);
@@ -111,11 +108,11 @@ sub create_input_database
 
     die "Error: duplicate ids found in input fasta $input_file\n" if ($duplicate_count > 0);
 
-    copy($input_file, $input_fasta_path)
-      or die "Could not copy $input_file to $input_fasta_path: $!";
+    copy($input_file, $new_input_fasta)
+      or die "Could not copy $input_file to $new_input_fasta: $!";
 
-    my $formatdb_command = "formatdb -i \"$input_fasta_path\" -p F -l \"$formatdb_log\"";
-    my $index_command = "perl \"$script_dir/index.pl\" \"$input_fasta_path\"";
+    my $formatdb_command = "formatdb -i \"$new_input_fasta\" -p F -l \"$formatdb_log\"";
+    my $index_command = "perl \"$script_dir/index.pl\" \"$new_input_fasta\"";
 
     print "\tCreating BLAST formatted database ...\n";
     print "\t\t$formatdb_command\n" if ($verbose);
@@ -126,8 +123,6 @@ sub create_input_database
     print "\t\t$index_command\n" if ($verbose);
     system($index_command) == 0 or die "Error for command: $index_command: $!";
     print "\t...done\n";
-
-    return ($input_fasta_path, "$input_fasta_path.idx");
 }
 
 sub print_sge_script
@@ -150,19 +145,17 @@ sub get_job_id
 # return blast output base path
 sub perform_blast
 {
-    my ($input_task_base, $output_dir, $processors, $database,$log_dir) = @_;
+    my ($input_task_base, $output_dir, $processors, $database,$log_dir,$blast_task_base) = @_;
 
     die "Input files $input_task_base.x do not exist" if (not -e "$input_task_base.1");
     die "Output directory $output_dir does not exist" if (not -e $output_dir);
     die "Database $database does not exist" if (not -e $database);
 
-    my $output_task_base = basename($input_task_base).".out"; 
-    my $output_task_path_base = "$output_dir/$output_task_base";
     my $job_name = get_job_id;
 
     my $blast_sge = "$output_dir/blast.sge";
     print "\tWriting $blast_sge script ...\n";
-    my $sge_command = "blastall -p blastn -i \"$input_task_base.\$SGE_TASK_ID\" -o \"$output_task_path_base.\$SGE_TASK_ID\" -d \"$database\"\n";
+    my $sge_command = "blastall -p blastn -i \"$input_task_base.\$SGE_TASK_ID\" -o \"$blast_task_base.\$SGE_TASK_ID\" -d \"$database\"\n";
     print_sge_script($processors, $blast_sge, $sge_command);
     print "\t...done\n";
 
@@ -176,14 +169,12 @@ sub perform_blast
     print "\t\tWaiting for completion of blast job array $job_name";
     wait_until_completion($job_name);
     print "done\n";
-
-    return $output_task_path_base;
 }
 
 sub perform_id_snps
 {
     my ($blast_input_base, $snps_output, $bioperl_index, $processors,
-        $strain_count, $pid_cutoff, $hsp_length,$log_dir) = @_;
+        $strain_count, $pid_cutoff, $hsp_length,$log_dir,$core_snp_base) = @_;
 
     die "Input files $blast_input_base.x do not exist" if (not -e "$blast_input_base.1");
     die "Output directory $snps_output does not exist" if (not -e $snps_output);
@@ -192,7 +183,7 @@ sub perform_id_snps
     die "Pid cutoff is invalid" if (not defined ($pid_cutoff) or $pid_cutoff <= 0 or $pid_cutoff > 100);
     die "HSP length is invalid" if (not defined ($hsp_length) or $hsp_length <= 0);
 
-    my $core_snp_base_path = "$snps_output/snps";
+    my $core_snp_base_path = "$snps_output/$core_snp_base";
 
     my $core_sge = "$snps_output/core.sge";
     print "\tWriting $core_sge script ...\n";
@@ -219,17 +210,21 @@ sub perform_id_snps
     system($rename_command) == 0 or die "Error renaming snp files: $!";
     print "\t...done\n";
 
-    my $count_command = "ls -l \"$core_snp_base_path\"* | wc -l";
-    my $count = undef;
-    print "\tCounting SNP files...\n";
-    print "\t\t$count_command\n" if ($verbose);
-    $count = `$count_command`;
-    die "Error counting snp files" if (not defined $count);
-    die "Error counting snp files, $count not a number" if ($count !~ /^\d+$/);
-    die "Error counting snp files, $count <= 0" if ($count <= 0);
-    print "\t...done\n";
+}
 
-    return ($core_snp_base_path, $count);
+sub count_snps
+{
+    my ($core_snp_base_path) = @_;
+
+    my $count_command = "ls -1 \"$core_snp_base_path\"* | wc -l";
+    my $count = undef;
+    print "\t$count_command\n" if ($verbose);
+    $count = `$count_command`;
+    die "\tError counting snp files" if (not defined $count);
+    die "\tError counting snp files, $count not a number" if ($count !~ /^\d+$/);
+    die "\tError counting snp files, $count <= 0" if ($count <= 0);
+
+    return $count;
 }
 
 sub align_orthologs
@@ -671,12 +666,15 @@ if (defined $input_dir)
 
 print "Creating initial databases ...\n";
 mkdir $database_output if (not -e $database_output);
-($database_file, $bioperl_index) = create_input_database($input_fasta, $database_output, $log_dir);
+$database_file = "$database_output/".basename($input_fasta);
+$bioperl_index = "$database_file.idx";
+create_input_database($input_fasta, $database_output, $log_dir,$database_file);
 print "...done\n";
 
 print "Performing split ...\n";
 mkdir "$split_output" if (not -e $split_output);
-$split_base_path = perform_split($split_file, $processors, $split_output, $log_dir);
+$split_base_path = "$split_output/".basename($split_file);
+perform_split($split_file, $processors, $split_output, $log_dir);
 print "...done\n";
 
 if (not $keep_files)
@@ -690,12 +688,19 @@ if (not $keep_files)
 
 print "Performing blast ...\n";
 mkdir "$blast_output" if (not -e $blast_output);
-$blast_base_path = perform_blast($split_base_path, $blast_output, $processors, $database_file,$log_dir);
+$blast_base_path = "$blast_output/".basename($split_base_path).".out";
+perform_blast($split_base_path, $blast_output, $processors, $database_file,$log_dir,$blast_base_path);
 print "...done\n";
 
 print "Performing core genome SNP identification ...\n";
 mkdir "$core_snp_output" if (not -e $core_snp_output);
-($core_snp_base_path, $snps_count) = perform_id_snps($blast_base_path, $core_snp_output, $bioperl_index, $processors, $strain_count, $pid_cutoff, $hsp_length,$log_dir);
+my $core_snp_base = "snps";
+$core_snp_base_path = "$core_snp_output/$core_snp_base";
+perform_id_snps($blast_base_path, $core_snp_output, $bioperl_index, $processors, $strain_count, $pid_cutoff, $hsp_length,$log_dir,$core_snp_base);
+print "...done\n";
+
+print "Counting SNP files...\n";
+$snps_count = count_snps($core_snp_base_path);
 print "...done\n";
 
 if (not $keep_files)
