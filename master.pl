@@ -328,7 +328,7 @@ sub build_input_fasta
     }
     print "\t...done\n";
 
-    my $main_input_file = "$output_dir/all.fasta";
+    my $main_output_file = "$output_dir/all.fasta";
     my $strain_count = 0;
 
     my @files;
@@ -347,26 +347,25 @@ sub build_input_fasta
 
     $strain_count = scalar(@files);
 
-    my $cat_command = "cat ";
+    print "\tBuilding single multi-fasta file $main_output_file ...\n";
+    open(my $out_fh, '>', "$main_output_file") or die "Could not open file $main_output_file: $!";
     foreach my $file (@files)
     {
-        if ($prepended)
+        print "\t\treading $output_dir/$file\n" if ($verbose);
+        open(my $in_fh, '<', "$input_dir/$file") or die "Could not open file $input_dir/$file: $!";
+        my $line;
+        while ($line = <$in_fh>)
         {
-            $cat_command .= "\"$output_dir/$file\" ";
+            chomp $line;
+            print $out_fh "$line\n";
         }
-        else
-        {
-            $cat_command .= "\"$input_dir/$file\" ";
-        }
-    }
-    $cat_command .= " 1> $main_input_file";
 
-    print "\tBuilding single multi-fasta file $main_input_file ...\n";
-    print "\t\t$cat_command\n" if ($verbose);
-    system($cat_command) == 0 or die "Could not build single multi-fasta file: $!";
+        close ($in_fh);
+    }
+    close ($out_fh);
     print "\t...done\n";
 
-    return ($main_input_file,$strain_count);
+    return ($main_output_file,$strain_count);
 }
 
 sub usage
