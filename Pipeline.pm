@@ -9,6 +9,7 @@ use File::Basename qw(basename dirname);
 use File::Copy qw(copy move);
 use File::Path qw(rmtree);
 
+my $properties_filename = 'run.properties';
 my @valid_dirs = ('job_dir','log_dir','fasta_dir','database_dir','split_dir','blast_dir','core_dir',
                   'align_dir','pseudoalign_dir');
 my @valid_properties = join(@valid_dirs,'hsp_length','pid_cutoff');
@@ -50,6 +51,88 @@ sub set_job_dir
     $job_properties->{'pseudoalign_dir'} = "$job_dir/pseudoalign";
 }
 
+sub set_start_stage
+{
+    my ($self,$start_stage) = @_;
+    my @stage_list = @{$self->{'stage_list'}};
+    my $end_stage = $self->{'end_stage'};
+
+    die "Cannot resubmit to undefined ending stage" if (not defined $start_stage);
+    die "Cannot resubmit to invalid stage $start_stage" if (not $self->is_valid_stage($start_stage));
+    die "Cannot resubmit to invalid stage $end_stage" if (not $self->_validate_stages($start_stage,$end_stage));
+
+    $self->{'start_stage'} = $start_stage;
+}
+
+sub set_end_stage
+{
+    my ($self,$end_stage) = @_;
+    my @stage_list = @{$self->{'stage_list'}};
+
+    my $start_stage = $self->{'start_stage'};
+
+    die "Cannot resubmit to undefined ending stage" if (not defined $end_stage);
+    die "Cannot resubmit to invalid stage $end_stage" if (not $self->is_valid_stage($end_stage));
+    die "Cannot resubmit to invalid stage $end_stage" if (not $self->_validate_stages($start_stage,$end_stage));
+
+    $self->{'end_stage'} = $end_stage;
+}
+
+sub _validate_stages
+{
+    my ($self,$start_stage,$end_stage) = @_;
+
+    my $is_valid = 1;
+
+    my @stage_list = @{$self->{'stage_list'}};
+
+    my $seen_start = 0;
+    my $seen_end = 0;
+    foreach my $valid_stage (@stage_list)
+    {
+        $seen_start = 1 if ($valid_stage eq $start_stage);
+        $seen_end = 1 if ($valid_stage eq $end_stage);
+        $is_valid = 0 if ($seen_end and (not $seen_start));
+    }
+    $is_valid = 0 if (not $seen_end);
+
+    return $is_valid;
+}
+
+# Purpose: Resubmits the passed job through the pipeline going through the given stages
+# Input:  $job_dir  The directory of the previously run job
+# Output: Sets up the pipeline to run with the given properties
+sub resubmit
+{
+    my ($self,$job_dir) = @_;
+
+    my @stage_list = @{$self->{'stage_list'}};
+
+    my $properties_path = "$job_dir/$properties_filename";
+
+    die "Cannot resubmit to undefined job_dir" if (not defined $job_dir);
+    die "Cannot resubmit $job_dir, file $properties_path not found" if (not -e $properties_path);
+    die "Cannot resubmit to non-existant job_dir $job_dir" if (not -d $job_dir);
+
+    $self->_read_properties($properties_path);
+}
+
+sub get_first_stage
+{
+    my ($self) = @_;
+
+    my $stage_list = $self->{'stage_list'};
+    return $stage_list->[0];
+}
+
+sub get_last_stage
+{
+    my ($self) = @_;
+
+    my $stage_list = $self->{'stage_list'};
+    return $stage_list->[-1];
+}
+
 sub set_hsp_length
 {
     my ($self,$length) = @_;
@@ -74,6 +157,7 @@ sub set_split_file
     my ($self,$file) = @_;
     $self->{'job_properties'}->{'split_file'} = $file;
     $self->{'job_properties'}->{'blast_base'} = basename($file).'.out';
+    $self->{'job_properties'}->{'split_base'} = basename($file);
 }
 
 sub set_processors
@@ -116,6 +200,7 @@ sub _create_stages
 
     my $stage_table = { 'initialize' => \&_initialize,
                         'prepare-input' => \&_build_input_fasta,
+                        'write-properties' => \&_write_properties,
                         'build-database' => \&_create_input_database,
                         'split' => \&_perform_split,
                         'blast' => \&_perform_blast,
@@ -126,15 +211,21 @@ sub _create_stages
 
     $self->{'stage_table'} = $stage_table;
 
-    $self->{'stage_list'} = ['initialize',
-                             'prepare-input',
-                             'build-database',
-                             'split',
-                             'blast',
-                             'identify-snps',
-                             'alignment',
-                             'pseudoalign'
-                            ];
+    my $stage_list = ['initialize',
+                      'prepare-input',
+                      'write-properties',
+                      'build-database',
+                      'split',
+                      'blast',
+                      'identify-snps',
+                      'alignment',
+                      'pseudoalign'
+                     ];
+
+    $self->{'start_stage'} = $stage_list->[0];
+    $self->{'end_stage'} = $stage_list->[-1];
+
+    $self->{'stage_list'} = $stage_list;
 }
 
 sub _execute_stage
@@ -154,20 +245,42 @@ sub _execute_stage
     }
 }
 
+sub is_valid_stage
+{
+    my ($self,$stage) = @_;
+    my @stage_list = @{$self->{'stage_list'}};
+
+    return (defined $stage) and (grep {$_ eq $stage} @stage_list);
+}
+
 sub execute
 {
     my ($self) = @_;
 
+    my $verbose = $self->{'verbose'};
+
     my $stage_list = $self->{'stage_list'};
+    my $start_stage = $self->{'start_stage'};
+    my $end_stage = $self->{'end_stage'};
 
-    if (not defined $stage_list)
-    {
-        die "Stage list not defined";
-    }
+    die "Start stage not defined" if (not defined $start_stage);
+    die "End stage not defined" if (not defined $end_stage);
+    die "Stage list not defined" if (not defined $stage_list);
 
+    my $seen_start = 0;
+    my $seen_end = 0;
     foreach my $stage (@$stage_list)
     {
-        $self->_execute_stage($stage);
+        $seen_start = 1 if ($stage eq $start_stage);
+        if ($seen_start and not $seen_end)
+        {
+            $self->_execute_stage($stage);
+        }
+        else
+        {
+            print "\nSkipping stage: $stage\n" if ($verbose);
+        }
+        $seen_end = 1 if ($stage eq $end_stage);
     }
 }
 
@@ -237,8 +350,50 @@ sub _perform_split
     print "\t\tSee $split_log for more information.\n";
     system($command) == 0 or die "Error for command $command: $!";
     print "...done\n";
+}
 
-    $job_properties->{'split_base'} = basename($input_file);
+sub _read_properties
+{
+    my ($self,$file) = @_;
+    my $job_properties = $self->{'job_properties'};
+
+    open(my $in_fh, '<', $file) or die "Could not open $file: $!\n";
+    while (my $line = <$in_fh>)
+    {
+        chomp $line;
+
+        my ($real_content) = ($line =~ /^([^#]*)/);
+        if (defined $real_content)
+        {
+            my ($key,$value) = ($real_content =~ /^([^=]+)=(.*)$/);
+
+            if (defined $key and defined $value)
+            {
+                $job_properties->{$key} = $value;
+            }
+        }
+    }
+}
+
+sub _write_properties
+{
+    my ($self,$stage) = @_;
+    my $verbose = $self->{'verbose'};
+
+    my $job_properties = $self->{'job_properties'};
+    my $output = $job_properties->{'job_dir'}."/$properties_filename";
+    
+    print "\nStage: $stage\n" if ($verbose);
+    print "Writing properties file to $output...\n" if ($verbose);
+    open(my $out_fh, '>', $output) or die "Could not write to $output: $!";
+    print $out_fh "#Properties for snp-phylogenomics job\n";
+    print $out_fh "#Auto-generated on ".`date`."\n";
+    foreach my $key (keys %$job_properties)
+    {
+        print $out_fh "$key=".$job_properties->{$key}."\n";
+    }
+    close($out_fh);
+    print "...done\n" if ($verbose);
 }
 
 # Counts duplicate ids for genes in fasta formatted files
