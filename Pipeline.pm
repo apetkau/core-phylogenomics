@@ -146,7 +146,7 @@ sub _execute_stage
 
     if (defined $stage_sub)
     {
-        &$stage_sub($self);
+        &$stage_sub($self,$stage);
     }
     else
     {
@@ -213,7 +213,7 @@ sub _wait_until_completion
 # returns split file base path
 sub _perform_split
 {
-    my ($self) = @_;
+    my ($self,$stage) = @_;
 
     my $verbose = $self->{'verbose'};
     my $job_properties = $self->{'job_properties'};
@@ -230,6 +230,7 @@ sub _perform_split
     die "input file: $input_file does not exist" if (not -e $input_file);
     die "output directory: $output_dir does not exist" if (not -e $output_dir);
 
+    print "\nStage: $stage\n";
     print "Performing split ...\n";
     print "\tSplitting $input_file into $split_number pieces ...\n";
     print "\t\t$command\n" if ($verbose);
@@ -274,7 +275,7 @@ sub _duplicate_count
 
 sub _create_input_database
 {
-    my ($self) = @_;
+    my ($self,$stage) = @_;
     my $verbose = $self->{'verbose'};
     my $job_properties = $self->{'job_properties'};
     my $input_file = $job_properties->{'fasta_dir'}.'/'.$job_properties->{'all_input_fasta'};
@@ -289,6 +290,7 @@ sub _create_input_database
     die "Input file $input_file does not exist" if (not -e $input_file);
     die "Output directory: $database_output does not exist" if (not -e $database_output);
 
+    print "\nStage: $stage\n";
     print "Creating initial databases ...\n";
     print "\tChecking for features in $input_file with duplicate ids...\n";
     my $duplicate_count = $self->_duplicate_count($input_file);
@@ -337,7 +339,7 @@ sub _get_job_id
 # return blast output base path
 sub _perform_blast
 {
-    my ($self) = @_;
+    my ($self,$stage) = @_;
     my $job_properties = $self->{'job_properties'};
     my $input_task_base = $job_properties->{'split_dir'}.'/'.$job_properties->{'split_base'};
     my $output_dir = $job_properties->{'blast_dir'};
@@ -351,6 +353,7 @@ sub _perform_blast
     die "Output directory $output_dir does not exist" if (not -e $output_dir);
     die "Database $database does not exist" if (not -e $database);
 
+    print "\nStage: $stage\n";
     print "Performing blast ...\n";
     mkdir "$output_dir" if (not -e $output_dir);
     my $blast_base_path = "$output_dir/$blast_task_base";
@@ -378,7 +381,7 @@ sub _perform_blast
 
 sub _perform_id_snps
 {
-    my ($self) = @_;
+    my ($self,$stage) = @_;
 
     my $job_properties = $self->{'job_properties'};
     my $snps_output = $job_properties->{'core_dir'};
@@ -405,6 +408,7 @@ sub _perform_id_snps
 
     my $core_snp_base_path = "$snps_output/$core_snp_base";
 
+    print "\nStage: $stage\n";
     print "Performing core genome SNP identification ...\n";
     my $core_sge = "$snps_output/core.sge";
     print "\tWriting $core_sge script ...\n";
@@ -455,7 +459,7 @@ sub _count_snps
 
 sub _align_orthologs
 {
-    my ($self) = @_;
+    my ($self,$stage) = @_;
     my $job_properties = $self->{'job_properties'};
     my $input_task_base = $job_properties->{'core_dir'}.'/'.$job_properties->{'core_snp_base'};
     my $output_dir = $job_properties->{'align_dir'};
@@ -470,6 +474,7 @@ sub _align_orthologs
 
     my $job_name = $self->_get_job_id;
 
+    print "\nStage: $stage\n";
     print "Performing multiple alignment of orthologs ...\n";
 
     my $snp_count = $self->_count_snps($input_task_base);
@@ -514,7 +519,7 @@ sub _align_orthologs
 
 sub _pseudoalign
 {
-    my ($self) = @_;
+    my ($self,$stage) = @_;
     my $job_properties = $self->{'job_properties'};
     my $script_dir = $self->{'script_dir'};
     my $verbose = $self->{'verbose'};
@@ -530,6 +535,7 @@ sub _pseudoalign
 
     my $pseudoalign_command = "perl $script_dir/pseudoaligner.pl \"$align_input\" \"$output_dir\" 1>\"$log\" 2>&1";
 
+    print "\nStage: $stage\n";
     print "Creating pseudoalignment ...\n";
 
     print "\tRunning pseudoaligner (see $log for details) ...\n";
@@ -546,7 +552,7 @@ sub _pseudoalign
 # returns main input file and count of strains
 sub _build_input_fasta
 {
-    my ($self) = @_;
+    my ($self,$stage) = @_;
     my $verbose = $self->{'verbose'};
     my $job_properties = $self->{'job_properties'};
     my $input_dir = $job_properties->{'input_fasta_dir'};
@@ -556,6 +562,9 @@ sub _build_input_fasta
     my $all_input_file = $output_dir.'/'.$job_properties->{'all_input_fasta'};
 
     die "Output directory is invalid" if (not -d $output_dir);
+
+    print "\nStage: $stage\n";
+    print "Preparing input files...\n";
 
     if (defined $input_file)
     {
@@ -655,6 +664,8 @@ sub _build_input_fasta
     {
         die "No input file or input directory defined";
     }
+
+    print "...done\n";
 }
 
 #print "Storing all data under $job_dir\n";
