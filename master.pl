@@ -290,7 +290,7 @@ else
     }
     else
     {
-        $pipeline->set_pid_cutoff($pid_cutoff_opt);
+        $pipeline->set_pid_cutoff($pid_cutoff_default);
     }
     
     if (defined $hsp_length_opt)
