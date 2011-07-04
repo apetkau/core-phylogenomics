@@ -267,6 +267,8 @@ sub execute
     die "End stage not defined" if (not defined $end_stage);
     die "Stage list not defined" if (not defined $stage_list);
 
+    print "Running core SNP phylogenomic pipeline on ".`date`."\n";
+
     my $seen_start = 0;
     my $seen_end = 0;
     foreach my $stage (@$stage_list)
@@ -407,16 +409,18 @@ sub _duplicate_count
 
     my $is_dir = (-d $input_file);
 
-    my $duplicate_count_command;
+    my $duplicate_text_command;
 
     if ($is_dir)
     {
-        $duplicate_count_command = "grep --only-match --no-filename '^>\\S*' \"$input_file\"/* | sort | uniq --count | grep --invert-match '^[ ^I]*1[ ^I]>' | wc -l";
+        $duplicate_text_command = "grep --only-match --no-filename '^>\\S*' \"$input_file\"/* | sort | uniq --count | grep --invert-match '^[ ^I]*1[ ^I]>'";
     }
     else
     {
-        $duplicate_count_command = "grep --only-match --no-filename '^>\\S*' \"$input_file\" | sort | uniq --count | grep --invert-match '^[ ^I]*1[ ^I]>' | wc -l";
+        $duplicate_text_command = "grep --only-match --no-filename '^>\\S*' \"$input_file\" | sort | uniq --count | grep --invert-match '^[ ^I]*1[ ^I]>'";
     }
+
+    my $duplicate_count_command = $duplicate_text_command." | wc -l";
 
     print "$duplicate_count_command\n" if ($self->{'verbose'});
 
@@ -424,6 +428,15 @@ sub _duplicate_count
     chomp $duplicate_count;
 
     die "Error in duplicate id command, output \"$duplicate_count\" not a number" if ($duplicate_count !~ /^\d+$/);
+
+    # added to show which ids are duplicated, inefficient (re-runs)
+    if ($self->{'verbose'})
+    {
+        print "\t\tDuplicates ...\n";
+        print "\t\tCount ID\n";
+        print `$duplicate_text_command`;
+        print "\t\t...done\n";
+    }
 
     return $duplicate_count;
 }
@@ -452,7 +465,7 @@ sub _create_input_database
     print "\t\tDuplicate ids: $duplicate_count\n" if ($verbose);
     print "\t...done\n";
 
-    die "Error: duplicate ids found in input fasta $input_file\n" if ($duplicate_count > 0);
+    die "Error: $duplicate_count duplicate ids found in input fasta $input_file\n" if ($duplicate_count > 0);
 
     copy($input_file, $input_fasta_path) or die "Could not copy $input_file to $input_fasta_path: $!";
 

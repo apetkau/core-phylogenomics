@@ -342,7 +342,6 @@ else
     }
 }
 
-print "Running core SNP phylogenomic pipeline.\n";
 $pipeline->execute;
 
 =pod
