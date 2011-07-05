@@ -43,9 +43,14 @@ sub usage
     print "\t-s|--split-file [file]:  The file to use for initial split.\n";
     print "\t-v|--verbose:  Print extra information.\n";
 
+    print "\nStages:\n";
+    print Pipeline::static_get_stage_descriptions("\t");
+
     print "\nExample:\n";
     print "\tmaster.pl --processors 480 --input-dir sample/ --split-file sample/ECO111.fasta --output data --keep-files\n";
     print "\tRuns master.pl on data under sample/ with the passed split file and processors.\n\n";
+    print "\tmaster.pl --resubmit data --start-stage pseudoalignment\n";
+    print "\tRe-runs the job stored under data/ at the pseudoalignment stage.\n\n";
 }
 
 ############
