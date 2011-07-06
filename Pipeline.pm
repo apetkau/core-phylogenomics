@@ -190,7 +190,7 @@ sub set_verbose
     $self->{'verbose'} = $verbose;
 }
 
-sub set_split_file
+sub _set_split_file
 {
     my ($self,$file) = @_;
     $self->{'job_properties'}->{'split_file'} = $file;
@@ -808,60 +808,59 @@ sub _build_input_fasta
     {
         die "Input directory is invalid" if (not -d $input_dir);
     
-        my $prepended = 0;
+        print "\tPrepending genes with strain_id, assuming strain_id is filename of each fasta file...\n";
     
-        print "\tChecking for unique genes...\n";
-        my $count = $self->_duplicate_count($input_dir);
-        if ($count > 0)
+        opendir(my $input_dh, $input_dir) or die "Could not open $input_dir: $!";
+        my @files = grep {/fasta$/i} readdir($input_dh);
+        close($input_dh);
+
+        die "No input fasta files found in $input_dir" if (scalar(@files) <= 0);
+
+        foreach my $file (@files)
         {
-            $prepended = 1;
-            print "\t\t$count duplicate genes found, attempting to fix...\n";
-    
-            opendir(my $input_dh, $input_dir) or die "Could not open $input_dir: $!";
-            my @files = grep {/fasta$/i} readdir($input_dh);
-            close($input_dh);
-    
-            die "No input fasta files found in $input_dir" if (scalar(@files) <= 0);
-            foreach my $file (@files)
+            my ($name) = ($file =~ /^([^\.]+)\./);
+
+            die "Cannot take id from file name for $input_dir/$file" if (not defined $name);
+            my $input_path = "$input_dir/$file";
+            my $output_path = "$output_dir/$name.prepended.fasta";
+
+            if (not defined $job_properties->{'split_file'})
             {
-                my ($name) = ($file =~ /^([^\.]+)\./);
-    
-                die "Cannot take id from file name for $input_dir/$file" if (not defined $name);
-                my $input_path = "$input_dir/$file";
-                my $output_path = "$output_dir/$name.prepended.fasta";
-                my $uniquify_command = "sed \"s/>/>$name\|/\" \"$input_path\" > \"$output_path\"";
-                print "\t\t$uniquify_command\n" if ($verbose);
-                system($uniquify_command) == 0 or die "Error attempting to create unique gene ids: $!";
+                print "\t\tSetting split file to $output_path\n";
+                $self->_set_split_file($output_path);
             }
-    
+
+            print "\t\tChecking valid headers for $input_path ...\n";
+            my $check_separator_command = "grep '^[^ |]*|' $input_path --count";
+            print "\t\t\t$check_separator_command\n" if ($verbose);
+            my $separator_count = `$check_separator_command`;
+
+            die "Invalid separator count" if (not defined $separator_count or $separator_count !~ /^\d+$/);
+            die "Count for '|' separator in $input_path ($separator_count) is not 0, cannot proceed" if ($separator_count != 0);
             print "\t\t...done\n";
+
+            my $uniquify_command = "sed \"s/>/>$name\|/\" \"$input_path\" > \"$output_path\"";
+            print "\t\t$uniquify_command\n" if ($verbose);
+            system($uniquify_command) == 0 or die "Error attempting to create unique gene ids: $!";
         }
+
         print "\t...done\n";
     
         my $strain_count = 0;
     
-        my @files;
+        my @files_to_build;
         my $file_dir;
-        if ($prepended)
-        {
-            opendir(my $input_dh, $output_dir) or die "Could not open $output_dir: $!";
-            $file_dir = $output_dir;
-            @files = grep {/prepended\.fasta$/} readdir($input_dh);
-            close($input_dh);
-        }
-        else
-        {
-            opendir(my $input_dh, $input_dir) or die "Could not open $input_dir: $!";
-            $file_dir = $input_dir;
-            @files = grep {/fasta$/} readdir($input_dh);
-            close($input_dh);
-        }
+
+        opendir(my $input_build_dh, $output_dir) or die "Could not open $output_dir: $!";
+        $file_dir = $output_dir;
+        @files_to_build = grep {/prepended\.fasta$/} readdir($input_build_dh);
+        close($input_build_dh);
     
-        $strain_count = scalar(@files);
+        $strain_count = scalar(@files_to_build);
     
         print "\tBuilding single multi-fasta file $all_input_file ...\n";
         open(my $out_fh, '>', "$all_input_file") or die "Could not open file $all_input_file: $!";
-        foreach my $file (@files)
+        foreach my $file (@files_to_build)
         {
             print "\t\treading $file_dir/$file\n" if ($verbose);
             open(my $in_fh, '<', "$file_dir/$file") or die "Could not open file $file_dir/$file: $!";

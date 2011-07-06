@@ -34,20 +34,18 @@ sub usage
     print "\t-c|--strain-count [integer]:  The number of strains we are working with.\n";
     print "\t-d|--input-diri [directory]:  The directory containing the input fasta files.\n";
     print "\t-h|--help:  Print help.\n";
-    print "\t-i|--input-fasta [file]:  The input fasta file.\n";
     print "\t-k|--keep-files:  Keep intermediate files around.\n";
     print "\t-o|--output [directory]:  The directory to store output (optional).\n";
     print "\t-p|--processors [integer]:  The number of processors to use.\n";
     print "\t--pid-cutoff [real]:  The pid cutoff to use (default $pid_cutoff_default).\n";
     print "\t--hsp-length [integer]:   The hsp length to use (default $hsp_length_default).\n";
-    print "\t-s|--split-file [file]:  The file to use for initial split.\n";
     print "\t-v|--verbose:  Print extra information.\n";
 
     print "\nStages:\n";
     print Pipeline::static_get_stage_descriptions("\t");
 
     print "\nExample:\n";
-    print "\tmaster.pl --processors 480 --input-dir sample/ --split-file sample/ECO111.fasta --output data --keep-files\n";
+    print "\tmaster.pl --processors 480 --input-dir sample/ --output data --keep-files\n";
     print "\tRuns master.pl on data under sample/ with the passed split file and processors.\n\n";
     print "\tmaster.pl --resubmit data --start-stage pseudoalignment\n";
     print "\tRe-runs the job stored under data/ at the pseudoalignment stage.\n\n";
@@ -59,7 +57,6 @@ sub usage
 
 my $verbose_opt;
 my $processors_opt;
-my $split_file_opt;
 my $input_fasta_opt;
 my $help_opt;
 my $strain_count_opt;
@@ -78,10 +75,8 @@ if (!GetOptions(
     'start-stage=s' => \$start_stage_opt,
     'end-stage=s' => \$end_stage_opt,
     'p|processors=i' => \$processors_opt,
-    's|split-file=s' => \$split_file_opt,
     'd|input-dir=s' => \$input_dir_opt,
     'o|output=s' => \$output_opt,
-    'i|input-fasta=s' => \$input_fasta_opt,
     'k|keep-files' => \$keep_files_opt,
     'pid-cutoff=f' => \$pid_cutoff_opt,
     'hsp-length=i' => \$hsp_length_opt,
@@ -162,23 +157,6 @@ else
         $pipeline->set_processors($processors_opt);
     }
     
-    if (not defined $split_file_opt)
-    {
-        print STDERR "Must specify an initial split file\n";
-        usage;
-        exit 1;
-    }
-    elsif (not -e $split_file_opt)
-    {
-        print STDERR "Error: split file $split_file_opt does not exist\n";
-        usage;
-        exit 1;
-    }
-    else
-    {
-        $pipeline->set_split_file($split_file_opt);
-    }
-    
     if (defined $keep_files_opt and $keep_files_opt)
     {
         $pipeline->set_keep_files($keep_files_opt);
@@ -213,39 +191,9 @@ else
     }
     else
     {
-        if (not defined $input_fasta_opt)
-        {
-            print STDERR "Error: input fasta file must be defined\n";
-            usage;
-            exit 1;
-        }
-        elsif (not -e $input_fasta_opt)
-        {
-            print STDERR "Error: input fasta file $input_fasta_opt does not exist\n";
-            usage;
-            exit 1;
-        }
-        else
-        {
-            $pipeline->set_input_fasta($input_fasta_opt);
-        }
-        
-        if (not defined $strain_count_opt)
-        {
-            print STDERR "Error: strain count must be defined\n";
-            usage;
-            exit 1;
-        }
-        elsif ($strain_count_opt <= 0)
-        {
-            print STDERR "Error: strain count $strain_count_opt must be positive\n";
-            usage;
-            exit 1;
-        }
-        else
-        {
-            $pipeline->set_strain_count($strain_count_opt);
-        }
+        print STDERR "Error: input dir must be defined\n";
+        usage;
+        exit 1;
     }
     
     if (defined $output_opt)
@@ -379,13 +327,11 @@ Use B<--output [OUT_NAME]> to define an output directory, otherwise a directory 
 
 =over 8
 
-=item B<--input-dir [directory]> or B<--input-fasta [file]>:  The input file or directory to process.
+=item B<--input-dir [directory]> :  The input directory to process.
 
-=item B<--strain-count [integer]> (optional if --input-dir is used):  The count of the number of strains we are processing.
+=item B<--strain-count [integer]> (optional):  The count of the number of strains we are processing.
 
 =item B<--processors [integer]>:  The number of processors we will run the SGE jobs with.
-
-=item B<--split-file [file]>:  The initial fasta file we split apart to run the SGE jobs with.
 
 =back
 
