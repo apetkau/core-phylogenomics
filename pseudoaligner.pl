@@ -128,6 +128,17 @@ for my $seqstr (@newseqs) {
 	$pseudolength = length $seq->seq;
 }
 
+if (not $newaln->is_flush)
+{
+    print STDERR "Error: not all sequences in alignment have length: ".$newaln->length."\n";
+    for my $seq ($newaln->each_seq())
+    {
+        print STDERR "Sequence: ".$seq->id." length: ".$seq->length."\n";
+        print STDERR "\t".$seq->seq."\n";
+    }
+    die;
+}
+
 my $pseudo_out = "$output_dir/pseudoalign.phy";
 my $out = new Bio::AlignIO (-file=>">$pseudo_out", -format=>"phylip");
 $out->write_aln($newaln);
