@@ -290,7 +290,15 @@ sub execute
     die "Start stage not defined" if (not defined $start_stage);
     die "End stage not defined" if (not defined $end_stage);
 
-    print "Running core SNP phylogenomic pipeline on ".`date`."\n";
+    my $job_properties = $self->{'job_properties'};
+    print "Running core SNP phylogenomic pipeline on ".`date`;
+    print "\nParameters:\n";
+    print "\tjob_dir = ".$self->{'job_dir'}."\n";
+    foreach my $k (keys %$job_properties)
+    {
+        print "\t$k = ".$job_properties->{$k}."\n";
+    }
+    print "\n";
 
     my $seen_start = 0;
     my $seen_end = 0;

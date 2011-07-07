@@ -45,7 +45,7 @@ sub usage
     print "\nExample:\n";
     print "\tmaster.pl --processors 480 --input-dir sample/ --output data\n";
     print "\tRuns master.pl on data under sample/ with the passed split file and processors.\n\n";
-    print "\tmaster.pl --resubmit data --start-stage pseudoalignment\n";
+    print "\tmaster.pl --resubmit data --start-stage pseudoalign\n";
     print "\tRe-runs the job stored under data/ at the pseudoalignment stage.\n\n";
 }
 
