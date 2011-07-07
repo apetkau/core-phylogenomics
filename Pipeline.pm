@@ -21,7 +21,7 @@ my @stage_list = ('initialize',
                   'build-database',
                   'split',
                   'blast',
-                  'identify-snps',
+                  'core',
                   'alignment',
                   'pseudoalign'
                  );
@@ -30,7 +30,7 @@ my @user_stage_list = ('prepare-input',
                        'build-database',
                        'split',
                        'blast',
-                       'identify-snps',
+                       'core',
                        'alignment',
                        'pseudoalign'
                       );
@@ -242,7 +242,7 @@ sub _create_stages
                         'build-database' => \&_create_input_database,
                         'split' => \&_perform_split,
                         'blast' => \&_perform_blast,
-                        'identify-snps' => \&_perform_id_snps,
+                        'core' => \&_find_core,
                         'alignment' => \&_align_orthologs,
                         'pseudoalign' => \&_pseudoalign
     };
@@ -605,7 +605,7 @@ sub _perform_blast
     print "...done\n";
 }
 
-sub _perform_id_snps
+sub _find_core
 {
     my ($self,$stage) = @_;
 

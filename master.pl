@@ -31,10 +31,8 @@ sub usage
     print "\t\tWill resubmit from beginning if not defined.\n";
     print "\t--end-stage:  The ending stage to resubmit to (can be used without a resubmission).\n";
     print "\t\tWill resubmit to ending if not defined.\n";
-    print "\t-c|--strain-count [integer]:  The number of strains we are working with.\n";
-    print "\t-d|--input-diri [directory]:  The directory containing the input fasta files.\n";
+    print "\t-d|--input-dir [directory]:  The directory containing the input fasta files.\n";
     print "\t-h|--help:  Print help.\n";
-    print "\t-k|--keep-files:  Keep intermediate files around.\n";
     print "\t-o|--output [directory]:  The directory to store output (optional).\n";
     print "\t-p|--processors [integer]:  The number of processors to use.\n";
     print "\t--pid-cutoff [real]:  The pid cutoff to use (default $pid_cutoff_default).\n";
@@ -45,7 +43,7 @@ sub usage
     print Pipeline::static_get_stage_descriptions("\t");
 
     print "\nExample:\n";
-    print "\tmaster.pl --processors 480 --input-dir sample/ --output data --keep-files\n";
+    print "\tmaster.pl --processors 480 --input-dir sample/ --output data\n";
     print "\tRuns master.pl on data under sample/ with the passed split file and processors.\n\n";
     print "\tmaster.pl --resubmit data --start-stage pseudoalignment\n";
     print "\tRe-runs the job stored under data/ at the pseudoalignment stage.\n\n";
@@ -305,19 +303,15 @@ master.pl:  Script to automate running of core SNP analysis.
 
 =head1 DESCRIPTION
 
-Runs the core SNP phylogenomic analysis stages.  The input is either a directory containing the FASTA files to analyize, or the multi-fasta file to analyze.  The output is the pseudoalign.phy alignment file and the snpreport.txt. The intermediate files are kept under a directory (named using --output), and are by default cleaned out after they aren't needed (they can be kept using --keep-files).
+Runs the core SNP phylogenomic analysis stages.  The input is either a directory containing the FASTA files to analyize, or the multi-fasta file to analyze.  The output is the pseudoalign.phy alignment file and the snpreport.txt. The intermediate files are kept under a directory (named using --output), and can be used to resubmit the analysis at different stages later.
 
 =head1 INPUT
 
-Input is in two forms, either a directory containing the fasta files to analyze, or a single multi-fasta file.
+Input is in the form of a directory of fasta-formatted files, one file per strain.  The files should be multi-fasta files containing all of the genes for that particular strain.
 
 =head2 FASTA Directory
 
-Use B<--input-dir [name]> to define the fasta input directory.  The input files will be checked to see if all gene names are unique, and we will attempt to create unique names if this is not the case.  The count of the files in this directory will be used for the strain count (can be overridden with B<--strain-count>).
-
-=head2 Multi-FASTA
-
-Use B<--input-fasta [name]> to pass a multi-fasta formatted file containing all the strains to analyze.  The file will be checked for unique strain ids, and will fail if this is not the case.  This input option also requires passing the count of the number of strains B<--strain-count>.
+Use B<--input-dir [name]> to define the fasta input directory.  The input files will be checked for validity.  The count of the files in this directory will be used for the strain count.
 
 =head1 OUTPUT
 
@@ -329,8 +323,6 @@ Use B<--output [OUT_NAME]> to define an output directory, otherwise a directory 
 
 =item B<--input-dir [directory]> :  The input directory to process.
 
-=item B<--strain-count [integer]> (optional):  The count of the number of strains we are processing.
-
 =item B<--processors [integer]>:  The number of processors we will run the SGE jobs with.
 
 =back
@@ -340,8 +332,6 @@ Use B<--output [OUT_NAME]> to define an output directory, otherwise a directory 
 =over 8
 
 =item B<--output [directory]>:  The directory to store the analysis files under.
-
-=item B<--keep-files>:  If set will keep intermediate files in analysis.
 
 =item B<--verbose>:  Print more information.
 
@@ -359,11 +349,17 @@ This script assumes you are running on a cluster environment.  Standard batch-qu
 
 =over 1
 
-=item master.pl --processors 480 --input-dir sample/ --split-file sample/ECO111.fasta --output data --keep-files
+=item master.pl --processors 480 --input-dir sample/ --output data
 
 =back
 
-This example will run the analysis on all fasta files under sample/, using sample/ECO111.fasta as the split file, and data/ as the directory to place all analysis files.  We will run the job using 480 processors on the cluster and keep all intermediate files around.
+This example will run the analysis on all fasta files under sample/, using a randomly chosing file from sample/ as the split file, and data/ as the directory to place all analysis files.  We will run the job using 480 processors on the cluster.
+
+=over 1
+
+=item master.pl --resubmit data --start-stage alignment
+
+This example will resubmit a previously run job (under directory data/), starting from the alignment stage.
 
 =head1 AUTHOR
 
