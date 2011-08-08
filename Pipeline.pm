@@ -11,7 +11,7 @@ use File::Path qw(rmtree);
 
 my $properties_filename = 'run.properties';
 my @valid_job_dirs = ('job_dir','log_dir','fasta_dir','database_dir','split_dir','blast_dir','core_dir',
-                  'align_dir','pseudoalign_dir');
+                  'align_dir','pseudoalign_dir','stage_dir');
 my @valid_other_files = ('input_fasta_dir','split_file','input_fasta_file');
 my @valid_properties = join(@valid_job_dirs,@valid_other_files,'hsp_length','pid_cutoff');
 
@@ -79,6 +79,7 @@ sub set_job_dir
     $job_properties->{'core_dir'} = "core";
     $job_properties->{'align_dir'} = "align";
     $job_properties->{'pseudoalign_dir'} = "pseudoalign";
+    $job_properties->{'stage_dir'} = "stages";
 }
 
 sub set_start_stage
@@ -260,10 +261,12 @@ sub _execute_stage
 
     my $stage_table = $self->{'stage_table'};
     my $stage_sub = $stage_table->{$stage};
+    my $stage_dir = $self->_get_file('stage_dir');
 
     if (defined $stage_sub)
     {
         &$stage_sub($self,$stage);
+        system("touch \"$stage_dir/$stage.done\"");
     }
     else
     {
@@ -275,7 +278,7 @@ sub is_valid_stage
 {
     my ($self,$stage) = @_;
 
-    return (defined $stage) and $self->_exists_in_array($stage,\@stage_list);
+    return ((defined $stage) and ($self->_exists_in_array($stage,\@stage_list)));
 }
 
 sub execute
@@ -302,6 +305,20 @@ sub execute
 
     my $seen_start = 0;
     my $seen_end = 0;
+
+    # remove "done" files from all stages after the starting stage
+    my $stage_dir = $self->_get_file('stage_dir');
+    foreach my $stage (@stage_list)
+    {
+        $seen_start = 1 if ($stage eq $start_stage);
+        if ($seen_start)
+        {
+            unlink "$stage_dir/$stage.done" if (-e "$stage_dir/$stage.done");
+        }
+    }
+
+    $seen_start = 0;
+    $seen_end = 0;
     foreach my $stage (@stage_list)
     {
         $seen_start = 1 if ($stage eq $start_stage);
@@ -309,12 +326,25 @@ sub execute
         {
             $self->_execute_stage($stage);
         }
+        elsif (not $seen_end and not $self->_is_stage_complete($stage))
+        {
+            die "Error: attempting to skip stage $stage, but is not complete yet ...\n";
+        }
         else
         {
             print "\nSkipping stage: $stage\n" if ($verbose);
         }
         $seen_end = 1 if ($stage eq $end_stage);
     }
+}
+
+sub _is_stage_complete
+{
+    my ($self,$stage) = @_;
+
+    my $stages_dir = $self->_get_file('stage_dir');
+
+    return (-e "$stages_dir/$stage.done");
 }
 
 sub _initialize
