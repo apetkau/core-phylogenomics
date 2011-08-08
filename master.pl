@@ -212,6 +212,7 @@ else
         }
         else
         {
+            mkdir $output_opt if (not -e $output_opt);
             $pipeline->set_job_dir($output_opt);
         }
     }
