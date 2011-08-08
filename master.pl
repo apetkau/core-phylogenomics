@@ -44,7 +44,7 @@ sub usage
 
     print "\nExample:\n";
     print "\tmaster.pl --processors 480 --input-dir sample/ --output data\n";
-    print "\tRuns master.pl on data under sample/ with the passed split file and processors.\n\n";
+    print "\tRuns master.pl on data under sample/ with the passed number of processors.\n\n";
     print "\tmaster.pl --resubmit data --start-stage pseudoalign\n";
     print "\tRe-runs the job stored under data/ at the pseudoalignment stage.\n\n";
 }
@@ -217,7 +217,9 @@ else
     }
     else
     {
-        $pipeline->set_job_dir(sprintf "%08x",time);
+        my $job_dir = (sprintf "%08x",time);
+        mkdir $job_dir if (not -e $job_dir);
+        $pipeline->set_job_dir($job_dir);
     }
     
     if (defined $pid_cutoff_opt)

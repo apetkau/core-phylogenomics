@@ -8,6 +8,7 @@ use warnings;
 use File::Basename qw(basename dirname);
 use File::Copy qw(copy move);
 use File::Path qw(rmtree);
+use Cwd qw(abs_path);
 
 my $properties_filename = 'run.properties';
 my @valid_job_dirs = ('job_dir','log_dir','fasta_dir','database_dir','split_dir','blast_dir','core_dir',
@@ -68,7 +69,10 @@ sub set_job_dir
 {
     my ($self,$job_dir) = @_;
 
-    $self->{'job_dir'} = $job_dir;
+    die "Job dir $job_dir does not exist" if (not -e $job_dir);
+
+    my $abs_job_dir = abs_path($job_dir);
+    $self->{'job_dir'} = $abs_job_dir;
 
     my $job_properties = $self->{'job_properties'};
     $job_properties->{'log_dir'} = "log";
@@ -133,13 +137,14 @@ sub resubmit
 {
     my ($self,$job_dir) = @_;
 
-    my $properties_path = "$job_dir/$properties_filename";
-
     die "Cannot resubmit to undefined job_dir" if (not defined $job_dir);
-    die "Cannot resubmit $job_dir, file $properties_path not found" if (not -e $properties_path);
     die "Cannot resubmit to non-existant job_dir $job_dir" if (not -d $job_dir);
 
-    $self->{'job_dir'} = $job_dir;
+    my $abs_job_dir = abs_path($job_dir);
+    my $properties_path = "$abs_job_dir/$properties_filename";
+    die "Cannot resubmit $abs_job_dir, file $properties_path not found" if (not -e $properties_path);
+
+    $self->{'job_dir'} = $abs_job_dir;
 
     $self->_read_properties($properties_path);
 }
@@ -196,7 +201,6 @@ sub _set_split_file
     my ($self,$file) = @_;
     $self->{'job_properties'}->{'split_file'} = $file;
     $self->{'job_properties'}->{'blast_base'} = basename($file).'.out';
-    $self->{'job_properties'}->{'split_base'} = basename($file);
 }
 
 sub set_processors
@@ -223,13 +227,15 @@ sub set_input_fasta
 
     die "File $file does not exists" if (not -e $file);
 
-    if (-d $file)
+    my $abs_input_fasta = abs_path($file);
+
+    if (-d $abs_input_fasta)
     {
-        $self->{'job_properties'}->{'input_fasta_dir'} = $file;
+        $self->{'job_properties'}->{'input_fasta_dir'} = $abs_input_fasta;
     }
     else
     {
-        $self->{'job_properties'}->{'input_fasta_file'} = $file;
+        $self->{'job_properties'}->{'input_fasta_file'} = $abs_input_fasta;
     }
 }
 
@@ -328,7 +334,7 @@ sub execute
         }
         elsif (not $seen_end and not $self->_is_stage_complete($stage))
         {
-            die "Error: attempting to skip stage $stage, but is not complete yet ...\n";
+            die "Error: attempting to skip stage '$stage', but it is not complete yet ...\n";
         }
         else
         {
@@ -392,7 +398,7 @@ sub _perform_split
 
     my $verbose = $self->{'verbose'};
     my $job_properties = $self->{'job_properties'};
-    my $input_file = $self->_get_file('split_file');
+    my $input_file = $self->_get_file('fasta_dir').'/'.$self->_get_file('split_file');
     my $script_dir = $self->{'script_dir'};
     my $log_dir = $self->_get_file('log_dir');
     my $output_dir = $self->_get_file('split_dir');
@@ -605,7 +611,7 @@ sub _perform_blast
 {
     my ($self,$stage) = @_;
     my $job_properties = $self->{'job_properties'};
-    my $input_task_base = $self->_get_file('split_dir').'/'.$job_properties->{'split_base'};
+    my $input_task_base = $self->_get_file('split_dir').'/'.(basename $job_properties->{'split_file'});
     my $output_dir = $self->_get_file('blast_dir');
     my $processors = $job_properties->{'processors'};
     my $database = $self->_get_file('database_dir').'/'.$job_properties->{'all_input_fasta'};
@@ -860,12 +866,13 @@ sub _build_input_fasta
 
             die "Cannot take id from file name for $input_dir/$file" if (not defined $name);
             my $input_path = "$input_dir/$file";
-            my $output_path = "$output_dir/$name.prepended.fasta";
+            my $output_file = "$name.prepended.fasta";
+            my $output_path = "$output_dir/$output_file";
 
             if (not defined $job_properties->{'split_file'})
             {
                 print "\t\tSetting split file to $output_path\n";
-                $self->_set_split_file($output_path);
+                $self->_set_split_file($output_file);
             }
 
             print "\t\tChecking valid headers for $input_path ...\n";
