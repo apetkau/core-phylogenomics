@@ -708,30 +708,34 @@ sub _find_core
     print "...done\n";
 }
 
-sub _count_snps
+sub _largest_snp_file
 {
-    my ($self,$core_snp_base_path) = @_;
+    my ($self,$core_dir, $core_snp_base) = @_;
     my $verbose = $self->{'verbose'};
 
-    print "\tCounting SNP files...\n";
-    my $count_command = "ls -1 \"$core_snp_base_path\"* | wc -l";
-    my $count = undef;
-    print "\t\t$count_command\n" if ($verbose);
-    $count = `$count_command`;
-    die "\t\tError counting snp files" if (not defined $count);
-    die "\t\tError counting snp files, $count not a number" if ($count !~ /^\d+$/);
-    die "\t\tError counting snp files, $count <= 0" if ($count <= 0);
+    print "\tGetting largest SNP file...\n";
+    my $max = -1;
+    opendir(my $dir_h,$core_dir);
+    while(my $file = readdir $dir_h)
+    {
+        my ($curr_num) = ($file =~ /^$core_snp_base(\d+)$/);
+        $max = $curr_num if (defined $curr_num and $curr_num > $max);
+    }
+    close ($dir_h);
+    print "\t\tMax: $max\n";
+    die "Error, no snp files" if ($max <= 0);
 
     print "\t...done\n";
 
-    return $count;
+    return $max;
 }
 
 sub _align_orthologs
 {
     my ($self,$stage) = @_;
     my $job_properties = $self->{'job_properties'};
-    my $input_task_base = $self->_get_file('core_dir').'/'.$job_properties->{'core_snp_base'};
+    my $core_dir = $self->_get_file('core_dir');
+    my $input_task_base = "$core_dir/".$job_properties->{'core_snp_base'};
     my $output_dir = $self->_get_file('align_dir');
     my $log_dir = $self->_get_file('log_dir');
     my $script_dir = $self->{'script_dir'};
@@ -747,13 +751,13 @@ sub _align_orthologs
     print "\nStage: $stage\n";
     print "Performing multiple alignment of orthologs ...\n";
 
-    my $snp_count = $self->_count_snps($input_task_base);
-    die "SNP count is invalid" if (not defined $snp_count or $snp_count <= 0);
+    my $max_snp_number = $self->_largest_snp_file($core_dir, $job_properties->{'core_snp_base'});
+    die "Largest SNP number is invalid" if (not defined $max_snp_number or $max_snp_number <= 0);
 
     my $clustalw_sge = "$output_dir/clustalw.sge";
     print "\tWriting $clustalw_sge script ...\n";
     my $sge_command = "clustalw2 -infile=${input_task_base}\$SGE_TASK_ID";
-    $self->_print_sge_script($snp_count, $clustalw_sge, $sge_command);
+    $self->_print_sge_script($max_snp_number, $clustalw_sge, $sge_command);
     print "\t...done\n";
 
     my $error = "$log_dir/clustalw.error.sge";
