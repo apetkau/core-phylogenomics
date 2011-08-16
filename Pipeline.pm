@@ -12,7 +12,7 @@ use Cwd qw(abs_path);
 
 my $properties_filename = 'run.properties';
 my @valid_job_dirs = ('job_dir','log_dir','fasta_dir','database_dir','split_dir','blast_dir','core_dir',
-                  'align_dir','pseudoalign_dir','stage_dir');
+                  'align_dir','pseudoalign_dir','stage_dir','phylogeny_dir');
 my @valid_other_files = ('input_fasta_dir','split_file','input_fasta_file');
 my @valid_properties = join(@valid_job_dirs,@valid_other_files,'hsp_length','pid_cutoff');
 
@@ -24,7 +24,8 @@ my @stage_list = ('initialize',
                   'blast',
                   'core',
                   'alignment',
-                  'pseudoalign'
+                  'pseudoalign',
+                  'build-phylogeny'
                  );
 
 my @user_stage_list = ('prepare-input',
@@ -33,7 +34,8 @@ my @user_stage_list = ('prepare-input',
                        'blast',
                        'core',
                        'alignment',
-                       'pseudoalign'
+                       'pseudoalign',
+                       'build-phylogeny'
                       );
 my @stage_descriptions = ('Prepares and checks input files.',
                           'Builds database for blasts.',
@@ -41,7 +43,8 @@ my @stage_descriptions = ('Prepares and checks input files.',
                           'Performs blast to find core genome.',
                           'Attempts to identify snps from core genome.',
                           'Performs multiple alignment on each ortholog.',
-                          'Creates a pseudoalignment.'
+                          'Creates a pseudoalignment.',
+                          'Builds the phylogeny based on the pseudoalignment.'
                          );
 
 sub new
@@ -84,6 +87,7 @@ sub set_job_dir
     $job_properties->{'align_dir'} = "align";
     $job_properties->{'pseudoalign_dir'} = "pseudoalign";
     $job_properties->{'stage_dir'} = "stages";
+    $job_properties->{'phylogeny_dir'} ='phylogeny';
 }
 
 sub set_start_stage
@@ -251,7 +255,8 @@ sub _create_stages
                         'blast' => \&_perform_blast,
                         'core' => \&_find_core,
                         'alignment' => \&_align_orthologs,
-                        'pseudoalign' => \&_pseudoalign
+                        'pseudoalign' => \&_pseudoalign,
+                        'build-phylogeny' => \&_build_phylogeny,
     };
 
     $self->{'stage_table'} = $stage_table;
@@ -389,6 +394,51 @@ sub _wait_until_completion
         print ".";
         $completed = not $self->_check_job_queue_for($job_name);
     }
+}
+
+sub _build_phylogeny
+{
+    my ($self,$stage) = @_;
+
+    my $verbose = $self->{'verbose'};
+    my $job_properties = $self->{'job_properties'};
+    my $input_dir = $self->_get_file('pseudoalign_dir');
+    my $output_dir = $self->_get_file('phylogeny_dir');
+    my $log_dir = $self->_get_file('log_dir');
+
+    my $pseudoalign_file = "$input_dir/pseudoalign.phy";
+    my $phyml_log = "$log_dir/phyml.log";
+
+    print "\nStage: $stage\n";
+    print "Building phylogeny ...\n";
+
+    print "\tChecking for phyml ...\n";
+    my $phyml_check_command = "which phyml 1>/dev/null 2>&1";
+    print "\t$phyml_check_command" if ($verbose);
+    system($phyml_check_command) == 0 or warn "\tUnable to find phyml using \"$phyml_check_command\"";
+    print "\t...done\n";
+
+
+    print "\tRunning phyml ...\n";
+    print "\tMore information can be found at $phyml_log\n";
+    die "Error: pseudoalign file $pseudoalign_file does not exist" if (not -e $pseudoalign_file);
+    my $phylogeny_command = "phyml -i \"$pseudoalign_file\" 1>\"$phyml_log\" 2>&1";
+    print "\t$phylogeny_command" if ($verbose);
+    if(system($phylogeny_command) != 0)
+    {
+        print STDERR "Warning: could not execute $phylogeny_command, skipping stage \"$stage\"\n";
+    }
+    else
+    {
+        my $stats = "${pseudoalign_file}_phyml_stats.txt";
+        my $tree = "${pseudoalign_file}_phyml_tree.txt";
+        move($stats,$output_dir) or die "Could not move $stats to $output_dir: $!";
+        move($tree,$output_dir) or die "Could not move $tree to $output_dir: $!";
+
+       print "\tOutput can be found in $output_dir\n";
+    }
+    print "\t...done\n";
+    print "...done\n";
 }
 
 # returns split file base path
