@@ -25,7 +25,8 @@ my @stage_list = ('initialize',
                   'core',
                   'alignment',
                   'pseudoalign',
-                  'build-phylogeny'
+                  'build-phylogeny',
+                  'phylogeny-graphic'
                  );
 
 my @user_stage_list = ('prepare-input',
@@ -35,7 +36,8 @@ my @user_stage_list = ('prepare-input',
                        'core',
                        'alignment',
                        'pseudoalign',
-                       'build-phylogeny'
+                       'build-phylogeny',
+                       'phylogeny-graphic'
                       );
 my @stage_descriptions = ('Prepares and checks input files.',
                           'Builds database for blasts.',
@@ -44,7 +46,8 @@ my @stage_descriptions = ('Prepares and checks input files.',
                           'Attempts to identify snps from core genome.',
                           'Performs multiple alignment on each ortholog.',
                           'Creates a pseudoalignment.',
-                          'Builds the phylogeny based on the pseudoalignment.'
+                          'Builds the phylogeny based on the pseudoalignment.',
+                          'Builds a graphic image of the phylogeny.'
                          );
 
 sub new
@@ -257,6 +260,7 @@ sub _create_stages
                         'alignment' => \&_align_orthologs,
                         'pseudoalign' => \&_pseudoalign,
                         'build-phylogeny' => \&_build_phylogeny,
+                        'phylogeny-graphic' => \&_build_phylogeny_graphic,
     };
 
     $self->{'stage_table'} = $stage_table;
@@ -396,6 +400,46 @@ sub _wait_until_completion
     }
 }
 
+sub _build_phylogeny_graphic
+{
+    my ($self,$stage) = @_;
+
+    my $verbose = $self->{'verbose'};
+    my $job_properties = $self->{'job_properties'};
+    my $working_dir = $self->_get_file('phylogeny_dir');
+    my $log_dir = $self->_get_file('log_dir');
+
+    my $log_file = "$log_dir/figtree.log";
+
+    my $tree_file = "$working_dir/pseudoalign.phy_phyml_tree.txt";
+
+    print "\nStage: $stage\n";
+    print "Building phylogeny tree graphic ...\n";
+
+    print "\tChecking for figtree ...\n";
+    my $figtree_check = 'which figtree 1>/dev/null 2>&1';
+    print "$figtree_check" if ($verbose);
+    system($figtree_check) == 0 or warn "Could not find figtree with $figtree_check";
+    print "\t...done\n";
+
+    print "\tGenerating image with figtree ...\n";
+    print "\tMore information can be found at $log_file\n";
+    die "Error: file $tree_file does not exist" if (not -e $tree_file);
+    my $tree_image = "$tree_file.pdf";
+    my $figtree_command = "figtree -graphic PDF \"$tree_file\" \"$tree_image\" 1>\"$log_file\" 2>&1";
+    print "\t$figtree_command" if ($verbose);
+    if(system($figtree_command) != 0)
+    {
+        print STDERR "Warning: Could not generate image using figtree";
+    }
+    else
+    {
+        print "\tphylogenetic tree image can be found at $tree_image\n";
+    }
+    print "\t...done\n";
+    print "...done\n";
+}
+
 sub _build_phylogeny
 {
     my ($self,$stage) = @_;
@@ -406,7 +450,8 @@ sub _build_phylogeny
     my $output_dir = $self->_get_file('phylogeny_dir');
     my $log_dir = $self->_get_file('log_dir');
 
-    my $pseudoalign_file = "$input_dir/pseudoalign.phy";
+    my $pseudoalign_file_name = "pseudoalign.phy";
+    my $pseudoalign_file = "$input_dir/$pseudoalign_file_name";
     my $phyml_log = "$log_dir/phyml.log";
 
     print "\nStage: $stage\n";
@@ -430,14 +475,20 @@ sub _build_phylogeny
     }
     else
     {
-        my $stats = "${pseudoalign_file}_phyml_stats.txt";
-        my $tree = "${pseudoalign_file}_phyml_tree.txt";
-        move($stats,$output_dir) or die "Could not move $stats to $output_dir: $!";
-        move($tree,$output_dir) or die "Could not move $tree to $output_dir: $!";
+        my $stats_name = "${pseudoalign_file_name}_phyml_stats.txt";
+        my $stats_in = "$input_dir/$stats_name";
+        my $stats_out = "$output_dir/$stats_name";
+        my $tree_name = "${pseudoalign_file_name}_phyml_tree.txt";
+        my $tree_in = "$input_dir/$tree_name";
+        my $tree_out = "$output_dir/$tree_name";
+        move($stats_in,$output_dir) or die "Could not move $stats_in to $output_dir: $!";
+        move($tree_in,$output_dir) or die "Could not move $tree_in to $output_dir: $!";
 
-       print "\tOutput can be found in $output_dir\n";
+        print "\tOutput can be found in $output_dir\n";
     }
     print "\t...done\n";
+
+
     print "...done\n";
 }
 
