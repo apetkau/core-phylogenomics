@@ -346,7 +346,7 @@ Use B<--output [OUT_NAME]> to define an output directory, otherwise a directory 
 
 =head1 DEPENDENCIES
 
-This script assumes you are running on a cluster environment.  Standard batch-queuing tools must be installed (qstat, qsub, etc).  As well, blast, clustalw, and BioPerl must be installed.
+This script assumes you are running on a cluster environment.  Standard batch-queuing tools must be installed (qstat, qsub, etc).  As well, blast, clustalw, and BioPerl must be installed. In order to build the phylogenetic tree automatically, phyml and figtree must be installed, otherwise the pipeline will stop short of building the tree.
 
 =head1 EXAMPLE
 

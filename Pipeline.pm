@@ -125,9 +125,24 @@ sub set_end_stage
     my ($self,$end_stage) = @_;
 
     my $start_stage = $self->{'start_stage'};
+    my $stage_dependencies = $self->{'stage_dependencies'};
 
     die "Cannot resubmit to undefined ending stage" if (not defined $end_stage);
     die "Cannot resubmit to invalid stage $end_stage" if (not $self->is_valid_stage($end_stage));
+
+    my $last_valid_stage;
+    my $break = 0;
+    for (my $i = 0; !$break and $i <= $#stage_list; $i++)
+    {
+        my $curr_stage = $stage_list[$i];
+        $last_valid_stage = $curr_stage if (($stage_dependencies->{$curr_stage}));
+        if ($curr_stage eq $end_stage)
+        {
+            $end_stage = $last_valid_stage if ($last_valid_stage ne $end_stage);
+            $break = 1;
+        }
+    }
+
     die "Cannot resubmit to invalid stage $end_stage" if (not $self->_validate_stages($start_stage,$end_stage));
 
     $self->{'end_stage'} = $end_stage;
@@ -136,18 +151,26 @@ sub set_end_stage
 sub _validate_stages
 {
     my ($self,$start_stage,$end_stage) = @_;
+    my $stage_dependencies = $self->{'stage_dependencies'};
 
     my $is_valid = 1;
 
-    my $seen_start = 0;
-    my $seen_end = 0;
-    foreach my $valid_stage (@stage_list)
+    if (not ($stage_dependencies->{$end_stage}))
     {
-        $seen_start = 1 if ($valid_stage eq $start_stage);
-        $seen_end = 1 if ($valid_stage eq $end_stage);
-        $is_valid = 0 if ($seen_end and (not $seen_start));
+        $is_valid = 0;
     }
-    $is_valid = 0 if (not $seen_end);
+    else
+    {
+        my $seen_start = 0;
+        my $seen_end = 0;
+        foreach my $valid_stage (@stage_list)
+        {
+            $seen_start = 1 if ($valid_stage eq $start_stage);
+            $seen_end = 1 if ($valid_stage eq $end_stage);
+            $is_valid = 0 if ($seen_end and (not $seen_start));
+        }
+        $is_valid = 0 if (not $seen_end);
+    }
 
     return $is_valid;
 }
@@ -268,22 +291,32 @@ sub _check_stages
     my $start_stage = $stage_list[0];
     my $end_stage = $stage_list[-1];
 
-    my $check_stage = 'build-phylogeny';
-    if (system('which phyml 1>/dev/null 2>&1') != 0)
+    my %stage_dependencies;
+    foreach my $stage (@stage_list)
     {
-        print STDERR "Warning: Could not find phyml, cannot run stage $check_stage\n";
-        $end_stage = $stage_list[-3];
+        $stage_dependencies{$stage} = 1;
     }
-
-    $check_stage = 'phylogeny-graphic';
-    if (system('which figtree 1>/dev/null 2>&1') != 0)
-    {
-        print STDERR "Warning: Could not find figtree, cannot run stage $check_stage\n";
-        $end_stage = $stage_list[-2];
-    }
-
+    $self->{'stage_dependencies'} = \%stage_dependencies;
     $self->{'start_stage'} = $start_stage;
     $self->{'end_stage'} = $end_stage;
+
+    my $check_stage;
+
+    if (system('which figtree 1>/dev/null 2>&1') != 0)
+    {
+        $check_stage = 'phylogeny-graphic';
+        print STDERR "Warning: Could not find figtree, cannot run stage $check_stage\n";
+        $stage_dependencies{$check_stage} = 0; 
+        $self->set_end_stage('build-phylogeny');
+    }
+
+    if (system('which phyml 1>/dev/null 2>&1') != 0)
+    {
+        $check_stage = 'build-phylogeny';
+        print STDERR "Warning: Could not find phyml, cannot run stage $check_stage\n";
+        $stage_dependencies{$check_stage} = 0; 
+        $self->set_end_stage('pseudoalign');
+    }
 }
 
 sub _execute_stage
@@ -413,13 +446,6 @@ sub _wait_until_completion
         print ".";
         $completed = not $self->_check_job_queue_for($job_name);
     }
-}
-
-sub _build_phylogeny_graphic_dependency
-{
-    my ($self) = @_;
-
-    return (system('which figtree 1>/dev/null 2>&1') == 0);
 }
 
 sub _build_phylogeny_graphic
