@@ -29,6 +29,20 @@ my @stage_list = ('initialize',
                   'phylogeny-graphic'
                  );
 
+my %stage_table = ( 'initialize' => \&_initialize,
+                    'prepare-input' => \&_build_input_fasta,
+                    'write-properties' => \&_write_properties,
+                    'build-database' => \&_create_input_database,
+                    'split' => \&_perform_split,
+                    'blast' => \&_perform_blast,
+                    'core' => \&_find_core,
+                    'alignment' => \&_align_orthologs,
+                    'pseudoalign' => \&_pseudoalign,
+                    'build-phylogeny' => \&_build_phylogeny,
+                    'phylogeny-graphic' => \&_build_phylogeny_graphic,
+    );
+
+
 my @user_stage_list = ('prepare-input',
                        'build-database',
                        'split',
@@ -39,6 +53,7 @@ my @user_stage_list = ('prepare-input',
                        'build-phylogeny',
                        'phylogeny-graphic'
                       );
+
 my @stage_descriptions = ('Prepares and checks input files.',
                           'Builds database for blasts.',
                           'Splits input file among processors.',
@@ -61,7 +76,7 @@ sub new
     $self->{'script_dir'} = $script_dir;
     $self->{'keep_files'} = 1;
     $self->{'job_properties'} = {};
-    $self->_create_stages;
+    $self->_check_stages;
     $self->{'job_properties'}->{'core_snp_base'} = 'snps';
     $self->{'job_properties'}->{'all_input_fasta'} = 'all.fasta';
     $self->{'job_properties'}->{'bioperl_index'} = 'all.fasta.idx';
@@ -246,36 +261,36 @@ sub set_input_fasta
     }
 }
 
-sub _create_stages
+sub _check_stages
 {
     my ($self) = @_;
 
-    my $stage_table = { 'initialize' => \&_initialize,
-                        'prepare-input' => \&_build_input_fasta,
-                        'write-properties' => \&_write_properties,
-                        'build-database' => \&_create_input_database,
-                        'split' => \&_perform_split,
-                        'blast' => \&_perform_blast,
-                        'core' => \&_find_core,
-                        'alignment' => \&_align_orthologs,
-                        'pseudoalign' => \&_pseudoalign,
-                        'build-phylogeny' => \&_build_phylogeny,
-                        'phylogeny-graphic' => \&_build_phylogeny_graphic,
-    };
+    my $start_stage = $stage_list[0];
+    my $end_stage = $stage_list[-1];
 
-    $self->{'stage_table'} = $stage_table;
+    my $check_stage = 'build-phylogeny';
+    if (system('which phyml 1>/dev/null 2>&1') != 0)
+    {
+        print STDERR "Warning: Could not find phyml, cannot run stage $check_stage\n";
+        $end_stage = $stage_list[-3];
+    }
 
+    $check_stage = 'phylogeny-graphic';
+    if (system('which figtree 1>/dev/null 2>&1') != 0)
+    {
+        print STDERR "Warning: Could not find figtree, cannot run stage $check_stage\n";
+        $end_stage = $stage_list[-2];
+    }
 
-    $self->{'start_stage'} = $stage_list[0];
-    $self->{'end_stage'} = $stage_list[-1];
+    $self->{'start_stage'} = $start_stage;
+    $self->{'end_stage'} = $end_stage;
 }
 
 sub _execute_stage
 {
     my ($self,$stage) = @_;
 
-    my $stage_table = $self->{'stage_table'};
-    my $stage_sub = $stage_table->{$stage};
+    my $stage_sub = $stage_table{$stage};
     my $stage_dir = $self->_get_file('stage_dir');
 
     if (defined $stage_sub)
@@ -398,6 +413,13 @@ sub _wait_until_completion
         print ".";
         $completed = not $self->_check_job_queue_for($job_name);
     }
+}
+
+sub _build_phylogeny_graphic_dependency
+{
+    my ($self) = @_;
+
+    return (system('which figtree 1>/dev/null 2>&1') == 0);
 }
 
 sub _build_phylogeny_graphic
