@@ -1,9 +1,0 @@
-#!/bin/sh
-# Tell the SGE that this is an array job, with "tasks" to be numbered 1 to 250
-#$ -t 1-480
-# When a single command in the array job is sent to a compute node,
-# its task number is stored in the variable SGE_TASK_ID,
-# so we can use the value of that variable to get the results we want:
-#blastall -p blastn  -i cl1_v1_cds.fas.$SGE_TASK_ID -o out.$SGE_TASK_ID -d STECchrom.fasta
-./coresnp2.pl out.$SGE_TASK_ID ecoli.fasta.idx 22 97 400
-

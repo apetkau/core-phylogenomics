@@ -5,7 +5,7 @@ use warnings;
 
 use FindBin;
 
-use lib $FindBin::Bin;
+use lib $FindBin::Bin.'/../lib';
 
 use File::Basename qw(basename dirname);
 use File::Copy qw(copy move);

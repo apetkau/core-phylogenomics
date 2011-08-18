@@ -555,7 +555,7 @@ sub _perform_split
 
     my $split_log = "$log_dir/split.log";
 
-    my $command = "perl $script_dir/split.pl \"$input_file\" \"$split_number\" \"$output_dir\" 1> \"$split_log\" 2>&1";
+    my $command = "perl $script_dir/../lib/split.pl \"$input_file\" \"$split_number\" \"$output_dir\" 1> \"$split_log\" 2>&1";
 
     die "input file: $input_file does not exist" if (not -e $input_file);
     die "output directory: $output_dir does not exist" if (not -e $output_dir);
@@ -721,7 +721,7 @@ sub _create_input_database
     copy($input_file, $input_fasta_path) or die "Could not copy $input_file to $input_fasta_path: $!";
 
     my $formatdb_command = "formatdb -i \"$input_fasta_path\" -p F -l \"$formatdb_log\"";
-    my $index_command = "perl \"$script_dir/index.pl\" \"$input_fasta_path\"";
+    my $index_command = "perl \"$script_dir/../lib/index.pl\" \"$input_fasta_path\"";
 
     print "\tCreating BLAST formatted database ...\n";
     print "\t\t$formatdb_command\n" if ($verbose);
@@ -831,7 +831,7 @@ sub _find_core
     print "Performing core genome SNP identification ...\n";
     my $core_sge = "$snps_output/core.sge";
     print "\tWriting $core_sge script ...\n";
-    my $sge_command = "$script_dir/coresnp2.pl \"$blast_input_base.\$SGE_TASK_ID\" \"$bioperl_index\" $strain_count $pid_cutoff $hsp_length \"$snps_output\"\n";
+    my $sge_command = "$script_dir/../lib/coresnp2.pl \"$blast_input_base.\$SGE_TASK_ID\" \"$bioperl_index\" $strain_count $pid_cutoff $hsp_length \"$snps_output\"\n";
     $self->_print_sge_script($processors, $core_sge, $sge_command);
     print "\t...done\n";
 
@@ -848,7 +848,7 @@ sub _find_core
     $self->_wait_until_completion($job_name);
     print "done\n";
 
-    my $rename_command = "perl $script_dir/rename.pl \"$snps_output\" \"$snps_output\"";
+    my $rename_command = "perl $script_dir/../lib/rename.pl \"$snps_output\" \"$snps_output\"";
     print "\tRenaming SNP output files...\n";
     print "\t\t$rename_command\n" if ($verbose);
     system($rename_command) == 0 or die "Error renaming snp files: $!";
@@ -931,7 +931,7 @@ sub _align_orthologs
     print "\t...done\n";
 
     my $log = "$log_dir/trim.log";
-    my $trim_command = "$script_dir/trim.pl \"$output_dir\" \"$output_dir\" 1>\"$log\" 2>&1";
+    my $trim_command = "$script_dir/../lib/trim.pl \"$output_dir\" \"$output_dir\" 1>\"$log\" 2>&1";
     print "\tTrimming alignments (see $log for details) ...\n";
     print "\t\t$trim_command\n" if ($verbose);
     system($trim_command) == 0 or die "Error trimming alignments: $!\n";
@@ -956,7 +956,7 @@ sub _pseudoalign
 
     my $log = "$log_dir/pseudoaligner.log";
 
-    my $pseudoalign_command = "perl $script_dir/pseudoaligner.pl \"$align_input\" \"$output_dir\" 1>\"$log\" 2>&1";
+    my $pseudoalign_command = "perl $script_dir/../lib/pseudoaligner.pl \"$align_input\" \"$output_dir\" 1>\"$log\" 2>&1";
 
     print "\nStage: $stage\n";
     print "Creating pseudoalignment ...\n";
