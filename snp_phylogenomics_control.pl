@@ -43,9 +43,9 @@ sub usage
     print Pipeline::static_get_stage_descriptions("\t");
 
     print "\nExample:\n";
-    print "\tmaster.pl --processors 480 --input-dir sample/ --output data\n";
-    print "\tRuns master.pl on data under sample/ with the passed number of processors.\n\n";
-    print "\tmaster.pl --resubmit data --start-stage pseudoalign\n";
+    print "\t".basename($0)." --processors 480 --input-dir sample/ --output data\n";
+    print "\tRuns ".basename($0)." on data under sample/ with the passed number of processors.\n\n";
+    print "\t".basename($0)." --resubmit data --start-stage pseudoalign\n";
     print "\tRe-runs the job stored under data/ at the pseudoalignment stage.\n\n";
 }
 
@@ -218,9 +218,7 @@ else
     }
     else
     {
-        my $job_dir = (sprintf "%08x",time);
-        mkdir $job_dir if (not -e $job_dir);
-        $pipeline->set_job_dir($job_dir);
+        die "No value defined for --output.";
     }
     
     if (defined $pid_cutoff_opt)
@@ -302,7 +300,7 @@ $pipeline->execute;
 
 =head1 NAME
 
-master.pl:  Script to automate running of core SNP analysis.
+snp_phylogenomics_control.pl:  Script to automate running of core SNP analysis.
 
 =head1 DESCRIPTION
 
@@ -318,11 +316,13 @@ Use B<--input-dir [name]> to define the fasta input directory.  The input files 
 
 =head1 OUTPUT
 
-Use B<--output [OUT_NAME]> to define an output directory, otherwise a directory will be created for you.  The output directory must be accessible by the cluster nodes.  Files for each stage will be written under the output directory.  In addition, a log/ directory will be written with log files for each stage.  The final results will be available under OUT_NAME/pseudoalign.
+Use B<--output [OUT_NAME]> to define an output directory.  The output directory must be accessible by the cluster nodes.  Files for each stage will be written under the output directory.  In addition, a log/ directory will be written with log files for each stage.  The final results will be available under OUT_NAME/pseudoalign.
 
 =head1 REQUIRED
 
 =over 8
+
+=item B<--output [directory> :  The directory to store the analysis data, required only for a new analysis.
 
 =item B<--input-dir [directory]> :  The input directory to process.
 
@@ -334,8 +334,6 @@ Use B<--output [OUT_NAME]> to define an output directory, otherwise a directory 
 
 =over 8
 
-=item B<--output [directory]>:  The directory to store the analysis files under.
-
 =item B<--verbose>:  Print more information.
 
 =item B<--pid-cutoff [real]>:  The pid cutoff to use.
@@ -346,13 +344,13 @@ Use B<--output [OUT_NAME]> to define an output directory, otherwise a directory 
 
 =head1 DEPENDENCIES
 
-This script assumes you are running on a cluster environment.  Standard batch-queuing tools must be installed (qstat, qsub, etc).  As well, blast, clustalw, and BioPerl must be installed. In order to build the phylogenetic tree automatically, phyml and figtree must be installed, otherwise the pipeline will stop short of building the tree.
+This script assumes you are running on a cluster environment.  Standard batch-queuing tools must be installed (qstat, qsub, etc).  As well, blast, clustalw, and BioPerl must be installed. In order to build the phylogenetic tree automatically, phyml and figtree must be installed, otherwise the pipeline will stop running before building the tree.
 
 =head1 EXAMPLE
 
 =over 1
 
-=item master.pl --processors 480 --input-dir sample/ --output data
+=item snp_phylogenomics_control.pl --processors 480 --input-dir sample/ --output data
 
 =back
 
@@ -360,7 +358,7 @@ This example will run the analysis on all fasta files under sample/, using a ran
 
 =over 1
 
-=item master.pl --resubmit data --start-stage alignment
+=item snp_phylogenomics_control.pl --resubmit data --start-stage alignment
 
 This example will resubmit a previously run job (under directory data/), starting from the alignment stage.
 
