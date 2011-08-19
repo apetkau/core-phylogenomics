@@ -5,21 +5,69 @@ use Bio::AlignIO;
 use Bio::SimpleAlign;
 use Bio::LocatableSeq;
 use Bio::SeqIO;
-my $columncounter=1;
-my $strainid = shift @ARGV;
-use Cwd;
+use File::Basename qw(basename);
 use File::Copy;
-my $dir = getcwd; 
-opendir (DH, $dir);
+use Getopt::Long;
+
+sub usage
+{
+    print "Usage: ".basename($0)."[Options]\n";
+    print "Options:\n";
+    print "\t--input-trimmed:  The input directory for the trimmed files\n";
+    print "\t--input-sequence:  The input directory for the sequence files\n";
+    print "\t--strain-id: (Optional) The strain id for the report\n";
+    print "Example:\n";
+    print "\t".basename($0)." --input-trimmed data/align --input-sequence data/core\n";
+}
+
+my $columncounter=1;
+
+my $strain_id_opt;
+my $input_dir_seq_opt;
+my $input_dir_trimmed_opt;
+if (!GetOptions('strain-id|s=s' => \$strain_id_opt,
+                'input-trimmed=s' => \$input_dir_trimmed_opt,
+                'input-sequence=s' => \$input_dir_seq_opt))
+{
+    usage;
+    exit 1;
+}
+
+my $input_dir_seq;
+my $input_dir_trimmed;
+my $strainid = $strain_id_opt;
+if (not defined $input_dir_seq_opt or not (-d $input_dir_seq_opt))
+{
+    print STDERR "Invalid input sequence directory";
+    usage;
+    exit 1;
+}
+else
+{
+    $input_dir_seq = $input_dir_seq_opt;
+}
+
+if (not defined $input_dir_trimmed_opt or not (-d $input_dir_trimmed_opt))
+{
+    print STDERR "Invalid input trimmed directory";
+    usage;
+    exit 1;
+}
+else
+{
+    $input_dir_trimmed = $input_dir_trimmed_opt;
+}
+
+opendir (DH, $input_dir_trimmed);
 my @files = sort {&matchnum($a) <=> &matchnum($b)} grep { /trimmed$/i } readdir(DH);
 my @columns;
 my %longseq;
 open (OUT, ">locusreport.txt");
 my $locuscounter = 1;
 for my $file (@files) {
-	my $in = new Bio::AlignIO(-file=>"$file", -format=>"clustalw");
+	my $in = new Bio::AlignIO(-file=>"$input_dir_trimmed/$file", -format=>"clustalw");
     $file =~ /(.*?)\.aln.trimmed$/;
-	my $seqin = new Bio::SeqIO(-file=>"$1",-format=>"fasta");
+	my $seqin = new Bio::SeqIO(-file=>"$input_dir_seq/$1",-format=>"fasta");
 	my %desc_recorder;
 	 while (my $seq2= $seqin->next_seq) {
 		if ($strainid) {
