@@ -555,7 +555,7 @@ sub _perform_split
 
     my $split_log = "$log_dir/split.log";
 
-    my $command = "perl $script_dir/../lib/split.pl \"$input_file\" \"$split_number\" \"$output_dir\" 1> \"$split_log\" 2>&1";
+    require("$script_dir/../lib/split.pl");
 
     die "input file: $input_file does not exist" if (not -e $input_file);
     die "output directory: $output_dir does not exist" if (not -e $output_dir);
@@ -563,9 +563,8 @@ sub _perform_split
     print "\nStage: $stage\n";
     print "Performing split ...\n";
     print "\tSplitting $input_file into $split_number pieces ...\n";
-    print "\t\t$command\n" if ($verbose);
     print "\t\tSee $split_log for more information.\n";
-    system($command) == 0 or die "Error for command $command: $!";
+    Split::run($input_file,$split_number,$output_dir,$split_log);
     print "...done\n";
 }
 
