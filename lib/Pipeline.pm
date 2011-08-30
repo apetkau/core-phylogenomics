@@ -830,7 +830,7 @@ sub _find_core
     print "Performing core genome SNP identification ...\n";
     my $core_sge = "$snps_output/core.sge";
     print "\tWriting $core_sge script ...\n";
-    my $sge_command = "$script_dir/../lib/coresnp2.pl \"$blast_input_base.\$SGE_TASK_ID\" \"$bioperl_index\" $strain_count $pid_cutoff $hsp_length \"$snps_output\"\n";
+    my $sge_command = "$script_dir/../lib/coresnp2.pl -b \"$blast_input_base.\$SGE_TASK_ID\" -i \"$bioperl_index\" -c $strain_count -p $pid_cutoff -l $hsp_length -o \"$snps_output\"\n";
     $self->_print_sge_script($processors, $core_sge, $sge_command);
     print "\t...done\n";
 
@@ -847,10 +847,9 @@ sub _find_core
     $self->_wait_until_completion($job_name);
     print "done\n";
 
-    my $rename_command = "perl $script_dir/../lib/rename.pl \"$snps_output\" \"$snps_output\"";
+    require("$script_dir/../lib/rename.pl");
     print "\tRenaming SNP output files...\n";
-    print "\t\t$rename_command\n" if ($verbose);
-    system($rename_command) == 0 or die "Error renaming snp files: $!";
+    Rename::run($snps_output,$snps_output);
     print "\t...done\n";
 
     print "...done\n";
@@ -930,10 +929,9 @@ sub _align_orthologs
     print "\t...done\n";
 
     my $log = "$log_dir/trim.log";
-    my $trim_command = "$script_dir/../lib/trim.pl \"$output_dir\" \"$output_dir\" 1>\"$log\" 2>&1";
+    require("$script_dir/../lib/trim.pl");
     print "\tTrimming alignments (see $log for details) ...\n";
-    print "\t\t$trim_command\n" if ($verbose);
-    system($trim_command) == 0 or die "Error trimming alignments: $!\n";
+    Trim::run($output_dir,$output_dir,$log);
     print "\t...done\n";
 
     print "...done\n";

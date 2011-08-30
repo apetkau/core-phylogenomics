@@ -1,37 +1,67 @@
 #!/usr/bin/perl
+
+package Rename;
+
 use strict;
 use lib ("/opt/rocks/lib/perl5/site_perl/5.10.1");
+
+use Getopt::Long;
 use Bio::SeqIO;
 use Cwd;
 use File::Copy;
 
-my $input_dir = shift;
-my $output_dir = shift;
+__PACKAGE__->run() unless caller;
 
-my $locus_map_path = (defined $output_dir) ? "$output_dir/locusmap.txt" : "locusmap.txt";
+1;
 
-my $x=1;
-$input_dir = '.' if (not defined $input_dir);
-opendir(my $input_dh, $input_dir) or die "Could not open directory $input_dir: $!";
-my @files = readdir($input_dh);
-closedir($input_dh);
+sub usage
+{
+    print "Usage: rename.pl -i <input_dir> [-o <output_dir>]\n";
+}
 
-open LOCUSMAP, ">$locus_map_path" || die "foo!: $!\n";
-for my $file (@files) {
-        if ($file =~ /^core.*\.ffn$/)
-        {
-		my $full_file_path = "$input_dir/$file";
-		my $in = new Bio::SeqIO(-file=>"$full_file_path", -format=>"fasta");
-		my  @orfs;
-		while (my  $seq= $in->next_seq) {
-		my ($orf) = $seq->desc =~ /^(.*?)\s/;
-			push @orfs, $orf;
-		}
-		my  $orfs =  join " ", @orfs;
-		print LOCUSMAP "$x: $orfs\n";
-		my $newfilename = (defined $output_dir) ? "$output_dir/snps$x" : "snps$x";
-		move($full_file_path, $newfilename) or die "Could not rename $full_file_path to $newfilename: $!";
-		$x++;
-        }
+sub run
+{
+    my ($input_dir,$output_dir);
+
+    if ( @_ && $_[0] eq __PACKAGE__)
+    {
+        GetOptions('i|input-dir=s' => \$input_dir,
+                   'o|output-dir=s' => \$output_dir) or die "Invalid options\n";
+    }
+    else
+    {
+        ($input_dir,$output_dir) = @_;
+    }
+
+    die "input-dir not defined\n".usage if (not defined $input_dir);
+    die "input-dir $input_dir not a valid directory\n".usage if (not -e $input_dir);
+
+    $output_dir = $input_dir if (not defined $output_dir);
+
+    my $locus_map_path = (defined $output_dir) ? "$output_dir/locusmap.txt" : "locusmap.txt";
+    
+    my $x=1;
+    opendir(my $input_dh, $input_dir) or die "Could not open directory $input_dir: $!";
+    my @files = readdir($input_dh);
+    closedir($input_dh);
+    
+    open LOCUSMAP, ">$locus_map_path" || die "foo!: $!\n";
+    for my $file (@files) {
+            if ($file =~ /^core.*\.ffn$/)
+            {
+    		my $full_file_path = "$input_dir/$file";
+    		my $in = new Bio::SeqIO(-file=>"$full_file_path", -format=>"fasta");
+    		my  @orfs;
+    		while (my  $seq= $in->next_seq) {
+    		my ($orf) = $seq->desc =~ /^(.*?)\s/;
+    			push @orfs, $orf;
+    		}
+    		my  $orfs =  join " ", @orfs;
+    		print LOCUSMAP "$x: $orfs\n";
+    		my $newfilename = (defined $output_dir) ? "$output_dir/snps$x" : "snps$x";
+    		move($full_file_path, $newfilename) or die "Could not rename $full_file_path to $newfilename: $!";
+    		$x++;
+            }
+    }
 }
 

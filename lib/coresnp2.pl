@@ -1,23 +1,40 @@
 #!/usr/bin/perl
 use lib ("/opt/rocks/lib/perl5/site_perl/5.10.1");
+
+use Getopt::Long;
+
 use Bio::PrimarySeq;
 use Bio::SeqIO;
 use Bio::Index::Fasta;
 use Bio::SearchIO; 
 use strict;
-my $blastfile = shift @ARGV;
-my $index = shift @ARGV;
-my $STRAIN_COUNT = shift @ARGV; 
-my $cutoff = shift;
-my $minhsplength = shift;
-my $output_dir = shift;
+
+sub usage
+{
+    print "Usage: coresnp2.pl -b <blast file> -i <index> -c <strain count> -p <pid cutoff> -l <hsp length> -o <output>\n";
+}
+
+my ($blastfile,$index,$strain_count,$cutoff,$minhsplength,$output_dir);
+
+GetOptions('b|blast-file=s' => \$blastfile,
+           'i|index=s' => \$index,
+           'c|strain-count=i' => \$strain_count,
+           'p|pid-cutoff=f' => \$cutoff,
+           'l|hsp-length=i' => \$minhsplength,
+           'o|output_dir=s' => \$output_dir) or die "Invalid options";
+
+die "Invalid blast file\n".usage if (not defined $blastfile or not -e $blastfile);
+die "Invalid index\n".usage if (not -e $index);
+die "Invalid strain-count\n".usage if (not defined $strain_count or $strain_count <= 0);
+die "Invalid pid-cutoff\n".usage if (not defined $cutoff or $cutoff < 0 or $cutoff > 100);
+
 my %hit_recorder;
 my %pid_recorder;
-my $inx = Bio::Index::Fasta->new( -filename   => $index);
+my $inx = Bio::Index::Fasta->new( -filename => $index);
 my $in = new Bio::SearchIO(-format => 'blast', 
                            -file   => $blastfile);
 my %revcom_recorder;
-$| = 1;
+$| = 1; # flush after every write/print
 query: while( my $result = $in->next_result ) {
   print ".";
   ## $result is a Bio::Search::Result::ResultI compliant object
@@ -70,12 +87,11 @@ for my $query (@query_loci) {
    (my $smallest_pid) = sort {$a <=> $b} @{$pid_recorder{$query}};
 my $ids = join " ", @{$pid_recorder{$query}};
     next unless $smallest_pid <100;
-    next unless @strains ==$STRAIN_COUNT;
+    next unless @strains ==$strain_count;
 my $out_file_path = (defined $output_dir) ? "$output_dir/core.$query.ffn" : "core.$query.ffn";
 my $out = new Bio::SeqIO(-file=>">$out_file_path", -format=>"fasta");
 $filecounter++;
 
-# print $ids, "\n";
     # grab the sequences using the accessions
     for my $strain (@strains) {
 #	my $out = new Bio::SeqIO(-file=>">>core.$strain.faa", -format=>"fasta");
@@ -93,13 +109,4 @@ $filecounter++;
 	$out->write_seq($seq);
     }
 }
-
-#for my $strain (@master_strains) {
-#    my  $out = new Bio::SeqIO(-file=>">core.$strain.concat.faa", -format=>"fasta");
-# my $seqobj = new Bio::PrimarySeq (-seq => $bigseq{$strain},
-#				    -display_id  => $strain);
-#    $out->write_seq($seqobj);
-#}
-
-
 
