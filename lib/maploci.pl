@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-use lib ("/opt/rocks/lib/perl5/site_perl/5.10.1");
 use strict;
 use Bio::SeqIO;
 my @files = <core*.ffn>;

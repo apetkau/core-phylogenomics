@@ -3,7 +3,6 @@
 package Rename;
 
 use strict;
-use lib ("/opt/rocks/lib/perl5/site_perl/5.10.1");
 
 use Getopt::Long;
 use Bio::SeqIO;
@@ -26,7 +25,7 @@ sub run
     if ( @_ && $_[0] eq __PACKAGE__)
     {
         GetOptions('i|input-dir=s' => \$input_dir,
-                   'o|output-dir=s' => \$output_dir) or die "Invalid options\n";
+                   'o|output-dir=s' => \$output_dir) or die "Invalid options\n".usage;
     }
     else
     {

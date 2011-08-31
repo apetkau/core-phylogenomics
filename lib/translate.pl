@@ -1,6 +1,5 @@
 #!/usr/bin/perl
 use strict;
-use lib ("/opt/rocks/lib/perl5/site_perl/5.10.1");
 use Bio::SeqIO;
 my $x=1;
 opendir (DH, ".");

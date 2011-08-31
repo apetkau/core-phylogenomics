@@ -953,14 +953,12 @@ sub _pseudoalign
 
     my $log = "$log_dir/pseudoaligner.log";
 
-    my $pseudoalign_command = "perl $script_dir/../lib/pseudoaligner.pl \"$align_input\" \"$output_dir\" 1>\"$log\" 2>&1";
-
     print "\nStage: $stage\n";
     print "Creating pseudoalignment ...\n";
 
+    require("$script_dir/../lib/pseudoaligner.pl");
     print "\tRunning pseudoaligner (see $log for details) ...\n";
-    print "\t\t$pseudoalign_command\n" if ($verbose);
-    system($pseudoalign_command) == 0 or die "Error running pseudoaligner: $!";
+    Pseudoaligner::run($align_input,$output_dir,$log);
     print "\t...done\n";
 
     print "...done\n";

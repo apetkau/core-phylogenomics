@@ -2,9 +2,6 @@
 
 package Split;
 
-# uncomment next line if running on Funky:
-use lib ("/opt/rocks/lib/perl5/site_perl/5.10.1");
-
 use strict;
 
 use Getopt::Long;

@@ -1,9 +1,7 @@
 #!/usr/bin/perl
  
 use strict;
-use lib ("/opt/rocks/lib/perl5/site_perl/5.10.1");
 
-use lib qw(..);
 use Bio::Index::Fasta;
 use Bio::SeqIO;
 use strict;
