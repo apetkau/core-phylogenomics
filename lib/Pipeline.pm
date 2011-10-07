@@ -999,8 +999,7 @@ sub _build_input_fasta
     elsif (defined $input_dir)
     {
         die "Input directory is invalid" if (not -d $input_dir);
-    
-        print "\tPrepending genes with strain_id, assuming strain_id is filename of each fasta file...\n";
+	my $sep_char = '|';
     
         opendir(my $input_dh, $input_dir) or die "Could not open $input_dir: $!";
         my @files = grep {/fasta$/i} readdir($input_dh);
@@ -1008,35 +1007,84 @@ sub _build_input_fasta
 
         die "No input fasta files found in $input_dir" if (scalar(@files) <= 0);
 
+        print "\tCopying input files to $output_dir\n";
         foreach my $file (@files)
         {
-            my ($name) = ($file =~ /^([^\.]+)\./);
-
-            die "Cannot take id from file name for $input_dir/$file" if (not defined $name);
             my $input_path = "$input_dir/$file";
-            my $output_file = "$name.prepended.fasta";
+            my $output_file = "$file.prepended.fasta";
             my $output_path = "$output_dir/$output_file";
+            copy($input_path,$output_path) or die "Could not copy $file from $input_dir to $output_dir: $!";
 
             if (not defined $job_properties->{'split_file'})
             {
                 print "\t\tSetting split file to $output_path\n";
                 $self->_set_split_file($output_file);
             }
+        }
+        print "\t...done\n";
 
-            print "\t\tChecking valid headers for $input_path ...\n";
-            my $check_separator_command = "grep '^[^ |]*|' $input_path --count";
-            print "\t\t\t$check_separator_command\n" if ($verbose);
-            my $separator_count = `$check_separator_command`;
+        print "\tChecking for unique names across all sequences in input fasta files...\n";
+	my @files_to_append_separator;
+	my %name_file_map; # used to map the name of a sequence to a file (for checking for unique separators)
+        foreach my $file (@files)
+        {
+            my $output_path = "$output_dir/$file.prepended.fasta";
 
-            die "Invalid separator count" if (not defined $separator_count or $separator_count !~ /^\d+$/);
-            die "Count for '|' separator in $input_path ($separator_count) is not 0, cannot proceed" if ($separator_count != 0);
+            print "\t\tFinding existing unique headers for $output_path ...\n";
+            my $unique_command = "grep '^>' \"$output_path\" | cut -d '$sep_char' -f 1|sort -u|wc -l";
+            print "\t\t\t$unique_command\n" if ($verbose);
+            my $unique_count = `$unique_command`;
+
+            die "Invalid unique count" if (not defined $unique_count or $unique_count !~ /^\d+$/);
+            if ($unique_count == 1)
+            {
+                print "\t\t\tFile $output_path contains single unique name for all sequences\n";
+                my $find_name_command = "grep '^>' \"$output_path\" | cut -d '$sep_char' -f 1|sort -u";
+                print "\t\t\t$find_name_command\n" if ($verbose);
+                my $unique_name = `$find_name_command`;
+                chomp $unique_name;
+                die "Invalid unique name" if (not defined $unique_count);
+
+                if (exists $name_file_map{$unique_name})
+                {
+                    print "\t\t\tName $unique_name not unique across all strains, need to generate new unique name for file $output_path\n";
+                    push(@files_to_append_separator, $file);
+                }
+                else
+                {
+                    print "\t\t\tName: $unique_name\n";
+                    $name_file_map{$unique_name} = $file;
+                }
+            }
+            else
+            {
+                print "\t\t\tFile $output_path has no single unique name for all sequences, need to generate new unique name\n";
+                push(@files_to_append_separator,$file);
+            }
+
             print "\t\t...done\n";
-
-            my $uniquify_command = "sed \"s/>/>$name\|/\" \"$input_path\" > \"$output_path\"";
-            print "\t\t$uniquify_command\n" if ($verbose);
-            system($uniquify_command) == 0 or die "Error attempting to create unique gene ids: $!";
         }
 
+        print "\t\tGenerating unique names for strains for files...\n" if (@files_to_append_separator > 0);
+        foreach my $file (@files_to_append_separator)
+        {
+            my ($name) = ($file =~ /^([^\.]+)\./);
+
+            die "Cannot take id from file name for $input_dir/$file" if (not defined $name);
+            my $output_file = "$file.prepended.fasta";
+            my $output_path = "$output_dir/$output_file";
+
+            my $remove_sep_char_command = "sed -i \"s/$sep_char/_/\" \"$output_path\"";
+            print "\t\t\tRemoving existing separator char\n" if ($verbose);
+            print "\t\t\t$remove_sep_char_command\n" if ($verbose);
+            system($remove_sep_char_command) == 0 or die "Error attempting to remove existing separator char: $!";
+
+            my $uniquify_command = "sed -i \"s/>/>$name\|/\" \"$output_path\"";
+            print "\t\t\tGenerating unique name for file $output_path\n";
+            print "\t\t\t$uniquify_command\n" if ($verbose);
+            system($uniquify_command) == 0 or die "Error attempting to create unique gene ids: $!";
+        }
+        print "\t\t...done\n" if (@files_to_append_separator > 0);
         print "\t...done\n";
     
         my $strain_count = 0;
