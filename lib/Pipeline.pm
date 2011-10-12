@@ -1035,7 +1035,7 @@ sub _build_input_fasta
 	my $sep_char = '|';
     
         opendir(my $input_dh, $input_dir) or die "Could not open $input_dir: $!";
-        my @files = grep {/fasta$/i} readdir($input_dh);
+        my @files = sort grep {/fasta$/i} readdir($input_dh);
         close($input_dh);
 
         die "No input fasta files found in $input_dir" if (scalar(@files) <= 0);
@@ -1127,7 +1127,7 @@ sub _build_input_fasta
 
         opendir(my $input_build_dh, $output_dir) or die "Could not open $output_dir: $!";
         $file_dir = $output_dir;
-        @files_to_build = grep {/prepended\.fasta$/} readdir($input_build_dh);
+        @files_to_build = sort grep {/prepended\.fasta$/} readdir($input_build_dh);
         close($input_build_dh);
     
         $strain_count = scalar(@files_to_build);
