@@ -37,7 +37,7 @@ sub usage
     print "\t-p|--processors [integer]:  The number of processors to use.\n";
     print "\t--pid-cutoff [real]:  The pid cutoff to use (default $pid_cutoff_default).\n";
     print "\t--hsp-length [integer]:   The hsp length to use (default $hsp_length_default).\n";
-    print "\t-v|--verbose:  Print extra information.\n";
+    print "\t-v|--verbose:  Print extra information, define multiple times for more information.\n";
 
     print "\nStages:\n";
     print Pipeline::static_get_stage_descriptions("\t");
@@ -78,7 +78,7 @@ if (!GetOptions(
     'k|keep-files' => \$keep_files_opt,
     'pid-cutoff=f' => \$pid_cutoff_opt,
     'hsp-length=i' => \$hsp_length_opt,
-    'v|verbose' => \$verbose_opt,
+    'v|verbose+' => \$verbose_opt,
     'h|help' => \$help_opt,
     'c|strain-count=i' => \$strain_count_opt))
 {
@@ -94,7 +94,7 @@ if (defined $help_opt and $help_opt)
 
 my $pipeline = new Pipeline($script_dir);
 
-if (defined $verbose_opt and $verbose_opt)
+if (defined $verbose_opt)
 {
     $pipeline->set_verbose($verbose_opt); 
 }
