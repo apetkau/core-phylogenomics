@@ -5,6 +5,8 @@ use warnings;
 
 use FindBin;
 
+$ENV{'PERL5LIB'} = "/opt/rocks/lib/perl5/site_perl/5.10.1:".$ENV{'PERL5LIB'};
+
 use lib $FindBin::Bin.'/../lib';
 
 use File::Basename qw(basename dirname);
