@@ -38,6 +38,7 @@ sub usage
     print "\t--pid-cutoff [real]:  The pid cutoff to use (default $pid_cutoff_default).\n";
     print "\t--hsp-length [integer]:   The hsp length to use (default $hsp_length_default).\n";
     print "\t-v|--verbose:  Print extra information, define multiple times for more information.\n";
+    print "\t--force-output-dir: Forces use of output directory even if it exists (optional).\n";
 
     print "\nStages:\n";
     print Pipeline::static_get_stage_descriptions("\t");
@@ -61,6 +62,7 @@ my $strain_count_opt;
 my $input_dir_opt;
 my $keep_files_opt;
 my $output_opt;
+my $force_output_dir_opt;
 my $pid_cutoff_opt;
 my $hsp_length_opt;
 
@@ -80,6 +82,7 @@ if (!GetOptions(
     'hsp-length=i' => \$hsp_length_opt,
     'v|verbose+' => \$verbose_opt,
     'h|help' => \$help_opt,
+    'force-output-dir' => \$force_output_dir_opt,
     'c|strain-count=i' => \$strain_count_opt))
 {
     usage;
@@ -198,16 +201,23 @@ else
     {
         if (-e $output_opt)
         {
-            print "Warning: directory \"$output_opt\" already exists, are you sure you want to store data here [Y]? ";
-            my $response = <>;
-            chomp $response;
-            if ($response eq 'y' or $response eq 'Y' or $response eq '')
+            if (-d $output_opt and defined $force_output_dir_opt and $force_output_dir_opt)
             {
                 $pipeline->set_job_dir($output_opt);
             }
             else
             {
-                die "Directory \"$output_opt\" already exists, could not continue.";
+                print "Warning: directory \"$output_opt\" already exists, are you sure you want to store data here [Y]? ";
+                my $response = <>;
+                chomp $response;
+                if ($response eq 'y' or $response eq 'Y' or $response eq '')
+                {
+                    $pipeline->set_job_dir($output_opt);
+                }
+                else
+                {
+                    die "Directory \"$output_opt\" already exists, could not continue.";
+                }
             }
         }
         else

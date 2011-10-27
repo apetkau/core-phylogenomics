@@ -9,8 +9,8 @@ use lib $FindBin::Bin.'/../lib';
 
 use File::Basename qw(basename dirname);
 use File::Copy qw(copy move);
-use File::Path qw(rmtree);
-use File::Temp;
+use File::Path qw(remove_tree);
+use File::Temp qw(tempdir);
 use Getopt::Long;
 
 my $script_dir = $FindBin::Bin;
@@ -50,7 +50,6 @@ if (!GetOptions(
 die "Error: invalid tmp-dir" if (not defined $tmp_dir_opt);
 die "Error: invalid tmp-dir=$tmp_dir_opt" if (not -d $tmp_dir_opt);
 die "Error: invalid output" if (not defined $output_opt);
-die "Error: invalid output" if (not -d $output_opt);
 my $output_dir = $output_opt;
 my $tmp_dir = $tmp_dir_opt;
 
