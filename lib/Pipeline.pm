@@ -737,6 +737,10 @@ sub _create_input_database
     my $input_fasta_path = $self->_get_file('database_dir').'/'.$job_properties->{'all_input_fasta'};
 
     my $formatdb_log = "$log_dir/formatdb.log";
+    my $formatdb_out = "$log_dir/formatdb.out";
+    my $formatdb_err = "$log_dir/formatdb.err";
+    my $index_out = "$log_dir/index.out";
+    my $index_err = "$log_dir/index.err";
 
     die "Input file $input_file does not exist" if (not -e $input_file);
     die "Output directory: $database_output does not exist" if (not -e $database_output);
@@ -752,17 +756,29 @@ sub _create_input_database
 
     copy($input_file, $input_fasta_path) or die "Could not copy $input_file to $input_fasta_path: $!";
 
-    my $formatdb_command = "formatdb -i \"$input_fasta_path\" -p F -l \"$formatdb_log\"";
-    my $index_command = "perl \"$script_dir/../lib/index.pl\" \"$input_fasta_path\"";
+    my $job_name;
 
+    my $formatdb_sge = "$database_output/formatdb.sge";
+    my $formatdb_command = "formatdb -i \"$input_fasta_path\" -p F -l \"$formatdb_log\"";
+    $self->_print_sge_script(1, $formatdb_sge, $formatdb_command);
+
+    my $index_sge = "$database_output/index.sge";
+    my $index_command = "perl \"$script_dir/../lib/index.pl\" \"$input_fasta_path\"";
+    $self->_print_sge_script(1, $index_sge, $index_command);
+
+    $job_name = $self->_get_job_id;
+    my $formatdb_qsub = "qsub -v PERL5LIB -N $job_name -cwd -S /bin/sh -e \"$formatdb_err\" -o \"$formatdb_out\" \"$formatdb_sge\" 2>/dev/null";
     $self->_log("\tCreating BLAST formatted database ...\n",1);
-    $self->_log("\t\t$formatdb_command\n",1);
-    system($formatdb_command) == 0 or die "Error for command: $formatdb_command: $!";
+    $self->_log("\t\t$formatdb_qsub\n",1);
+    system($formatdb_qsub) == 0 or die "Error for command: $formatdb_qsub: $!";
+    $self->_wait_until_completion($job_name);
     $self->_log("\t...done\n",1);
 
+    my $index_qsub = "qsub -v PERL5LIB -N $job_name -cwd -S /bin/sh -e \"$index_err\" -o \"$index_out\" \"$index_sge\" 2>/dev/null";
     $self->_log("\tCreating bioperl index ...\n",1);
-    $self->_log("\t\t$index_command\n",1);
-    system($index_command) == 0 or die "Error for command: $index_command: $!";
+    $self->_log("\t\t$index_qsub\n",1);
+    system($index_qsub) == 0 or die "Error for command: $index_qsub: $!";
+    $self->_wait_until_completion($job_name);
     $self->_log("\t...done\n",1);
 
     $self->_log("...done\n",1);
