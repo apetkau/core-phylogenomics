@@ -11,7 +11,7 @@ use lib $FindBin::Bin.'/../lib';
 
 use File::Basename qw(basename dirname);
 use File::Copy qw(copy move);
-use File::Path qw(remove_tree);
+use File::Path qw(rmtree);
 use File::Temp qw(tempdir);
 use Getopt::Long;
 
@@ -60,7 +60,7 @@ my $tmp_output_dir = tempdir('core_snp.XXXXXX', DIR => $tmp_dir);
 my $pseudoalign_out_file = "$tmp_output_dir/pseudoalign/pseudoalign.phy";
 my $pseudoalign_done_file = "$tmp_output_dir/stages/pseudoalign.done";
 
-my $pipeline_control_command = "$script_dir/snp_phylogenomics_control.pl --output \"$tmp_output_dir\" --input-dir \"$script_dir/../sample\" --processors 480";
+my $pipeline_control_command = "$script_dir/snp_phylogenomics_control.pl --output \"$tmp_output_dir\" --input-dir \"$script_dir/../sample\" --processors 480 -v -v -v";
 system("$pipeline_control_command") == 0 or die "Error in command $pipeline_control_command";
 if (-e $pseudoalign_done_file)
 {
@@ -71,4 +71,4 @@ else
 	die "Error: file $pseudoalign_done_file does not exist, some error has occured";
 }
 
-remove_tree($tmp_output_dir) or die "Could not delete $tmp_output_dir: $!";
+rmtree($tmp_output_dir) or die "Could not delete $tmp_output_dir: $!";
