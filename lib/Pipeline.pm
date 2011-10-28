@@ -13,7 +13,7 @@ use Cwd qw(abs_path);
 my $properties_filename = 'run.properties';
 my @valid_job_dirs = ('job_dir','log_dir','fasta_dir','database_dir','split_dir','blast_dir','core_dir',
                   'align_dir','pseudoalign_dir','stage_dir','phylogeny_dir');
-my @valid_other_files = ('input_fasta_dir','split_file','input_fasta_file');
+my @valid_other_files = ('input_fasta_dir','split_file','input_fasta_files');
 my @valid_properties = join(@valid_job_dirs,@valid_other_files,'hsp_length','pid_cutoff');
 
 my @stage_list = ('prepare-input',
@@ -289,7 +289,14 @@ sub set_input_fasta
     }
     else
     {
-        $self->{'job_properties'}->{'input_fasta_file'} = $abs_input_fasta;
+        my $input_fasta_files = $self->{'job_properties'}->{'input_fasta_files'};
+        if (not defined $input_fasta_files)
+        {
+            $input_fasta_files = [];
+            $self->{'job_properties'}->{'input_fasta_files'} = $input_fasta_files;
+        }
+
+        push(@$input_fasta_files, $abs_input_fasta);
     }
 }
 
@@ -377,16 +384,15 @@ sub execute
     die "End stage not defined" if (not defined $end_stage);
 
     my $job_properties = $self->{'job_properties'};
+    open(my $out_fh, '>-') or die "Could not open STDOUT";
     $self->_log("Running core SNP phylogenomic pipeline on ".`date`,0);
     $self->_log("\nParameters:\n",0);
     $self->_log("\tjob_dir = ".$self->{'job_dir'}."\n",0);
     $self->_log("\tstart_stage = ".$self->{'start_stage'}."\n",0);
     $self->_log("\tend_stage = ".$self->{'end_stage'}."\n",0);
-    foreach my $k (keys %$job_properties)
-    {
-        $self->_log("\t$k = ".$job_properties->{$k}."\n",0);
-    }
+    $self->_perform_write_properties($out_fh,$self->{'job_properties'},"\t");
     $self->_log("\n",0);
+    close($out_fh);
 
     my $seen_start = 0;
     my $seen_end = 0;
@@ -610,9 +616,35 @@ sub _read_properties
 
             if (defined $key and defined $value)
             {
-                $job_properties->{$key} = $value;
+                if ($value =~ /,/)
+                {
+                    my @values = split(/,/,$value);
+                    $job_properties->{$key} = \@values;
+                }
+                else
+                {
+                    $job_properties->{$key} = $value;
+                }
             }
         }
+    }
+}
+
+sub _perform_write_properties
+{
+    my ($self, $out_fh, $job_properties,$prefix) = @_;
+    my $real_prefix = defined $prefix ? $prefix : '';
+    foreach my $key (keys %$job_properties)
+    {
+        my $value = $job_properties->{$key};
+        if ((ref $value) eq 'ARRAY')
+        {
+            print $out_fh "$real_prefix$key=".join(', ',@$value),"\n";
+        }
+        else
+        {
+        	print $out_fh "$real_prefix$key=".$job_properties->{$key}."\n";
+	}
     }
 }
 
@@ -629,10 +661,7 @@ sub _write_properties
     open(my $out_fh, '>', $output) or die "Could not write to $output: $!";
     print $out_fh "#Properties for snp-phylogenomics job\n";
     print $out_fh "#Auto-generated on ".`date`."\n";
-    foreach my $key (keys %$job_properties)
-    {
-        print $out_fh "$key=".$job_properties->{$key}."\n";
-    }
+    $self->_perform_write_properties($out_fh,$job_properties);
     close($out_fh);
     $self->_log("...done\n",1);
 }
@@ -1023,7 +1052,7 @@ sub _build_input_fasta
     my $verbose = $self->{'verbose'};
     my $job_properties = $self->{'job_properties'};
     my $input_dir = $self->_get_file('input_fasta_dir');
-    my $input_file = $self->{'input_fasta_file'};
+    my $input_files = $job_properties->{'input_fasta_files'};
     my $output_dir = $self->_get_file('fasta_dir');
 
     my $all_input_file = $output_dir.'/'.$job_properties->{'all_input_fasta'};
@@ -1033,19 +1062,27 @@ sub _build_input_fasta
     $self->_log("\nStage: $stage\n",0);
     $self->_log("Preparing input files...\n",0);
 
-    if (defined $input_file)
+    if (not defined $input_dir and (defined $input_files and (ref $input_files eq 'ARRAY')))
     {
-        copy($input_file,$all_input_file) or die "Could not copy $input_file: $!";
-        if (not defined $job_properties->{'strain_count_manual'})
+        my $strain_count = 0;
+        my $temp_input_dir =  $self->{'job_dir'}.'/temp_input_dir';
+        (rmtree($temp_input_dir) or die "Could not delete $temp_input_dir: $!") if (-e $temp_input_dir);
+        mkdir($temp_input_dir) or die "Could not create $temp_input_dir: $!";
+        foreach my $input_file (@$input_files)
         {
-            die "Strain count not defined";
+            copy($input_file,$temp_input_dir) or die "Could not copy $input_file: $!";
+            $strain_count++;
         }
-        else
-        {
-            $job_properties->{'strain_count'} = $job_properties->{'strain_count_manual'};
-        }
+
+        $job_properties->{'strain_count'} = $strain_count;
+        $input_dir = $temp_input_dir;
     }
-    elsif (defined $input_dir)
+
+    if (not defined $input_dir)
+    {
+        die "Error: could not find any valid input files\n";
+    }
+    else
     {
         die "Input directory is invalid" if (not -d $input_dir);
 	my $sep_char = '|';
@@ -1174,10 +1211,6 @@ sub _build_input_fasta
         {
             $job_properties->{'strain_count'} = $job_properties->{'strain_count_manual'};
         }
-    }
-    else
-    {
-        die "No input file or input directory defined";
     }
 
     $self->_log("...done\n",0);

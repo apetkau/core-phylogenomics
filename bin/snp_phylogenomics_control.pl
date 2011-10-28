@@ -32,6 +32,7 @@ sub usage
     print "\t--end-stage:  The ending stage to resubmit to (can be used without a resubmission).\n";
     print "\t\tWill resubmit to ending if not defined.\n";
     print "\t-d|--input-dir [directory]:  The directory containing the input fasta files.\n";
+    print "\t-i|--input-file [file]:  Specify an individual input fasta file.\n";
     print "\t-h|--help:  Print help.\n";
     print "\t-o|--output [directory]:  The directory to store output (optional).\n";
     print "\t-p|--processors [integer]:  The number of processors to use.\n";
@@ -65,6 +66,7 @@ my $output_opt;
 my $force_output_dir_opt;
 my $pid_cutoff_opt;
 my $hsp_length_opt;
+my $input_files_opt;
 
 my $resubmit_opt;
 my $start_stage_opt;
@@ -76,6 +78,7 @@ if (!GetOptions(
     'end-stage=s' => \$end_stage_opt,
     'p|processors=i' => \$processors_opt,
     'd|input-dir=s' => \$input_dir_opt,
+    'i|input-file=s@' => \$input_files_opt,
     'o|output=s' => \$output_opt,
     'k|keep-files' => \$keep_files_opt,
     'pid-cutoff=f' => \$pid_cutoff_opt,
@@ -190,9 +193,30 @@ else
             }
         }
     }
+    elsif (defined $input_files_opt)
+    {
+        if ((ref $input_files_opt) eq 'ARRAY' and (@$input_files_opt > 0))
+        {
+            foreach my $in_file (@$input_files_opt)
+            {
+                die "Error: one of passed input files is undefind" if (not defined $in_file);
+                die "Error: file=$in_file does not exist" if (not -e $in_file);
+                die "Error: file=$in_file does not end in .fasta" if ($in_file !~ /\.fasta$/);
+                die "Error: file=$in_file is a directory" if (-d $in_file);
+
+            	$pipeline->set_input_fasta($in_file);
+            }
+        }
+        else
+        {
+            print STDERR "Error: input-files not properly defined\n";
+            usage;
+            exit 1;
+        }
+    }
     else
     {
-        print STDERR "Error: input dir must be defined\n";
+        print STDERR "Error: no input files defined, please specify --input-dir or --input-file\n";
         usage;
         exit 1;
     }
@@ -201,7 +225,7 @@ else
     {
         if (-e $output_opt)
         {
-            if (-d $output_opt and defined $force_output_dir_opt and $force_output_dir_opt)
+            if (-d $output_opt and (defined $force_output_dir_opt) and $force_output_dir_opt)
             {
                 $pipeline->set_job_dir($output_opt);
             }
