@@ -48,7 +48,7 @@ if (!GetOptions(
     'h|hsp-length=i' => \$hsp_length_opt,
     'o|output=s' => \$output_opt,
     't|tmp-dir=s' => \$tmp_dir_opt,
-    'processors=i' => $processors_opt))
+    'processors=i' => \$processors_opt))
 {
     die "$!";
 }
