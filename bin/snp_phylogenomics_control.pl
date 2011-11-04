@@ -257,7 +257,7 @@ else
     
     if (defined $pid_cutoff_opt)
     {
-        if ($pid_cutoff_opt !~ /^\d+$/)
+        if ($pid_cutoff_opt !~ /^\d+\.?\d*$/)
         {
             print STDERR "pid-cutoff value $pid_cutoff_opt is invalid\n";
             usage;

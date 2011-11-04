@@ -43,6 +43,8 @@ my $end_stage_opt;
 my $tmp_dir_opt;
 
 if (!GetOptions(
+    'p|pid-cutoff=f' => \$pid_cutoff_opt,
+    'h|hsp-length=i' => \$hsp_length_opt,
     'o|output=s' => \$output_opt,
     't|tmp-dir=s' => \$tmp_dir_opt))
 {
@@ -52,6 +54,8 @@ if (!GetOptions(
 die "Error: invalid tmp-dir" if (not defined $tmp_dir_opt);
 die "Error: invalid tmp-dir=$tmp_dir_opt" if (not -d $tmp_dir_opt);
 die "Error: invalid output" if (not defined $output_opt);
+die "Error: invalid pid-cutoff" if (defined $pid_cutoff_opt and $pid_cutoff_opt !~ /\d+\.?\d*/);
+die "Error: invalid hsp-length" if (defined $hsp_length_opt and $hsp_length_opt !~ /\d+/);
 my $output_dir = $output_opt;
 my $tmp_dir = $tmp_dir_opt;
 
@@ -60,7 +64,9 @@ my $tmp_output_dir = tempdir('core_snp.XXXXXX', DIR => $tmp_dir);
 my $pseudoalign_out_file = "$tmp_output_dir/pseudoalign/pseudoalign.phy";
 my $pseudoalign_done_file = "$tmp_output_dir/stages/pseudoalign.done";
 
-my $pipeline_control_command = "$script_dir/snp_phylogenomics_control.pl --output \"$tmp_output_dir\" --input-dir \"$script_dir/../sample\" --processors 480 -v -v -v";
+my $pipeline_control_command = "$script_dir/snp_phylogenomics_control.pl --output \"$tmp_output_dir\" --input-dir \"$script_dir/../sample\" --processors 8 -v -v -v --force-output-dir";
+$pipeline_control_command .= " --pid-cutoff $pid_cutoff_opt" if (defined $pid_cutoff_opt);
+$pipeline_control_command .= " --hsp-length $hsp_length_opt" if (defined $hsp_length_opt);
 system("$pipeline_control_command") == 0 or die "Error in command $pipeline_control_command";
 if (-e $pseudoalign_done_file)
 {
