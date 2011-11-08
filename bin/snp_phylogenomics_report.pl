@@ -23,6 +23,7 @@ sub usage
 	print "\t-i|--input-dir:  The main input directory\n";
 	print "\t-o|--output-file:  The output file (optional)\n";
 	print "\t-v|--verbose:  Verbosity (optional)\n";
+	print "\t-h|--help:  Help.\n";
 }
 
 sub report_core_locus
@@ -132,7 +133,7 @@ sub report_initial_strains
 
 sub run
 {
-	my ($core_dir,$align_dir,$fasta_dir,$input_dir,$output_file);
+	my ($core_dir,$align_dir,$fasta_dir,$input_dir,$output_file,$help);
 
 	if ( @_ && $_[0] eq __PACKAGE__)
 	{
@@ -141,7 +142,14 @@ sub run
 			'o|output-file=s' => \$output_file,
 			'f|fasta-input-dir=s' => \$fasta_dir,
 			'i|input-dir=s' => \$input_dir,
-			'v|verbose' => \$verbose) or die "Invalid options\n".usage;
+			'v|verbose' => \$verbose,
+			'h|help' => \$help) or die "Invalid options\n".usage;
+
+		if (defined $help and $help)
+		{
+			print usage();
+			exit 0;
+		}
 	}
 	else
 	{
