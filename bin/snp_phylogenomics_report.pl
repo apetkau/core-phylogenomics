@@ -4,6 +4,7 @@ package Report;
 
 use strict;
 
+use File::Basename;
 use Getopt::Long;
 use Bio::Seq;
 use Bio::SeqIO;
@@ -16,7 +17,7 @@ __PACKAGE__->run() unless caller;
 
 sub usage
 {
-	print "Usage: $0 -c <core_dir> -a <align_dir> -f <fasta_input_dir> [-o <output-file> -v]\n";
+	print "Usage: ".basename($0)." -c <core_dir> -a <align_dir> -f <fasta_input_dir> [-o <output-file> -v]\n";
 	print "\t-c|--core-dir:  The job data core directory\n";
 	print "\t-a|--align-dir:  The job data align directory\n";
 	print "\t-f|--fasta-input-dir:  The job data fasta input directory\n";
@@ -24,6 +25,9 @@ sub usage
 	print "\t-o|--output-file:  The output file (optional)\n";
 	print "\t-v|--verbose:  Verbosity (optional)\n";
 	print "\t-h|--help:  Help.\n";
+	print "\nExample:\n";
+	print "To generate a report for a job stored under sample_out/ use:\n";
+	print "\t".basename($0)." --input-dir sample_out\n\n";
 }
 
 sub report_core_locus
