@@ -20,6 +20,7 @@ sub usage
 	print "\t-c|--core-dir:  The job data core directory\n";
 	print "\t-a|--align-dir:  The job data align directory\n";
 	print "\t-f|--fasta-input-dir:  The job data fasta input directory\n";
+	print "\t-i|--input-dir:  The main input directory\n";
 	print "\t-o|--output-file:  The output file (optional)\n";
 	print "\t-v|--verbose:  Verbosity (optional)\n";
 }
@@ -131,7 +132,7 @@ sub report_initial_strains
 
 sub run
 {
-	my ($core_dir,$align_dir,$fasta_dir,$output_file);
+	my ($core_dir,$align_dir,$fasta_dir,$input_dir,$output_file);
 
 	if ( @_ && $_[0] eq __PACKAGE__)
 	{
@@ -139,14 +140,25 @@ sub run
 			'a|align-dir=s' => \$align_dir,
 			'o|output-file=s' => \$output_file,
 			'f|fasta-input-dir=s' => \$fasta_dir,
+			'i|input-dir=s' => \$input_dir,
 			'v|verbose' => \$verbose) or die "Invalid options\n".usage;
 	}
 	else
 	{
-		($core_dir,$align_dir,$fasta_dir,$output_file,$verbose) = @_;
+		($core_dir,$align_dir,$fasta_dir,$input_dir,$output_file,$verbose) = @_;
 	}
 
 	$verbose = 0 if (not defined $verbose);
+
+	if (defined $input_dir)
+	{
+		die "input-dir=$input_dir not a directory" if (not -d $input_dir);
+		die "input-dir=$input_dir not valid job directory" if (not -e "$input_dir/run.properties");
+
+		$core_dir = "$input_dir/core" if (not defined $core_dir);
+		$align_dir = "$input_dir/align" if (not defined $align_dir);
+		$fasta_dir = "$input_dir/fasta" if (not defined $fasta_dir);
+	}
 
 	die "core-dir not defined\n".usage if (not defined $core_dir);
 	die "core-dir=$core_dir not a valid directory\n".usage if (not -d $core_dir);
