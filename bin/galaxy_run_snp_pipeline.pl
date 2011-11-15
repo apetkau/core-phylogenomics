@@ -81,7 +81,7 @@ foreach my $file (@$input_files)
 my $pseudoalign_out_file = "$tmp_output_dir/pseudoalign/pseudoalign.phy";
 my $pseudoalign_done_file = "$tmp_output_dir/stages/pseudoalign.done";
 
-my $pipeline_control_command = "$script_dir/snp_phylogenomics_control.pl --output \"$tmp_output_dir\" --processors $processors_opt -v -v -v --force-output-dir --input-dir \"$input_dir\"";
+my $pipeline_control_command = "$script_dir/snp_phylogenomics_control.pl --output \"$tmp_output_dir\" --processors $processors_opt -v -v -v --force-output-dir --input-dir \"$input_dir\" --end-stage pseudoalign";
 $pipeline_control_command .= " --pid-cutoff $pid_cutoff_opt" if (defined $pid_cutoff_opt);
 $pipeline_control_command .= " --hsp-length $hsp_length_opt" if (defined $hsp_length_opt);
 print "Executing: $pipeline_control_command\n";
