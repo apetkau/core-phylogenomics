@@ -49,7 +49,7 @@ sub report_core_locus
 			my $core_file = $1;
 			if (not defined $core_file)
 			{
-				print STDERR "Warning: core_file for $align_dir/$align_file not defined, skipping...";
+				print "Warning: core_file for $align_dir/$align_file not defined, skipping...";
 				next;
 			}
 
@@ -57,11 +57,11 @@ sub report_core_locus
 
 			if (not -e $full_file_path)
 			{
-				print STDERR "Warning: core_file=$full_file_path for $align_dir/$align_file does not exist, skipping...";
+				print "Warning: core_file=$full_file_path for $align_dir/$align_file does not exist, skipping...";
 				next;
 			}
 
-			print STDERR "processing $full_file_path\n" if ($verbose);
+			print "processing $full_file_path\n" if ($verbose);
 			my $in = new Bio::SeqIO(-file=>"$full_file_path", -format=>"fasta");
 			my  @orfs;
 			while (my $seq = $in->next_seq)
@@ -103,7 +103,7 @@ sub report_initial_strains
 
 			my $strain_id = undef;
 			my $full_file_path = "$fasta_dir/$file";
-			print STDERR "processing $full_file_path\n" if ($verbose);
+			print "processing $full_file_path\n" if ($verbose);
 			my $in = new Bio::SeqIO(-file=>"$full_file_path", -format=>"fasta");
 			while (my $seq = $in->next_seq)
 			{
@@ -200,7 +200,7 @@ sub run
 		my $percent_loci = sprintf "%02.3f",($core_locus_count/$curr_total_loci);
 		my $percent_sequence = sprintf "%02.3f",($curr_core_lengths/$curr_total_length);
 
-		print "$strain: compared $percent_loci% ($core_locus_count/$curr_total_loci) of loci, $percent_sequence% ($curr_core_lengths/$curr_total_length) of sequence\n";
+		print $output_fh "$strain: compared $percent_loci% ($core_locus_count/$curr_total_loci) of loci, $percent_sequence% ($curr_core_lengths/$curr_total_length) of sequence\n";
 	}
 
 	close($output_fh);

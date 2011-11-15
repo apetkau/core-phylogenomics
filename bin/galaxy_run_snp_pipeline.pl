@@ -36,6 +36,7 @@ my $output_opt;
 my $pid_cutoff_opt;
 my $hsp_length_opt;
 my $input_files;
+my $report_opt;
 
 my $resubmit_opt;
 my $start_stage_opt;
@@ -47,6 +48,7 @@ if (!GetOptions(
     'i|input-file=s@' => \$input_files,
     'h|hsp-length=i' => \$hsp_length_opt,
     'o|output=s' => \$output_opt,
+    'r|report-output=s' => \$report_opt,
     't|tmp-dir=s' => \$tmp_dir_opt,
     'processors=i' => \$processors_opt))
 {
@@ -56,6 +58,7 @@ if (!GetOptions(
 die "Error: invalid tmp-dir" if (not defined $tmp_dir_opt);
 die "Error: invalid tmp-dir=$tmp_dir_opt" if (not -d $tmp_dir_opt);
 die "Error: invalid output" if (not defined $output_opt);
+die "Error: invalid report out" if (not defined $report_opt);
 die "Error: invalid pid-cutoff" if (defined $pid_cutoff_opt and $pid_cutoff_opt !~ /\d+\.?\d*/);
 die "Error: invalid hsp-length" if (defined $hsp_length_opt and $hsp_length_opt !~ /\d+/);
 die "Error: invalid processors" if ((not defined $processors_opt) or $processors_opt !~ /\d+/);
@@ -81,18 +84,30 @@ foreach my $file (@$input_files)
 my $pseudoalign_out_file = "$tmp_output_dir/pseudoalign/pseudoalign.phy";
 my $pseudoalign_done_file = "$tmp_output_dir/stages/pseudoalign.done";
 
-my $pipeline_control_command = "$script_dir/snp_phylogenomics_control.pl --output \"$tmp_output_dir\" --processors $processors_opt -v -v -v --force-output-dir --input-dir \"$input_dir\" --end-stage pseudoalign";
+my $report_done_file = "$tmp_output_dir/stages/report.done";
+my $report_out_file = "$tmp_output_dir/pseudoalign/main.report";
+
+my $pipeline_control_command = "$script_dir/snp_phylogenomics_control.pl --output \"$tmp_output_dir\" --processors $processors_opt -v -v -v --force-output-dir --input-dir \"$input_dir\" --end-stage report";
 $pipeline_control_command .= " --pid-cutoff $pid_cutoff_opt" if (defined $pid_cutoff_opt);
 $pipeline_control_command .= " --hsp-length $hsp_length_opt" if (defined $hsp_length_opt);
 print "Executing: $pipeline_control_command\n";
 system("$pipeline_control_command") == 0 or die "Error in command $pipeline_control_command";
 if (-e $pseudoalign_done_file)
 {
-	move($pseudoalign_out_file, $output_dir);
+	move($pseudoalign_out_file, $output_dir) or die "Could not move $pseudoalign_out_file to $output_dir: $!";
 }
 else
 {
 	die "Error: file $pseudoalign_done_file does not exist, some error has occured";
+}
+
+if (-e $report_out_file)
+{
+	move($report_out_file, $report_opt) or die "Could not move $report_out_file to $report_opt: $!";
+}
+else
+{
+	die "Error: file $report_out_file does not exist, some error has occured";
 }
 
 rmtree($tmp_output_dir) or die "Could not delete $tmp_output_dir: $!";

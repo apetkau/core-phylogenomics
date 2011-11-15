@@ -24,6 +24,7 @@ my @stage_list = ('prepare-input',
                   'core',
                   'alignment',
                   'pseudoalign',
+                  'report',
                   'build-phylogeny',
                   'phylogeny-graphic'
                  );
@@ -36,6 +37,7 @@ my %stage_table = ( 'prepare-input' => \&_build_input_fasta,
                     'core' => \&_find_core,
                     'alignment' => \&_align_orthologs,
                     'pseudoalign' => \&_pseudoalign,
+                    'report' => \&_generate_report,
                     'build-phylogeny' => \&_build_phylogeny,
                     'phylogeny-graphic' => \&_build_phylogeny_graphic,
     );
@@ -516,6 +518,31 @@ sub _build_phylogeny_graphic
         $self->_log("\tphylogenetic tree image can be found at $tree_image\n",0);
     }
     $self->_log("\t...done\n",1);
+    $self->_log("...done\n",0);
+}
+
+sub _generate_report
+{
+    my ($self,$stage) = @_;
+
+    my $verbose = $self->{'verbose'};
+    my $job_properties = $self->{'job_properties'};
+    my $working_dir = $self->_get_file('pseudoalign_dir');
+    my $script_dir = $self->{'script_dir'};
+    my $core_dir = $self->_get_file('core_dir');
+    my $align_dir = $self->_get_file('align_dir');
+    my $fasta_dir = $self->_get_file('fasta_dir');
+    my $input_dir = $self->{'job_dir'};
+    my $output_file = "$working_dir/main.report";
+    my $log_dir = $self->_get_file('log_dir');
+
+    my $log_file = "$log_dir/generate_report.log";
+
+    $self->_log("\nStage: $stage\n",0);
+    $self->_log("Generating report ...\n",0);
+
+    require("$script_dir/snp_phylogenomics_report.pl");
+    Report::run($core_dir,$align_dir,$fasta_dir,$input_dir,$output_file,$verbose);
     $self->_log("...done\n",0);
 }
 
