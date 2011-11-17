@@ -885,7 +885,7 @@ sub _perform_blast
 
     my $blast_sge = "$output_dir/blast.sge";
     $self->_log("\tWriting $blast_sge script ...\n",1);
-    my $sge_command = "blastall -p blastn -i \"$input_task_base.\$SGE_TASK_ID\" -o \"$blast_base_path.\$SGE_TASK_ID\" -d \"$database\"\n";
+    my $sge_command = "blastall -p blastn -i \"$input_task_base.\$SGE_TASK_ID\" -F F -o \"$blast_base_path.\$SGE_TASK_ID\" -d \"$database\"\n";
     $self->_print_sge_script($processors, $blast_sge, $sge_command);
     $self->_log("\t...done\n",1);
 
