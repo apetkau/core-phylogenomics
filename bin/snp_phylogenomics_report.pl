@@ -65,24 +65,33 @@ sub process_ortholog_file
 
 sub report_snp_locus
 {
-	my ($core_dir,$align_dir) = @_;
+	my ($core_dir,$pseudoalign_dir) = @_;
 	my %total_locus_lengths;
 	my $snp_locus_count = 0;
+	my $snp_report_file = "$pseudoalign_dir/snp.report.txt";
 
-	# gets snps/core genes used in pipeline (assumes all files under align/ directory are used)
-	opendir(my $align_dh, $align_dir) or die "Could not open directory $align_dir: $!";
-	my @align_files = grep {/^snps\d+\.aln$/} readdir($align_dh);
-	closedir($align_dh);
+	# gets snps/core genes used in pipeline (from snp report)
+	open(my $snp_report_fh, $snp_report_file) or die "Could not open snp report $snp_report_file: $!";
+	my %align_files;
+	my $line = readline($snp_report_fh);
+	while ($line)
+	{
+		my ($align_file) = ($line =~ /(snps\d+\.aln\.trimmed)/);
+		$align_files{$align_file} = 1;
+
+		$line = readline($snp_report_fh);
+	}
+	close($snp_report_fh);
 
 	# loci count
-	for my $align_file (@align_files)
+	for my $align_file (keys %align_files)
 	{
-		if ($align_file =~ /^(snps\d+)\.aln$/)
+		if ($align_file =~ /^(snps\d+)\.aln.trimmed$/)
 		{
 			my $core_file = $1;
 			if (not defined $core_file)
 			{
-				print "Warning: core_file for $align_dir/$align_file not defined, skipping...";
+				print "Warning: core_file for $align_file not defined, skipping...";
 				next;
 			}
 
@@ -199,6 +208,8 @@ sub run
 		($core_dir,$align_dir,$fasta_dir,$input_dir,$output_file,$verbose) = @_;
 	}
 
+	my $pseudoalign_dir = undef;
+
 	$verbose = 0 if (not defined $verbose);
 
 	if (defined $input_dir)
@@ -209,6 +220,7 @@ sub run
 		$core_dir = "$input_dir/core" if (not defined $core_dir);
 		$align_dir = "$input_dir/align" if (not defined $align_dir);
 		$fasta_dir = "$input_dir/fasta" if (not defined $fasta_dir);
+		$pseudoalign_dir = "$input_dir/pseudoalign" if (not defined $pseudoalign_dir);
 	}
 
 	die "core-dir not defined\n".usage if (not defined $core_dir);
@@ -217,6 +229,8 @@ sub run
 	die "align-dir=$align_dir not a valid directory\n".usage if (not -d $align_dir);
 	die "fasta-dir not defined\n".usage if (not defined $fasta_dir);
 	die "fasta-dir=$fasta_dir not a valid directory\n".usage if (not -d $fasta_dir);
+	die "pseudoalign-dir not defined\n".usage if (not defined $pseudoalign_dir);
+	die "pseudoalign-dir=$pseudoalign_dir not a valid directory\n".usage if (not -d $pseudoalign_dir);
 
 	my $output_fh = undef;
 	if (defined $output_file)
@@ -228,23 +242,19 @@ sub run
 		open($output_fh, '>-') or die "Could not open stdout for writing";
 	}
 
-	my ($snp_locus_count,$total_snp_lengths) = report_snp_locus($core_dir,$align_dir);
+	my ($snp_locus_count,$total_snp_lengths) = report_snp_locus($core_dir,$pseudoalign_dir);
 	my ($core_locus_count,$total_core_lengths) = report_core_locus($core_dir);
 	my ($total_strain_loci,$total_features_lengths) = report_initial_strains($fasta_dir);
 
+	print "# Numbers given as (filtered/core/total)\n";
 	foreach my $strain (sort keys %$total_strain_loci)
 	{
 		my $curr_total_loci = $total_strain_loci->{$strain};
 		my $curr_total_length = $total_features_lengths->{$strain};
 		my $curr_snp_lengths = $total_snp_lengths->{$strain};
 		my $curr_core_lengths = $total_core_lengths->{$strain};
-		my $percent_snp_loci = sprintf "%02.3f",($snp_locus_count/$curr_total_loci);
-		my $percent_snp_sequence = sprintf "%02.3f",($curr_snp_lengths/$curr_total_length);
-		my $percent_core_loci = sprintf "%02.3f",($core_locus_count/$curr_total_loci);
-		my $percent_core_sequence = sprintf "%02.3f",($curr_core_lengths/$curr_total_length);
 
-		print $output_fh "$strain loci: total $curr_total_loci, core $core_locus_count (".($core_locus_count-$snp_locus_count)." at 100%, $snp_locus_count at not 100%)\n";
-		print $output_fh "$strain sequence: total $curr_total_length, core $curr_core_lengths (".($curr_core_lengths-$curr_snp_lengths)." at 100%, $curr_snp_lengths at not 100%)\n\n";
+		print $output_fh "$strain: loci ($snp_locus_count / $core_locus_count / $curr_total_loci), sequence ($curr_snp_lengths / $curr_core_lengths / $curr_total_length)\n";
 	}
 
 	close($output_fh);
