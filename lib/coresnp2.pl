@@ -85,28 +85,37 @@ for my $query (@query_loci) {
     @master_strains = @strains;
     #added by gvd
    (my $smallest_pid) = sort {$a <=> $b} @{$pid_recorder{$query}};
-my $ids = join " ", @{$pid_recorder{$query}};
-    next unless $smallest_pid <100;
-    next unless @strains ==$strain_count;
-my $out_file_path = (defined $output_dir) ? "$output_dir/core.$query.ffn" : "core.$query.ffn";
-my $out = new Bio::SeqIO(-file=>">$out_file_path", -format=>"fasta");
-$filecounter++;
+    my $ids = join " ", @{$pid_recorder{$query}};
+    next unless @strains == $strain_count; # next if not part of core
+
+    my $ortho_name;
+    if ($smallest_pid >= 100)
+    {
+        $ortho_name = "100pid_core.$query.ffn";
+    }
+    else
+    {
+        $ortho_name = "core.$query.ffn";
+    }
+
+    my $out_file_path = (defined $output_dir) ? "$output_dir/$ortho_name" : "$ortho_name";
+    my $out = new Bio::SeqIO(-file=>">$out_file_path", -format=>"fasta");
+    $filecounter++;
 
     # grab the sequences using the accessions
     for my $strain (@strains) {
 #	my $out = new Bio::SeqIO(-file=>">>core.$strain.faa", -format=>"fasta");
-	my $hitname = $hit_recorder{$query}{$strain};
-	my $seq = $inx->fetch($hitname);
-	my $newdesc = $seq->display_id ; $newdesc .= " [$strain] "; $newdesc .= $seq->desc;
-	$seq->desc($newdesc);
-	$seq->display_id($strain);
-	$bigseq{$strain}.= $seq->seq;
-	my @frame = @{$revcom_recorder{$query}{$strain}};
-	if ($frame[0] * $frame[1] < 0 ) {
-	$seq = $seq->revcom;
-	print "revcom in $query $strain\n"; 
-	}
-	$out->write_seq($seq);
+        my $hitname = $hit_recorder{$query}{$strain};
+        my $seq = $inx->fetch($hitname);
+        my $newdesc = $seq->display_id ; $newdesc .= " [$strain] "; $newdesc .= $seq->desc;
+        $seq->desc($newdesc);
+        $seq->display_id($strain);
+        $bigseq{$strain}.= $seq->seq;
+        my @frame = @{$revcom_recorder{$query}{$strain}};
+        if ($frame[0] * $frame[1] < 0 ) {
+            $seq = $seq->revcom;
+            print "revcom in $query $strain\n"; 
+        }
+        $out->write_seq($seq);
     }
 }
-

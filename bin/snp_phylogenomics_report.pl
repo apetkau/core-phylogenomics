@@ -30,11 +30,44 @@ sub usage
 	print "\t".basename($0)." --input-dir sample_out\n\n";
 }
 
-sub report_core_locus
+sub process_ortholog_file
+{
+	my ($ortho_file, $total_locus_lengths) = @_;
+	my $success = 0;
+
+	if (not -e $ortho_file)
+	{
+		print "Warning: ortho_file=$ortho_file does not exist, skipping...";
+		return $success;
+	}
+
+	print "processing $ortho_file\n" if ($verbose);
+	my $in = new Bio::SeqIO(-file=>"$ortho_file", -format=>"fasta");
+	my  @orfs;
+	while (my $seq = $in->next_seq)
+	{
+		my ($orf) = $seq->desc =~ /^(.*?)\s/;
+		my ($strain_id) = ($orf =~ /^([^\|]*)\|/);
+		die "Error, found invalid strain_id=$strain_id in orf=$orf" if (not defined $strain_id or $strain_id eq '');
+		if (not exists $total_locus_lengths->{$strain_id})
+		{
+			$total_locus_lengths->{$strain_id} = $seq->length;
+		}
+		else
+		{
+			$total_locus_lengths->{$strain_id} += $seq->length;
+		}
+	}
+
+	$success = 1;
+	return $success;
+}
+
+sub report_snp_locus
 {
 	my ($core_dir,$align_dir) = @_;
 	my %total_locus_lengths;
-	my $core_locus_count = 0;
+	my $snp_locus_count = 0;
 
 	# gets snps/core genes used in pipeline (assumes all files under align/ directory are used)
 	opendir(my $align_dh, $align_dir) or die "Could not open directory $align_dir: $!";
@@ -54,32 +87,38 @@ sub report_core_locus
 			}
 
 			my $full_file_path = "$core_dir/$core_file";
-
-			if (not -e $full_file_path)
+			if (process_ortholog_file($full_file_path,\%total_locus_lengths))
 			{
-				print "Warning: core_file=$full_file_path for $align_dir/$align_file does not exist, skipping...";
-				next;
+				$snp_locus_count++;
 			}
-
-			print "processing $full_file_path\n" if ($verbose);
-			my $in = new Bio::SeqIO(-file=>"$full_file_path", -format=>"fasta");
-			my  @orfs;
-			while (my $seq = $in->next_seq)
-			{
-				my ($orf) = $seq->desc =~ /^(.*?)\s/;
-				my ($strain_id) = ($orf =~ /^([^\|]*)\|/);
-				die "Error, found invalid strain_id=$strain_id in orf=$orf" if (not defined $strain_id or $strain_id eq '');
-				if (not exists $total_locus_lengths{$strain_id})
-				{
-					$total_locus_lengths{$strain_id} = $seq->length;
-				}
-				else
-				{
-					$total_locus_lengths{$strain_id} += $seq->length;
-				}
-			}
-			$core_locus_count++;
 		}
+	}	
+
+	return ($snp_locus_count,\%total_locus_lengths);
+}
+
+sub report_core_locus
+{
+	my ($core_dir) = @_;
+	my %total_locus_lengths;
+	my $core_locus_count = 0;
+
+	opendir(my $core_dh, $core_dir) or die "Could not open directory $core_dir: $!";
+
+	# loci count
+	my $file = readdir($core_dh);
+	while($file)
+	{
+		if ($file =~ /^core.*\.ffn$/ or $file =~ /^100pid_core.*\.ffn/)
+		{
+			my $full_file_path = "$core_dir/$file";
+			if (process_ortholog_file($full_file_path,\%total_locus_lengths))
+			{
+				$core_locus_count++;
+			}
+		}
+
+		$file = readdir($core_dh);
 	}	
 
 	return ($core_locus_count,\%total_locus_lengths);
@@ -189,18 +228,25 @@ sub run
 		open($output_fh, '>-') or die "Could not open stdout for writing";
 	}
 
-	my ($core_locus_count,$total_core_lengths) = report_core_locus($core_dir,$align_dir);
+	my ($snp_locus_count,$total_snp_lengths) = report_snp_locus($core_dir,$align_dir);
+	my ($core_locus_count,$total_core_lengths) = report_core_locus($core_dir);
 	my ($total_strain_loci,$total_features_lengths) = report_initial_strains($fasta_dir);
 
+	print $output_fh "# All numbers given as snp containing core/core/total\n";
 	foreach my $strain (sort keys %$total_strain_loci)
 	{
 		my $curr_total_loci = $total_strain_loci->{$strain};
 		my $curr_total_length = $total_features_lengths->{$strain};
+		my $curr_snp_lengths = $total_snp_lengths->{$strain};
 		my $curr_core_lengths = $total_core_lengths->{$strain};
-		my $percent_loci = sprintf "%02.3f",($core_locus_count/$curr_total_loci);
-		my $percent_sequence = sprintf "%02.3f",($curr_core_lengths/$curr_total_length);
+		my $percent_snp_loci = sprintf "%02.3f",($snp_locus_count/$curr_total_loci);
+		my $percent_snp_sequence = sprintf "%02.3f",($curr_snp_lengths/$curr_total_length);
+		my $percent_core_loci = sprintf "%02.3f",($core_locus_count/$curr_total_loci);
+		my $percent_core_sequence = sprintf "%02.3f",($curr_core_lengths/$curr_total_length);
 
-		print $output_fh "$strain: compared $percent_loci% ($core_locus_count/$curr_total_loci) of loci, $percent_sequence% ($curr_core_lengths/$curr_total_length) of sequence\n";
+		#print $output_fh "$strain: core loci $percent_core_loci% ($core_locus_count/$curr_total_loci), core sequence $percent_core_sequence% ($curr_core_lengths/$curr_total_length)\n";
+		#print $output_fh "$strain: core snp loci $percent_snp_loci% ($snp_locus_count/$curr_total_loci), core snp sequence $percent_snp_sequence% ($curr_snp_lengths/$curr_total_length)\n";
+		print $output_fh "$strain: loci ($snp_locus_count / $core_locus_count / $curr_total_loci), sequence ($curr_snp_lengths / $curr_core_lengths / $curr_total_length)\n";
 	}
 
 	close($output_fh);

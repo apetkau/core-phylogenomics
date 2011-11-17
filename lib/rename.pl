@@ -58,7 +58,7 @@ sub run
     		my  $orfs =  join " ", @orfs;
     		print LOCUSMAP "$x: $orfs\n";
     		my $newfilename = (defined $output_dir) ? "$output_dir/snps$x" : "snps$x";
-    		move($full_file_path, $newfilename) or die "Could not rename $full_file_path to $newfilename: $!";
+    		copy($full_file_path, $newfilename) or die "Could not rename $full_file_path to $newfilename: $!";
     		$x++;
             }
     }
