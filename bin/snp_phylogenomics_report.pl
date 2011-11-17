@@ -232,7 +232,6 @@ sub run
 	my ($core_locus_count,$total_core_lengths) = report_core_locus($core_dir);
 	my ($total_strain_loci,$total_features_lengths) = report_initial_strains($fasta_dir);
 
-	print $output_fh "# All numbers given as snp containing core/core/total\n";
 	foreach my $strain (sort keys %$total_strain_loci)
 	{
 		my $curr_total_loci = $total_strain_loci->{$strain};
@@ -244,9 +243,8 @@ sub run
 		my $percent_core_loci = sprintf "%02.3f",($core_locus_count/$curr_total_loci);
 		my $percent_core_sequence = sprintf "%02.3f",($curr_core_lengths/$curr_total_length);
 
-		#print $output_fh "$strain: core loci $percent_core_loci% ($core_locus_count/$curr_total_loci), core sequence $percent_core_sequence% ($curr_core_lengths/$curr_total_length)\n";
-		#print $output_fh "$strain: core snp loci $percent_snp_loci% ($snp_locus_count/$curr_total_loci), core snp sequence $percent_snp_sequence% ($curr_snp_lengths/$curr_total_length)\n";
-		print $output_fh "$strain: loci ($snp_locus_count / $core_locus_count / $curr_total_loci), sequence ($curr_snp_lengths / $curr_core_lengths / $curr_total_length)\n";
+		print $output_fh "$strain loci: total $curr_total_loci, core $core_locus_count (".($core_locus_count-$snp_locus_count)." at 100%, $snp_locus_count at not 100%)\n";
+		print $output_fh "$strain sequence: total $curr_total_length, core $curr_core_lengths (".($curr_core_lengths-$curr_snp_lengths)." at 100%, $curr_snp_lengths at not 100%)\n\n";
 	}
 
 	close($output_fh);
