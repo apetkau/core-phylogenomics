@@ -12,7 +12,7 @@ use Cwd qw(abs_path);
 
 my $properties_filename = 'run.properties';
 my @valid_job_dirs = ('job_dir','log_dir','fasta_dir','database_dir','split_dir','blast_dir','core_dir',
-                  'align_dir','pseudoalign_dir','stage_dir','phylogeny_dir','align_validate_dir');
+                  'align_dir','pseudoalign_dir','stage_dir','phylogeny_dir');
 my @valid_other_files = ('input_fasta_dir','split_file','input_fasta_files');
 my @valid_properties = join(@valid_job_dirs,@valid_other_files,'hsp_length','pid_cutoff');
 
@@ -23,7 +23,6 @@ my @stage_list = ('prepare-input',
                   'blast',
                   'core',
                   'alignment',
-                  'validate_alignments',
                   'pseudoalign',
                   'report',
                   'build-phylogeny',
@@ -37,7 +36,6 @@ my %stage_table = ( 'prepare-input' => \&_build_input_fasta,
                     'blast' => \&_perform_blast,
                     'core' => \&_find_core,
                     'alignment' => \&_align_orthologs,
-                    'validate_alignments' => \&_validate_alignments,
                     'pseudoalign' => \&_pseudoalign,
                     'report' => \&_generate_report,
                     'build-phylogeny' => \&_build_phylogeny,
@@ -51,7 +49,6 @@ my @user_stage_list = ('prepare-input',
                        'blast',
                        'core',
                        'alignment',
-                       'validate_alignments',
                        'pseudoalign',
                        'build-phylogeny',
                        'phylogeny-graphic'
@@ -63,7 +60,6 @@ my @stage_descriptions = ('Prepares and checks input files.',
                           'Performs blast to find core genome.',
                           'Attempts to identify snps from core genome.',
                           'Performs multiple alignment on each ortholog.',
-                          'Validates alignments of core genes.',
                           'Creates a pseudoalignment.',
                           'Builds the phylogeny based on the pseudoalignment.',
                           'Builds a graphic image of the phylogeny.'
@@ -86,7 +82,6 @@ sub new
     $self->{'job_properties'}->{'bioperl_index'} = 'all.fasta.idx';
     $self->{'job_properties'}->{'pid_cutoff'} = 99;
     $self->{'job_properties'}->{'hsp_length'} = 400;
-    $self->{'job_properties'}->{'validate_alignments'} = 0;
 
     return $self;
 }
@@ -120,7 +115,6 @@ sub set_job_dir
     $job_properties->{'core_dir'} = "core";
     $job_properties->{'align_dir'} = "align";
     $job_properties->{'pseudoalign_dir'} = "pseudoalign";
-    $job_properties->{'align_validate_dir'} = "align_validate";
     $job_properties->{'stage_dir'} = "stages";
     $job_properties->{'phylogeny_dir'} ='phylogeny';
 }
@@ -243,12 +237,6 @@ sub set_hsp_length
 {
     my ($self,$length) = @_;
     $self->{'job_properties'}->{'hsp_length'} = $length;
-}
-
-sub set_validate_alignemnts
-{
-    my ($self,$value) = @_;
-    $self->{'job_properties'}->{'validate_alignments'} = $value;
 }
 
 sub set_pid_cutoff
@@ -1051,83 +1039,6 @@ sub _align_orthologs
     Trim::run($output_dir,$output_dir,$log);
     $self->_log("\t...done\n",1);
 
-    $self->_log("...done\n",0);
-}
-
-sub _validate_alignments
-{
-    my ($self,$stage) = @_;
-    my $job_properties = $self->{'job_properties'};
-    my $validate_alignments = $job_properties->{'validate_aligments'};
-    return if (not defined $validate_alignments or not $validate_alignments);
-
-    my $script_dir = $self->{'script_dir'};
-    my $verbose = $self->{'verbose'};
-
-    my $align_input = $self->_get_file('align_dir');
-    my $badaligns = $self->_get_file('align_dir').'/badaligns';
-    my $output_dir = $self->_get_file('align_validate_dir');
-    my $log_dir = $self->_get_file('log_dir');
-
-    mkdir $badaligns if (not -e $badaligns);
-
-    die "Error: align_input directory does not exist" if (not -e $align_input);
-    die "Error: align_validate_dir directory does not exist" if (not -e $output_dir);
-
-    my $log = "$log_dir/align_validate.log";
-
-    $self->_log("\nStage: $stage\n",0);
-    $self->_log("Validating alignment ...\n",0);
-
-    require("$script_dir/../lib/pseudoaligner.pl");
-    $self->_log("\tRunning pseudoaligner (see $log for details) ...\n",1);
-    Pseudoaligner::run($align_input,$output_dir,$log);
-    $self->_log("\t...done\n",1);
-
-    my $snp_report = "$output_dir/snp.report.txt";
-    $self->_log("\tSorting report ...\n",1);
-    my $sorted_report = `$script_dir/../lib/sort_report.pl -i $snp_report`;
-    die "Error: no sorted report" if (not defined $sorted_report or $sorted_report eq '');
-    my @lines = split(/\n/, $sorted_report);
-    $self->_log("\t...done\n",1);
-
-    $self->_log("\tFinding outliers in alignment data...\n",1);
-    my @snps_aligns = ();
-    my $total = 0;
-    my $total_count = 0;
-    foreach my $line (@lines)
-    {
-        my ($file,$count) = ($line =~ /^(snps\d+\.aln\.trimmed) has (\d+) snps$/);
- 	push(@snps_aligns,[$file,$count]);
-    }
-
-    my @snps_aligns_sorted = sort { $a->[1] <=> $b->[1] } @snps_aligns;
-    my $total_alignments = scalar @snps_aligns_sorted;
-    my $cutoff_value = 0.90; # keep x percentile value
-    my $cutoff_index = int($total_alignments * $cutoff_value);
-
-    $self->_log("\t\tAlignments to remove start at $cutoff_index/$total_alignments\n",1);
-    if ($cutoff_index > $total_alignments)
-    {
-        $self->_log("\t\t$cutoff_index > $total_alignments, skip removing bad aligns\n",1);
-    }
-    elsif ($cutoff_index <= 0)
-    {
-        $self->_log("\t\t$cutoff_index <= 0, something went wrong, skip removing bad aligns\n",1);
-    }
-    else
-    {
-        for (my $i = $cutoff_index; $i < $total_alignments; $i++)
-        {
-            my $file = $snps_aligns_sorted[$i]->[0];
-            my $count = $snps_aligns_sorted[$i]->[1];
-
-            $self->_log("\t\tRemoving $file with $count snps for pseudoalignment\n",1);
-            move("$align_input/$file",$badaligns) or die "Could not move $align_input/$file to $badaligns: $!";
-        }
-    }
-
-    $self->_log("\t...done\n",1);
     $self->_log("...done\n",0);
 }
 

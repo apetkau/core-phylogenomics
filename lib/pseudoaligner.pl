@@ -141,7 +141,7 @@ sub run
     		my $strains = join "\t", @strains;
     		print REPORT "column $columncounter: $minorsnp($majorsnp) from $locus in:\t $strains\n"; 
     		$columncounter++;
-    	}
+    }
     }
     my @newseqs;
     for my $column (@pseudoalign) {
