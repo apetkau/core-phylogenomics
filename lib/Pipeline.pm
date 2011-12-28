@@ -823,14 +823,14 @@ sub _create_input_database
     $self->_print_sge_script(1, $index_sge, $index_command);
 
     $job_name = $self->_get_job_id;
-    my $formatdb_qsub = "qsub -v PERL5LIB -N $job_name -cwd -S /bin/sh -e \"$formatdb_err\" -o \"$formatdb_out\" \"$formatdb_sge\" 2>/dev/null";
+    my $formatdb_qsub = "qsub -v PERL5LIB -N $job_name -cwd -S /bin/sh -e \"$formatdb_err\" -o \"$formatdb_out\" \"$formatdb_sge\" 1>/dev/null";
     $self->_log("\tCreating BLAST formatted database ...\n",1);
     $self->_log("\t\t$formatdb_qsub\n",1);
     system($formatdb_qsub) == 0 or die "Error for command: $formatdb_qsub: $!";
     $self->_wait_until_completion($job_name);
     $self->_log("\t...done\n",1);
 
-    my $index_qsub = "qsub -v PERL5LIB -N $job_name -cwd -S /bin/sh -e \"$index_err\" -o \"$index_out\" \"$index_sge\" 2>/dev/null";
+    my $index_qsub = "qsub -v PERL5LIB -N $job_name -cwd -S /bin/sh -e \"$index_err\" -o \"$index_out\" \"$index_sge\" 1>/dev/null";
     $self->_log("\tCreating bioperl index ...\n",1);
     $self->_log("\t\t$index_qsub\n",1);
     system($index_qsub) == 0 or die "Error for command: $index_qsub: $!";

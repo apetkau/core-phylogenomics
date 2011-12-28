@@ -246,7 +246,7 @@ sub run
 	my ($core_locus_count,$total_core_lengths) = report_core_locus($core_dir);
 	my ($total_strain_loci,$total_features_lengths) = report_initial_strains($fasta_dir);
 
-	print "# Numbers given as (filtered/core/total)\n";
+	print $output_fh "# Numbers given as (core kept for analysis / total core / total)\n";
 	foreach my $strain (sort keys %$total_strain_loci)
 	{
 		my $curr_total_loci = $total_strain_loci->{$strain};
