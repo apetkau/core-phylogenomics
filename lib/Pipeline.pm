@@ -573,7 +573,7 @@ sub _build_phylogeny
     $self->_log("\tRunning phyml ...\n",1);
     $self->_log("\tMore information can be found at $phyml_log\n",1);
     die "Error: pseudoalign file $pseudoalign_file does not exist" if (not -e $pseudoalign_file);
-    my $phylogeny_command = "phyml -i \"$pseudoalign_file\" 1>\"$phyml_log\" 2>&1";
+    my $phylogeny_command = "yes | phyml -i \"$pseudoalign_file\" 1>\"$phyml_log\" 2>&1";
     $self->_log("\t$phylogeny_command",2);
     if(system($phylogeny_command) != 0)
     {
