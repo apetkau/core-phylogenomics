@@ -18,7 +18,12 @@ __PACKAGE__->run() unless caller;
 sub usage
 {
 	return
-"Usage: ".basename($0).".pl -i <input_dir> -f <fasta_input> -o <output_dir> --strain-id <strain id> ...\n";
+"Usage: ".basename($0).".pl -i <orthomcl input> -f <fasta_input> -o <output_dir> --strain-id <strain id> ...
+Options:
+	-i|--orthomcl-input:  The orthomcl groups file to use for clusters of core genes.
+	-f|--fasta-input:  The fasta input directory containing the nucleotide files.
+	-o|--output-dir:  The output dir to store the core gene files.
+	-s|--strain-id:  The ids of each strain to include in the set to filter out (multiple).\n";
 }
 
 sub create_set_table
@@ -150,7 +155,7 @@ sub run
 		GetOptions('i|orthomcl-input=s' => \$orthomcl_input,
 		   'f|fasta-input=s' => \$fasta_input,
 		   'o|output-dir=s' => \$output_dir,
-		   'strain-id=s@' => \$strain_id) or die "Invalid options\n".usage;
+		   's|strain-id=s@' => \$strain_id) or die "Invalid options\n".usage;
 	}
 	else
 	{
@@ -180,9 +185,10 @@ sub run
 
 	for(my $i = 0; $i < @$groups; $i++)
 	{
+		my $num = $i+1;
 		my $ortho_group = $groups->[$i];
 
-		my $filepath = "$output_dir/core.$i";
+		my $filepath = "$output_dir/snps$num";
 		open(my $fh, ">$filepath") or die "Could not write to $filepath: $!";
 	        for ( my $j = 0; $j < @$ortho_group; $j++)
 	        {
