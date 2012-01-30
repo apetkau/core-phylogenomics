@@ -82,16 +82,16 @@ sub handle_ortho_groups
 
 			if (not exists $ortho_group->{$strain})
 			{
-				#print "No ortholog group name for $strain in set, skipping ...\n";
+				print "No ortholog group name for $strain in set, skipping ...\n";
 			}
 			elsif (not exists $existence_hash{$strain})
 			{
 				$existence_hash{$strain} = 1;
-				push(@good_ortho_values, $group_en[$g]);
+				push(@good_ortho_values, {name => $strain, id => $locus_id});
 			}
 			else
 			{
-				#print "Duplicate for strain $strain found, skipping ...\n";
+				print "Duplicate for strain $strain found, skipping ...\n";
 			}
 		}
 
@@ -102,7 +102,7 @@ sub handle_ortho_groups
 		}
 		else
 		{
-			#print STDERR "Skipping group as it does not contain a complete valid set of strains: $line\n";
+			print STDERR "Skipping group as it does not contain a complete valid set of strains: $line\n";
 			$group_filtered++;
 		}
 		
@@ -178,7 +178,7 @@ sub run
 	my $seq_gene = create_seq_gene_table($fasta_input);
 
 	my ($groups, $group_kept, $group_filtered) = handle_ortho_groups($orthomcl_input,$ortho_group);
-	print "Filtered out $group_filtered of a total of ".($group_kept + $group_filtered)." groups\n";
+	print "Kept a total of $group_kept of ".($group_kept + $group_filtered)." groups\n";
 
 	my %strain_locus;
 	mkdir $output_dir if (not -e $output_dir);
@@ -193,6 +193,9 @@ sub run
 	        for ( my $j = 0; $j < @$ortho_group; $j++)
 	        {
 			my $entry = $ortho_group->[$j];
+			my $strain = $entry->{'name'};
+			my $id = $entry->{'id'};
+			my $seq_gene_string = "$strain|$id";
 	
 	                if (not defined $entry)
 	                {
@@ -200,15 +203,15 @@ sub run
 	                }
 	                else
 	                {
-	                        my $seq = $seq_gene->{$entry};
+	                        my $seq = $seq_gene->{$seq_gene_string};
 
 	                        if (not defined $seq)
 	                        {
-	                                print STDERR "Warning: no in sequence list for entry $entry\n";
+	                                print STDERR "Warning: no in sequence list for entry $seq_gene_string\n";
 	                        }
 	                        else
 	                        {
-	                                print $fh ">$entry\n";
+	                                print $fh ">$strain $strain|$id\n";
                                		print $fh $seq->seq,"\n";
                         	}
 	                }
