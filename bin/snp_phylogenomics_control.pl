@@ -38,6 +38,7 @@ sub usage
     print "\t-p|--processors [integer]:  The number of processors to use.\n";
     print "\t--pid-cutoff [real]:  The pid cutoff to use (default $pid_cutoff_default).\n";
     print "\t--hsp-length [integer]:   The hsp length to use (default $hsp_length_default).\n";
+    print "\t--use-orthomcl:  The directory containing the orthomcl groups file.\n";
     print "\t-v|--verbose:  Print extra information, define multiple times for more information.\n";
     print "\t--force-output-dir: Forces use of output directory even if it exists (optional).\n";
 
@@ -49,6 +50,78 @@ sub usage
     print "\tRuns ".basename($0)." on data under sample/ with the passed number of processors.\n\n";
     print "\t".basename($0)." --resubmit data --start-stage pseudoalign\n";
     print "\tRe-runs the job stored under data/ at the pseudoalignment stage.\n\n";
+}
+
+sub handle_input_fasta
+{
+	my ($pipeline, $input_dir_opt, $strain_count_opt) = @_;
+
+	if (defined $input_dir_opt)
+	{
+		if (not -d $input_dir_opt)
+		{
+			print STDERR "Error: input fasta directory $input_dir_opt is not a directory\n";
+			usage;
+			exit 1;
+		}
+		else
+		{
+			$pipeline->set_input_fasta($input_dir_opt);
+	
+			if (defined $strain_count_opt)
+			{
+				if ($strain_count_opt <= 0)
+				{
+					print STDERR "Error: strain count $strain_count_opt must be positive\n";
+					usage;
+					exit 1;
+				}
+				else
+				{
+					$pipeline->set_strain_count($strain_count_opt);
+				}
+			}
+		}
+	}
+}
+
+sub handle_output_opt
+{
+    my ($pipeline, $output_opt, $force_output_dir_opt) = @_;
+
+    if (defined $output_opt)
+    {
+        if (-e $output_opt)
+        {
+            if (-d $output_opt and (defined $force_output_dir_opt) and $force_output_dir_opt)
+            {
+                $pipeline->set_job_dir($output_opt);
+            }
+            else
+            {
+                print "Warning: directory \"$output_opt\" already exists, are you sure you want to store data here [Y]? ";
+                my $response = <>;
+                chomp $response;
+                if ($response eq 'y' or $response eq 'Y' or $response eq '')
+                {
+                    $pipeline->set_job_dir($output_opt);
+                }
+                else
+                {
+                    die "Directory \"$output_opt\" already exists, could not continue.";
+                }
+            }
+        }
+        else
+        {
+            mkdir $output_opt if (not -e $output_opt);
+            $pipeline->set_job_dir($output_opt);
+        }
+    }
+    else
+    {
+        die "No value defined for --output.";
+    }
 }
 
 ############
@@ -67,6 +140,7 @@ my $force_output_dir_opt;
 my $pid_cutoff_opt;
 my $hsp_length_opt;
 my $input_files_opt;
+my $orthomcl_groups;
 
 my $resubmit_opt;
 my $start_stage_opt;
@@ -86,6 +160,7 @@ if (!GetOptions(
     'v|verbose+' => \$verbose_opt,
     'h|help' => \$help_opt,
     'force-output-dir' => \$force_output_dir_opt,
+    'use-orthomcl=s' => \$orthomcl_groups,
     'c|strain-count=i' => \$strain_count_opt))
 {
     usage;
@@ -142,6 +217,19 @@ if (defined $resubmit_opt)
         }
     }
 }
+elsif (defined $orthomcl_groups)
+{
+	die "Orthomcl groups file $orthomcl_groups does not exist" if (not -e $orthomcl_groups);
+
+	handle_input_fasta($pipeline, $input_dir_opt, $strain_count_opt);
+	handle_output_opt($pipeline, $output_opt);
+
+	$pipeline->_initialize;
+	$pipeline->_build_input_fasta;
+	$pipeline->_write_properties;
+	$pipeline->prepare_orthomcl($orthomcl_groups);
+	$pipeline->set_start_stage('alignment');
+}
 else
 {
     if (not defined $processors_opt)
@@ -168,30 +256,7 @@ else
     
     if (defined $input_dir_opt)
     {
-        if (not -d $input_dir_opt)
-        {
-            print STDERR "Error: input fasta directory $input_dir_opt is not a directory\n";
-            usage;
-            exit 1;
-        }
-        else
-        {
-            $pipeline->set_input_fasta($input_dir_opt);
-    
-            if (defined $strain_count_opt)
-            {
-                if ($strain_count_opt <= 0)
-                {
-                    print STDERR "Error: strain count $strain_count_opt must be positive\n";
-                    usage;
-                    exit 1;
-                }
-                else
-                {
-                    $pipeline->set_strain_count($strain_count_opt);
-                }
-            }
-        }
+        handle_input_fasta($pipeline, $input_dir_opt, $strain_count_opt);
     }
     elsif (defined $input_files_opt)
     {
@@ -221,39 +286,7 @@ else
         exit 1;
     }
     
-    if (defined $output_opt)
-    {
-        if (-e $output_opt)
-        {
-            if (-d $output_opt and (defined $force_output_dir_opt) and $force_output_dir_opt)
-            {
-                $pipeline->set_job_dir($output_opt);
-            }
-            else
-            {
-                print "Warning: directory \"$output_opt\" already exists, are you sure you want to store data here [Y]? ";
-                my $response = <>;
-                chomp $response;
-                if ($response eq 'y' or $response eq 'Y' or $response eq '')
-                {
-                    $pipeline->set_job_dir($output_opt);
-                }
-                else
-                {
-                    die "Directory \"$output_opt\" already exists, could not continue.";
-                }
-            }
-        }
-        else
-        {
-            mkdir $output_opt if (not -e $output_opt);
-            $pipeline->set_job_dir($output_opt);
-        }
-    }
-    else
-    {
-        die "No value defined for --output.";
-    }
+    handle_output_opt($pipeline, $output_opt, $force_output_dir_opt);
     
     if (defined $pid_cutoff_opt)
     {

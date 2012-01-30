@@ -119,6 +119,50 @@ sub set_job_dir
     $job_properties->{'phylogeny_dir'} ='phylogeny';
 }
 
+sub _get_strain_ids
+{
+	my ($self,$fasta_input) = @_;
+
+	opendir(my $dh, $fasta_input) or die "Could not open directory $fasta_input: $!";
+	my @strain_ids = map {/(.*).fasta$/; $1;} grep {/\.fasta$/} readdir($dh);
+	closedir($dh);
+
+	return \@strain_ids;
+}
+
+sub prepare_orthomcl
+{
+	my ($self, $orthologs_group) = @_;
+
+	my $script_dir = $self->{'script_dir'};
+	my $core_dir = $self->_get_file('core_dir');
+	my $fasta_input = $self->_get_file('input_fasta_dir');
+	my $stage_dir = $self->_get_file('stage_dir');
+
+	die "Core dir undefined" if (not defined $core_dir or $core_dir eq '');
+	die "Core dir $core_dir does not exist" if (not -e $core_dir);
+
+	die "Fasta input undefined" if (not defined $fasta_input or $fasta_input eq '');
+	die "Fasta input $fasta_input does not exist" if (not -e $fasta_input);
+
+	# Create files to indicate previous stages have been done
+        system("touch \"$stage_dir/prepare-input.done\"");
+        system("touch \"$stage_dir/write-properties.done\"");
+        system("touch \"$stage_dir/build-database.done\"");
+        system("touch \"$stage_dir/split.done\"");
+        system("touch \"$stage_dir/blast.done\"");
+        system("touch \"$stage_dir/core.done\"");
+
+	$self->_log("Stage: Prepare Orthomcl\n", 0);
+
+	my $strain_ids = $self->_get_strain_ids($fasta_input);
+
+	require("$script_dir/../lib/alignments_orthomcl.pl");
+	AlignmentsOrthomcl::run($orthologs_group, $fasta_input, $core_dir, $strain_ids);
+
+	$self->_log("done\n",0);
+}
+
 sub set_start_stage
 {
     my ($self,$start_stage) = @_;
