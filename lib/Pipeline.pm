@@ -5,6 +5,8 @@ package Pipeline;
 use strict;
 use warnings;
 
+use Logger;
+
 use File::Basename qw(basename dirname);
 use File::Copy qw(copy move);
 use File::Path qw(rmtree);
@@ -86,17 +88,6 @@ sub new
     return $self;
 }
 
-sub _log($$)
-{
-    my ($self,$message,$level) = @_;
-    my $verbose = $self->{'verbose'};
-    my $main_log_h = $self->{'_main_log_h'};
-
-    $verbose = 0 if (not defined $verbose);
-    print $message if ($level <= $verbose);
-    print $main_log_h $message if (defined $main_log_h);
-}
-
 sub set_job_dir
 {
     my ($self,$job_dir) = @_;
@@ -134,6 +125,7 @@ sub prepare_orthomcl
 {
 	my ($self, $orthologs_group) = @_;
 
+	my $logger = $self->{'logger'};
 	my $script_dir = $self->{'script_dir'};
 	my $core_dir = $self->_get_file('core_dir');
 	my $fasta_input = $self->_get_file('input_fasta_dir');
@@ -153,14 +145,14 @@ sub prepare_orthomcl
         system("touch \"$stage_dir/blast.done\"");
         system("touch \"$stage_dir/core.done\"");
 
-	$self->_log("Stage: Prepare Orthomcl\n", 0);
+	$logger->log("Stage: Prepare Orthomcl\n", 0);
 
 	my $strain_ids = $self->_get_strain_ids($fasta_input);
 
 	require("$script_dir/../lib/alignments_orthomcl.pl");
 	AlignmentsOrthomcl::run($orthologs_group, $fasta_input, $core_dir, $strain_ids);
 
-	$self->_log("done\n",0);
+	$logger->log("done\n",0);
 }
 
 sub set_start_stage
@@ -414,14 +406,9 @@ sub execute
 
     $self->_initialize;
 
-    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
-    $mon +=1;
-    $year += 1900;
     my $log_dir = $self->_get_file('log_dir');
-    my $main_log = sprintf("$log_dir/pipeline.%02d.%02d.%02d-%02d.%02d.%02d.log",$year,$mon,$mday,$hour,$min,$sec);
-    open(my $main_log_h, ">$main_log") or die "Could not open main log file $main_log: $!";
-
-    $self->{'_main_log_h'} = $main_log_h;
+    my $logger = new Logger($log_dir, $verbose);
+    $self->{'logger'} = $logger;
 
     my $start_stage = $self->{'start_stage'};
     my $end_stage = $self->{'end_stage'};
@@ -431,13 +418,13 @@ sub execute
 
     my $job_properties = $self->{'job_properties'};
     open(my $out_fh, '>-') or die "Could not open STDOUT";
-    $self->_log("Running core SNP phylogenomic pipeline on ".`date`,0);
-    $self->_log("\nParameters:\n",0);
-    $self->_log("\tjob_dir = ".$self->{'job_dir'}."\n",0);
-    $self->_log("\tstart_stage = ".$self->{'start_stage'}."\n",0);
-    $self->_log("\tend_stage = ".$self->{'end_stage'}."\n",0);
+    $logger->log("Running core SNP phylogenomic pipeline on ".`date`,0);
+    $logger->log("\nParameters:\n",0);
+    $logger->log("\tjob_dir = ".$self->{'job_dir'}."\n",0);
+    $logger->log("\tstart_stage = ".$self->{'start_stage'}."\n",0);
+    $logger->log("\tend_stage = ".$self->{'end_stage'}."\n",0);
     $self->_perform_write_properties($out_fh,$self->{'job_properties'},"\t");
-    $self->_log("\n",0);
+    $logger->log("\n",0);
     close($out_fh);
 
     my $seen_start = 0;
@@ -469,13 +456,10 @@ sub execute
         }
         else
         {
-            $self->_log("\nSkipping stage: $stage\n",1);
+            $logger->log("\nSkipping stage: $stage\n",1);
         }
         $seen_end = 1 if ($stage eq $end_stage);
     }
-
-    close($main_log_h);
-    $self->{'_main_log_h'} = undef;
 }
 
 sub _is_stage_complete
@@ -515,12 +499,12 @@ sub _check_job_queue_for
 sub _wait_until_completion
 {
     my ($self,$job_name) = @_;
-
+    my $logger = $self->{'logger'};
     my $completed = 0;
     while (not $completed)
     {
         sleep 10;
-        $self->_log(".",0);
+        $logger->log(".",0);
         $completed = not $self->_check_job_queue_for($job_name);
     }
 }
@@ -528,6 +512,7 @@ sub _wait_until_completion
 sub _build_phylogeny_graphic
 {
     my ($self,$stage) = @_;
+    my $logger = $self->{'logger'};
 
     my $verbose = $self->{'verbose'};
     my $job_properties = $self->{'job_properties'};
@@ -538,36 +523,38 @@ sub _build_phylogeny_graphic
 
     my $tree_file = "$working_dir/pseudoalign.phy_phyml_tree.txt";
 
-    $self->_log("\nStage: $stage\n",0);
-    $self->_log("Building phylogeny tree graphic ...\n",0);
+    $logger->log("\nStage: $stage\n",0);
+    $logger->log("Building phylogeny tree graphic ...\n",0);
 
-    $self->_log("\tChecking for figtree ...\n",1);
+    $logger->log("\tChecking for figtree ...\n",1);
     my $figtree_check = 'which figtree 1>/dev/null 2>&1';
-    $self->_log("$figtree_check",2);
+    $logger->log("$figtree_check",2);
     system($figtree_check) == 0 or warn "Could not find figtree with $figtree_check";
-    $self->_log("\t...done\n",1);
+    $logger->log("\t...done\n",1);
 
-    $self->_log("\tGenerating image with figtree ...\n",1);
-    $self->_log("\tMore information can be found at $log_file\n",1);
+    $logger->log("\tGenerating image with figtree ...\n",1);
+    $logger->log("\tMore information can be found at $log_file\n",1);
     die "Error: file $tree_file does not exist" if (not -e $tree_file);
     my $tree_image = "$tree_file.pdf";
     my $figtree_command = "figtree -graphic PDF \"$tree_file\" \"$tree_image\" 1>\"$log_file\" 2>&1";
-    $self->_log("\t$figtree_command",2);
+    $logger->log("\t$figtree_command",2);
     if(system($figtree_command) != 0)
     {
         print STDERR "Warning: Could not generate image using figtree";
     }
     else
     {
-        $self->_log("\tphylogenetic tree image can be found at $tree_image\n",0);
+        $logger->log("\tphylogenetic tree image can be found at $tree_image\n",0);
     }
-    $self->_log("\t...done\n",1);
-    $self->_log("...done\n",0);
+    $logger->log("\t...done\n",1);
+    $logger->log("...done\n",0);
 }
 
 sub _generate_report
 {
     my ($self,$stage) = @_;
+
+    my $logger = $self->{'logger'};
 
     my $verbose = $self->{'verbose'};
     my $job_properties = $self->{'job_properties'};
@@ -582,17 +569,19 @@ sub _generate_report
 
     my $log_file = "$log_dir/generate_report.log";
 
-    $self->_log("\nStage: $stage\n",0);
-    $self->_log("Generating report ...\n",0);
+    $logger->log("\nStage: $stage\n",0);
+    $logger->log("Generating report ...\n",0);
 
     require("$script_dir/snp_phylogenomics_report.pl");
     Report::run($core_dir,$align_dir,$fasta_dir,$input_dir,$output_file,$verbose);
-    $self->_log("...done\n",0);
+    $logger->log("...done\n",0);
 }
 
 sub _build_phylogeny
 {
     my ($self,$stage) = @_;
+
+    my $logger = $self->{'logger'};
 
     my $verbose = $self->{'verbose'};
     my $job_properties = $self->{'job_properties'};
@@ -604,21 +593,21 @@ sub _build_phylogeny
     my $pseudoalign_file = "$input_dir/$pseudoalign_file_name";
     my $phyml_log = "$log_dir/phyml.log";
 
-    $self->_log("\nStage: $stage\n",0);
-    $self->_log("Building phylogeny ...\n",0);
+    $logger->log("\nStage: $stage\n",0);
+    $logger->log("Building phylogeny ...\n",0);
 
-    $self->_log("\tChecking for phyml ...\n",1);
+    $logger->log("\tChecking for phyml ...\n",1);
     my $phyml_check_command = "which phyml 1>/dev/null 2>&1";
-    $self->_log("\t$phyml_check_command",2);
+    $logger->log("\t$phyml_check_command",2);
     system($phyml_check_command) == 0 or warn "\tUnable to find phyml using \"$phyml_check_command\"";
-    $self->_log("\t...done\n",1);
+    $logger->log("\t...done\n",1);
 
 
-    $self->_log("\tRunning phyml ...\n",1);
-    $self->_log("\tMore information can be found at $phyml_log\n",1);
+    $logger->log("\tRunning phyml ...\n",1);
+    $logger->log("\tMore information can be found at $phyml_log\n",1);
     die "Error: pseudoalign file $pseudoalign_file does not exist" if (not -e $pseudoalign_file);
     my $phylogeny_command = "yes | phyml -i \"$pseudoalign_file\" 1>\"$phyml_log\" 2>&1";
-    $self->_log("\t$phylogeny_command",2);
+    $logger->log("\t$phylogeny_command",2);
     if(system($phylogeny_command) != 0)
     {
         print STDERR "Warning: could not execute $phylogeny_command, skipping stage \"$stage\"\n";
@@ -634,18 +623,20 @@ sub _build_phylogeny
         move($stats_in,$output_dir) or die "Could not move $stats_in to $output_dir: $!";
         move($tree_in,$output_dir) or die "Could not move $tree_in to $output_dir: $!";
 
-        $self->_log("\tOutput can be found in $output_dir\n",0);
+        $logger->log("\tOutput can be found in $output_dir\n",0);
     }
-    $self->_log("\t...done\n",1);
+    $logger->log("\t...done\n",1);
 
 
-    $self->_log("...done\n",0);
+    $logger->log("...done\n",0);
 }
 
 # returns split file base path
 sub _perform_split
 {
     my ($self,$stage) = @_;
+
+    my $logger = $self->{'logger'};
 
     my $verbose = $self->{'verbose'};
     my $job_properties = $self->{'job_properties'};
@@ -662,12 +653,12 @@ sub _perform_split
     die "input file: $input_file does not exist" if (not -e $input_file);
     die "output directory: $output_dir does not exist" if (not -e $output_dir);
 
-    $self->_log("\nStage: $stage\n",0);
-    $self->_log("Performing split ...\n",0);
-    $self->_log("\tSplitting $input_file into $split_number pieces ...\n",1);
-    $self->_log("\t\tSee $split_log for more information.\n",1);
+    $logger->log("\nStage: $stage\n",0);
+    $logger->log("Performing split ...\n",0);
+    $logger->log("\tSplitting $input_file into $split_number pieces ...\n",1);
+    $logger->log("\t\tSee $split_log for more information.\n",1);
     Split::run($input_file,$split_number,$output_dir,$split_log);
-    $self->_log("...done\n",0);
+    $logger->log("...done\n",0);
 }
 
 sub _read_properties
@@ -722,19 +713,21 @@ sub _perform_write_properties
 sub _write_properties
 {
     my ($self,$stage) = @_;
+    my $logger = $self->{'logger'};
+
     my $verbose = $self->{'verbose'};
 
     my $job_properties = $self->{'job_properties'};
     my $output = $self->{'job_dir'}."/$properties_filename";
     
-    $self->_log("\nStage: $stage\n",1);
-    $self->_log("Writing properties file to $output...\n",1);
+    $logger->log("\nStage: $stage\n",1);
+    $logger->log("Writing properties file to $output...\n",1);
     open(my $out_fh, '>', $output) or die "Could not write to $output: $!";
     print $out_fh "#Properties for snp-phylogenomics job\n";
     print $out_fh "#Auto-generated on ".`date`."\n";
     $self->_perform_write_properties($out_fh,$job_properties);
     close($out_fh);
-    $self->_log("...done\n",1);
+    $logger->log("...done\n",1);
 }
 
 # Counts duplicate ids for genes in fasta formatted files
@@ -743,6 +736,8 @@ sub _write_properties
 sub _duplicate_count
 {
     my ($self,$input_file) = @_;
+
+    my $logger = $self->{'logger'};
 
     die "Invalid input dir" if (not -e $input_file);
 
@@ -761,7 +756,7 @@ sub _duplicate_count
 
     my $duplicate_count_command = $duplicate_text_command." | wc -l";
 
-    $self->_log("$duplicate_count_command\n",2);
+    $logger->log("$duplicate_count_command\n",2);
 
     my $duplicate_count = `$duplicate_count_command`;
     chomp $duplicate_count;
@@ -771,18 +766,18 @@ sub _duplicate_count
     # added to show which ids are duplicated, inefficient (re-runs)
     if ($duplicate_count > 0)
     {
-        $self->_log("\t\tDuplicates ...\n",1);
-        $self->_log("\t\tCount ID\n",1);
+        $logger->log("\t\tDuplicates ...\n",1);
+        $logger->log("\t\tCount ID\n",1);
         my $duplicate_text_out = `$duplicate_text_command`;
         if (defined $duplicate_text_out)
         {
-            $self->_log($duplicate_text_out,1);
+            $logger->log($duplicate_text_out,1);
         }
         else
         {
-            $self->_log("none",1);
+            $logger->log("none",1);
         }
-        $self->_log("\t\t...done\n",1);
+        $logger->log("\t\t...done\n",1);
     }
 
     return $duplicate_count;
@@ -827,6 +822,8 @@ sub _get_file
 sub _create_input_database
 {
     my ($self,$stage) = @_;
+    my $logger = $self->{'logger'};
+
     my $verbose = $self->{'verbose'};
     my $job_properties = $self->{'job_properties'};
     my $input_file = $self->_get_file('fasta_dir').'/'.$job_properties->{'all_input_fasta'};
@@ -845,12 +842,12 @@ sub _create_input_database
     die "Input file $input_file does not exist" if (not -e $input_file);
     die "Output directory: $database_output does not exist" if (not -e $database_output);
 
-    $self->_log("\nStage: $stage\n",0);
-    $self->_log("Creating initial databases ...\n",1);
-    $self->_log("\tChecking for features in $input_file with duplicate ids...\n",1);
+    $logger->log("\nStage: $stage\n",0);
+    $logger->log("Creating initial databases ...\n",1);
+    $logger->log("\tChecking for features in $input_file with duplicate ids...\n",1);
     my $duplicate_count = $self->_duplicate_count($input_file);
-    $self->_log("\t\tDuplicate ids: $duplicate_count\n",1);
-    $self->_log("\t...done\n",1);
+    $logger->log("\t\tDuplicate ids: $duplicate_count\n",1);
+    $logger->log("\t...done\n",1);
 
     die "Error: $duplicate_count duplicate ids found in input fasta $input_file\n" if ($duplicate_count > 0);
 
@@ -868,20 +865,20 @@ sub _create_input_database
 
     $job_name = $self->_get_job_id;
     my $formatdb_qsub = "qsub -v PERL5LIB -N $job_name -cwd -S /bin/sh -e \"$formatdb_err\" -o \"$formatdb_out\" \"$formatdb_sge\" 1>/dev/null";
-    $self->_log("\tCreating BLAST formatted database ...\n",1);
-    $self->_log("\t\t$formatdb_qsub\n",1);
+    $logger->log("\tCreating BLAST formatted database ...\n",1);
+    $logger->log("\t\t$formatdb_qsub\n",1);
     system($formatdb_qsub) == 0 or die "Error for command: $formatdb_qsub: $!";
     $self->_wait_until_completion($job_name);
-    $self->_log("\t...done\n",1);
+    $logger->log("\t...done\n",1);
 
     my $index_qsub = "qsub -v PERL5LIB -N $job_name -cwd -S /bin/sh -e \"$index_err\" -o \"$index_out\" \"$index_sge\" 1>/dev/null";
-    $self->_log("\tCreating bioperl index ...\n",1);
-    $self->_log("\t\t$index_qsub\n",1);
+    $logger->log("\tCreating bioperl index ...\n",1);
+    $logger->log("\t\t$index_qsub\n",1);
     system($index_qsub) == 0 or die "Error for command: $index_qsub: $!";
     $self->_wait_until_completion($job_name);
-    $self->_log("\t...done\n",1);
+    $logger->log("\t...done\n",1);
 
-    $self->_log("...done\n",1);
+    $logger->log("...done\n",1);
 }
 
 sub _print_sge_script
@@ -914,36 +911,38 @@ sub _perform_blast
     my $database = $self->_get_file('database_dir').'/'.$job_properties->{'all_input_fasta'};
     my $log_dir = $self->_get_file('log_dir');
     my $blast_task_base = $job_properties->{'blast_base'}; 
+    my $logger = $self->{'logger'};
+
     my $verbose = $self->{'verbose'};
 
     die "Input files $input_task_base.x do not exist" if (not -e "$input_task_base.1");
     die "Output directory $output_dir does not exist" if (not -e $output_dir);
     die "Database $database does not exist" if (not -e $database);
 
-    $self->_log("\nStage: $stage\n",0);
-    $self->_log("Performing blast ...\n",0);
+    $logger->log("\nStage: $stage\n",0);
+    $logger->log("Performing blast ...\n",0);
     mkdir "$output_dir" if (not -e $output_dir);
     my $blast_base_path = "$output_dir/$blast_task_base";
 
     my $job_name = $self->_get_job_id;
 
     my $blast_sge = "$output_dir/blast.sge";
-    $self->_log("\tWriting $blast_sge script ...\n",1);
+    $logger->log("\tWriting $blast_sge script ...\n",1);
     my $sge_command = "blastall -p blastn -i \"$input_task_base.\$SGE_TASK_ID\" -F F -o \"$blast_base_path.\$SGE_TASK_ID\" -d \"$database\"\n";
     $self->_print_sge_script($processors, $blast_sge, $sge_command);
-    $self->_log("\t...done\n",1);
+    $logger->log("\t...done\n",1);
 
     my $error = "$log_dir/blast.error.sge";
     my $out = "$log_dir/blast.out.sge";
     my $submission_command = "qsub -N $job_name -cwd -S /bin/sh -e \"$error\" -o \"$out\" \"$blast_sge\" 1>/dev/null";
-    $self->_log("\tSubmitting $blast_sge for execution ...\n",1);
-    $self->_log("\t\tSee ($out) and ($error) for details.\n",1);
-    $self->_log("\t\t$submission_command\n",2);
+    $logger->log("\tSubmitting $blast_sge for execution ...\n",1);
+    $logger->log("\t\tSee ($out) and ($error) for details.\n",1);
+    $logger->log("\t\t$submission_command\n",2);
     system($submission_command) == 0 or die "Error submitting $submission_command: $!\n";
-    $self->_log("\t\tWaiting for completion of blast job array $job_name",1);
+    $logger->log("\t\tWaiting for completion of blast job array $job_name",1);
     $self->_wait_until_completion($job_name);
-    $self->_log("done\n",1);
-    $self->_log("...done\n",0);
+    $logger->log("done\n",1);
+    $logger->log("...done\n",0);
 }
 
 sub _find_core
@@ -964,6 +963,8 @@ sub _find_core
     my $blast_dir = $self->_get_file('blast_dir');
     my $blast_input_base = $blast_dir.'/'.$job_properties->{'blast_base'};
 
+    my $logger = $self->{'logger'};
+
     my $verbose = $self->{'verbose'};
 
     die "Input files $blast_input_base.x do not exist" if (not -e "$blast_input_base.1");
@@ -975,41 +976,43 @@ sub _find_core
 
     my $core_snp_base_path = "$snps_output/$core_snp_base";
 
-    $self->_log("\nStage: $stage\n",0);
-    $self->_log("Performing core genome SNP identification ...\n",0);
+    $logger->log("\nStage: $stage\n",0);
+    $logger->log("Performing core genome SNP identification ...\n",0);
     my $core_sge = "$snps_output/core.sge";
-    $self->_log("\tWriting $core_sge script ...\n",1);
+    $logger->log("\tWriting $core_sge script ...\n",1);
     my $sge_command = "$script_dir/../lib/coresnp2.pl -b \"$blast_input_base.\$SGE_TASK_ID\" -i \"$bioperl_index\" -c $strain_count -p $pid_cutoff -l $hsp_length -o \"$snps_output\"\n";
     $self->_print_sge_script($processors, $core_sge, $sge_command);
-    $self->_log("\t...done\n",1);
+    $logger->log("\t...done\n",1);
 
     my $job_name = $self->_get_job_id;
 
     my $error = "$log_dir/core.error.sge";
     my $out = "$log_dir/core.out.sge";
     my $submission_command = "qsub -N $job_name -cwd -S /bin/sh -e \"$error\" -o \"$out\" \"$core_sge\" 1>/dev/null";
-    $self->_log("\tSubmitting $core_sge for execution ...\n",1);
-    $self->_log("\t\tSee ($out) and ($error) for details.\n",1);
-    $self->_log("\t\t$submission_command\n",2);
+    $logger->log("\tSubmitting $core_sge for execution ...\n",1);
+    $logger->log("\t\tSee ($out) and ($error) for details.\n",1);
+    $logger->log("\t\t$submission_command\n",2);
     system($submission_command) == 0 or die "Error submitting $submission_command: $!\n";
-    $self->_log("\t\tWaiting for completion of core sge job array $job_name",1);
+    $logger->log("\t\tWaiting for completion of core sge job array $job_name",1);
     $self->_wait_until_completion($job_name);
-    $self->_log("done\n",1);
+    $logger->log("done\n",1);
 
     require("$script_dir/../lib/rename.pl");
-    $self->_log("\tRenaming SNP output files...\n",1);
+    $logger->log("\tRenaming SNP output files...\n",1);
     Rename::run($snps_output,$snps_output);
-    $self->_log("\t...done\n",1);
+    $logger->log("\t...done\n",1);
 
-    $self->_log("...done\n",0);
+    $logger->log("...done\n",0);
 }
 
 sub _largest_snp_file
 {
     my ($self,$core_dir, $core_snp_base) = @_;
+    my $logger = $self->{'logger'};
+
     my $verbose = $self->{'verbose'};
 
-    $self->_log("\tGetting largest SNP file...\n",1);
+    $logger->log("\tGetting largest SNP file...\n",1);
     my $max = -1;
     opendir(my $dir_h,$core_dir);
     while(my $file = readdir $dir_h)
@@ -1018,10 +1021,10 @@ sub _largest_snp_file
         $max = $curr_num if (defined $curr_num and $curr_num > $max);
     }
     close ($dir_h);
-    $self->_log("\t\tMax: $max\n",1);
+    $logger->log("\t\tMax: $max\n",1);
     die "Error, no snp files" if ($max <= 0);
 
-    $self->_log("\t...done\n",1);
+    $logger->log("\t...done\n",1);
 
     return $max;
 }
@@ -1035,6 +1038,8 @@ sub _align_orthologs
     my $output_dir = $self->_get_file('align_dir');
     my $log_dir = $self->_get_file('log_dir');
     my $script_dir = $self->{'script_dir'};
+    my $logger = $self->{'logger'};
+
     my $verbose = $self->{'verbose'};
 
     die "Input files ${input_task_base}x do not exist" if (not -e "${input_task_base}1");
@@ -1044,46 +1049,46 @@ sub _align_orthologs
 
     my $job_name = $self->_get_job_id;
 
-    $self->_log("\nStage: $stage\n",0);
-    $self->_log("Performing multiple alignment of orthologs ...\n",0);
+    $logger->log("\nStage: $stage\n",0);
+    $logger->log("Performing multiple alignment of orthologs ...\n",0);
 
     my $max_snp_number = $self->_largest_snp_file($core_dir, $job_properties->{'core_snp_base'});
     die "Largest SNP number is invalid" if (not defined $max_snp_number or $max_snp_number <= 0);
 
     my $clustalw_sge = "$output_dir/clustalw.sge";
-    $self->_log("\tWriting $clustalw_sge script ...\n",1);
+    $logger->log("\tWriting $clustalw_sge script ...\n",1);
     my $sge_command = "clustalw2 -infile=${input_task_base}\$SGE_TASK_ID";
     $self->_print_sge_script($max_snp_number, $clustalw_sge, $sge_command);
-    $self->_log("\t...done\n",1);
+    $logger->log("\t...done\n",1);
 
     my $error = "$log_dir/clustalw.error.sge";
     my $out = "$log_dir/clustalw.out.sge";
     my $submission_command = "qsub -N $job_name -cwd -S /bin/sh -e \"$error\" -o \"$out\" \"$clustalw_sge\" 1>/dev/null";
-    $self->_log("\tSubmitting $clustalw_sge for execution ...\n",1);
-    $self->_log("\t\tSee ($out) and ($error) for details.\n",1);
-    $self->_log("\t\t$submission_command\n",2);
+    $logger->log("\tSubmitting $clustalw_sge for execution ...\n",1);
+    $logger->log("\t\tSee ($out) and ($error) for details.\n",1);
+    $logger->log("\t\t$submission_command\n",2);
     system($submission_command) == 0 or die "Error submitting $submission_command: $!\n";
-    $self->_log("\t\tWaiting for completion of clustalw job array $job_name",1);
+    $logger->log("\t\tWaiting for completion of clustalw job array $job_name",1);
     $self->_wait_until_completion($job_name);
-    $self->_log("done\n",1);
+    $logger->log("done\n",1);
 
     opendir(my $align_dh, $input_dir) or die "Could not open $input_dir: $!";
     my @align_files = grep {/snps\d+\.aln/} readdir($align_dh);
     close($align_dh);
-    $self->_log("\tMoving alignment files ...\n",1);
+    $logger->log("\tMoving alignment files ...\n",1);
     foreach my $file_in (@align_files)
     {
         move("$input_dir/$file_in", "$output_dir/".basename($file_in)) or die "Could not move file $file_in: $!";
     }
-    $self->_log("\t...done\n",1);
+    $logger->log("\t...done\n",1);
 
     my $log = "$log_dir/trim.log";
     require("$script_dir/../lib/trim.pl");
-    $self->_log("\tTrimming alignments (see $log for details) ...\n",1);
+    $logger->log("\tTrimming alignments (see $log for details) ...\n",1);
     Trim::run($output_dir,$output_dir,$log);
-    $self->_log("\t...done\n",1);
+    $logger->log("\t...done\n",1);
 
-    $self->_log("...done\n",0);
+    $logger->log("...done\n",0);
 }
 
 sub _pseudoalign
@@ -1091,6 +1096,8 @@ sub _pseudoalign
     my ($self,$stage) = @_;
     my $job_properties = $self->{'job_properties'};
     my $script_dir = $self->{'script_dir'};
+    my $logger = $self->{'logger'};
+
     my $verbose = $self->{'verbose'};
 
     my $align_input = $self->_get_file('align_dir');
@@ -1102,17 +1109,17 @@ sub _pseudoalign
 
     my $log = "$log_dir/pseudoaligner.log";
 
-    $self->_log("\nStage: $stage\n",0);
-    $self->_log("Creating pseudoalignment ...\n",0);
+    $logger->log("\nStage: $stage\n",0);
+    $logger->log("Creating pseudoalignment ...\n",0);
 
     require("$script_dir/../lib/pseudoaligner.pl");
-    $self->_log("\tRunning pseudoaligner (see $log for details) ...\n",1);
+    $logger->log("\tRunning pseudoaligner (see $log for details) ...\n",1);
     Pseudoaligner::run($align_input,$output_dir,$log);
-    $self->_log("\t...done\n",1);
+    $logger->log("\t...done\n",1);
 
-    $self->_log("\tPseudoalignment and snp report generated.\n",0);
-    $self->_log("\tFiles can be found in $output_dir\n",0);
-    $self->_log("...done\n",0);
+    $logger->log("\tPseudoalignment and snp report generated.\n",0);
+    $logger->log("\tFiles can be found in $output_dir\n",0);
+    $logger->log("...done\n",0);
 
 }
 
@@ -1120,6 +1127,8 @@ sub _pseudoalign
 sub _build_input_fasta
 {
     my ($self,$stage) = @_;
+    my $logger = $self->{'logger'};
+
     my $verbose = $self->{'verbose'};
     my $job_properties = $self->{'job_properties'};
     my $input_dir = $self->_get_file('input_fasta_dir');
@@ -1130,8 +1139,8 @@ sub _build_input_fasta
 
     die "Output directory is invalid" if (not -d $output_dir);
 
-    $self->_log("\nStage: $stage\n",0);
-    $self->_log("Preparing input files...\n",0);
+    $logger->log("\nStage: $stage\n",0);
+    $logger->log("Preparing input files...\n",0);
 
     if (not defined $input_dir and (defined $input_files and (ref $input_files eq 'ARRAY')))
     {
@@ -1164,7 +1173,7 @@ sub _build_input_fasta
 
         die "No input fasta files found in $input_dir" if (scalar(@files) <= 0);
 
-        $self->_log("\tCopying input files to $output_dir\n",1);
+        $logger->log("\tCopying input files to $output_dir\n",1);
         foreach my $file (@files)
         {
             my $input_path = "$input_dir/$file";
@@ -1174,55 +1183,55 @@ sub _build_input_fasta
 
             if (not defined $job_properties->{'split_file'})
             {
-                $self->_log("\t\tSetting split file to $output_path\n",1);
+                $logger->log("\t\tSetting split file to $output_path\n",1);
                 $self->_set_split_file($output_file);
             }
         }
-        $self->_log("\t...done\n",1);
+        $logger->log("\t...done\n",1);
 
-        $self->_log("\tChecking for unique names across all sequences in input fasta files...\n",1);
+        $logger->log("\tChecking for unique names across all sequences in input fasta files...\n",1);
 	my @files_to_append_separator;
 	my %name_file_map; # used to map the name of a sequence to a file (for checking for unique separators)
         foreach my $file (@files)
         {
             my $output_path = "$output_dir/$file.prepended.fasta";
 
-            $self->_log("\t\tFinding existing unique headers for $output_path ...\n",1);
+            $logger->log("\t\tFinding existing unique headers for $output_path ...\n",1);
             my $unique_command = "grep '^>' \"$output_path\" | cut -d '$sep_char' -f 1|sort -u|wc -l";
-            $self->_log("\t\t\t$unique_command\n",2);
+            $logger->log("\t\t\t$unique_command\n",2);
             my $unique_count = `$unique_command`;
 
             die "Invalid unique count" if (not defined $unique_count or $unique_count !~ /^\d+$/);
             if ($unique_count == 1)
             {
-                $self->_log("\t\t\tFile $output_path contains single unique name for all sequences\n",1);
+                $logger->log("\t\t\tFile $output_path contains single unique name for all sequences\n",1);
                 my $find_name_command = "grep '^>' \"$output_path\" | cut -d '$sep_char' -f 1|sort -u";
-                $self->_log("\t\t\t$find_name_command\n",2);
+                $logger->log("\t\t\t$find_name_command\n",2);
                 my $unique_name = `$find_name_command`;
                 chomp $unique_name;
                 die "Invalid unique name" if (not defined $unique_count);
 
                 if (exists $name_file_map{$unique_name})
                 {
-                    $self->_log("\t\t\tName $unique_name not unique across all strains, need to generate new unique name for file $output_path\n",1);
+                    $logger->log("\t\t\tName $unique_name not unique across all strains, need to generate new unique name for file $output_path\n",1);
                     push(@files_to_append_separator, $file);
                 }
                 else
                 {
-                    $self->_log("\t\t\tName: $unique_name\n",1);
+                    $logger->log("\t\t\tName: $unique_name\n",1);
                     $name_file_map{$unique_name} = $file;
                 }
             }
             else
             {
-                $self->_log("\t\t\tFile $output_path has no single unique name for all sequences, need to generate new unique name\n",1);
+                $logger->log("\t\t\tFile $output_path has no single unique name for all sequences, need to generate new unique name\n",1);
                 push(@files_to_append_separator,$file);
             }
 
-            $self->_log("\t\t...done\n",1);
+            $logger->log("\t\t...done\n",1);
         }
 
-        $self->_log("\t\tGenerating unique names for strains for files...\n",1) if (@files_to_append_separator > 0);
+        $logger->log("\t\tGenerating unique names for strains for files...\n",1) if (@files_to_append_separator > 0);
         foreach my $file (@files_to_append_separator)
         {
             my ($name) = ($file =~ /^([^\.]+)\./);
@@ -1232,17 +1241,17 @@ sub _build_input_fasta
             my $output_path = "$output_dir/$output_file";
 
             my $remove_sep_char_command = "sed -i \"s/$sep_char/_/\" \"$output_path\"";
-            $self->_log("\t\t\tRemoving existing separator char\n",1);
-            $self->_log("\t\t\t$remove_sep_char_command\n",1);
+            $logger->log("\t\t\tRemoving existing separator char\n",1);
+            $logger->log("\t\t\t$remove_sep_char_command\n",1);
             system($remove_sep_char_command) == 0 or die "Error attempting to remove existing separator char: $!";
 
             my $uniquify_command = "sed -i \"s/>/>$name\|/\" \"$output_path\"";
-            $self->_log("\t\t\tGenerating unique name for file $output_path\n",1);
-            $self->_log("\t\t\t$uniquify_command\n",1);
+            $logger->log("\t\t\tGenerating unique name for file $output_path\n",1);
+            $logger->log("\t\t\t$uniquify_command\n",1);
             system($uniquify_command) == 0 or die "Error attempting to create unique gene ids: $!";
         }
-        $self->_log("\t\t...done\n",1) if (@files_to_append_separator > 0);
-        $self->_log("\t...done\n",1);
+        $logger->log("\t\t...done\n",1) if (@files_to_append_separator > 0);
+        $logger->log("\t...done\n",1);
     
         my $strain_count = 0;
     
@@ -1256,11 +1265,11 @@ sub _build_input_fasta
     
         $strain_count = scalar(@files_to_build);
     
-        $self->_log("\tBuilding single multi-fasta file $all_input_file ...\n",1);
+        $logger->log("\tBuilding single multi-fasta file $all_input_file ...\n",1);
         open(my $out_fh, '>', "$all_input_file") or die "Could not open file $all_input_file: $!";
         foreach my $file (@files_to_build)
         {
-            $self->_log("\t\treading $file_dir/$file\n",2);
+            $logger->log("\t\treading $file_dir/$file\n",2);
             open(my $in_fh, '<', "$file_dir/$file") or die "Could not open file $file_dir/$file: $!";
             my $line;
             while ($line = <$in_fh>)
@@ -1272,7 +1281,7 @@ sub _build_input_fasta
             close ($in_fh);
         }
         close ($out_fh);
-        $self->_log("\t...done\n",1);
+        $logger->log("\t...done\n",1);
     
         if (not defined $job_properties->{'strain_count_manual'})
         {
@@ -1284,7 +1293,7 @@ sub _build_input_fasta
         }
     }
 
-    $self->_log("...done\n",0);
+    $logger->log("...done\n",0);
 }
 
 #print "Storing all data under $job_dir\n";
