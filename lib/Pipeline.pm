@@ -6,6 +6,7 @@ use strict;
 use warnings;
 
 use Logger;
+use FileManager;
 
 use File::Basename qw(basename dirname);
 use File::Copy qw(copy move);
@@ -74,16 +75,31 @@ sub new
     my $self = {};
     bless($self,$class);
 
+    my $file_manager = new FileManager($script_dir);
+
     $self->{'verbose'} = 0;
-    $self->{'script_dir'} = $script_dir;
     $self->{'keep_files'} = 1;
+    $self->{'file_manager'} = 
     $self->{'job_properties'} = {};
     $self->_check_stages;
-    $self->{'job_properties'}->{'core_snp_base'} = 'snps';
-    $self->{'job_properties'}->{'all_input_fasta'} = 'all.fasta';
-    $self->{'job_properties'}->{'bioperl_index'} = 'all.fasta.idx';
     $self->{'job_properties'}->{'pid_cutoff'} = 99;
     $self->{'job_properties'}->{'hsp_length'} = 400;
+
+    $file_manager->set_file('all_input_fasta', 'all.fasta');
+    $file_manager->set_file('bioperl_index', 'all.fasta.idx');
+    $file_manager->set_file('core_snp_base', 'snps');
+    $file_manager->set_dir('log_dir', "log");
+    $file_manager->set_dir('fasta_dir', "fasta");
+    $file_manager->set_dir('database_dir', "database");
+    $file_manager->set_dir('split_dir', "split");
+    $file_manager->set_dir('blast_dir', "blast");
+    $file_manager->set_dir('core_dir', "core");
+    $file_manager->set_dir('align_dir', "align");
+    $file_manager->set_dir('pseudoalign_dir', "pseudoalign");
+    $file_manager->set_dir('stage_dir', "stages");
+    $file_manager->set_dir('phylogeny_dir', 'phylogeny');
+
+    $self->{'file_manager'} = $file_manager;
 
     return $self;
 }
@@ -95,19 +111,7 @@ sub set_job_dir
     die "Job dir $job_dir does not exist" if (not -e $job_dir);
 
     my $abs_job_dir = abs_path($job_dir);
-    $self->{'job_dir'} = $abs_job_dir;
-
-    my $job_properties = $self->{'job_properties'};
-    $job_properties->{'log_dir'} = "log";
-    $job_properties->{'fasta_dir'} = "fasta";
-    $job_properties->{'database_dir'} = "database";
-    $job_properties->{'split_dir'} = "split";
-    $job_properties->{'blast_dir'} = "blast";
-    $job_properties->{'core_dir'} = "core";
-    $job_properties->{'align_dir'} = "align";
-    $job_properties->{'pseudoalign_dir'} = "pseudoalign";
-    $job_properties->{'stage_dir'} = "stages";
-    $job_properties->{'phylogeny_dir'} ='phylogeny';
+    $self->{'file_manager'}->set_job_dir($abs_job_dir);
 }
 
 sub _get_strain_ids
@@ -123,36 +127,36 @@ sub _get_strain_ids
 
 sub prepare_orthomcl
 {
-	my ($self, $orthologs_group) = @_;
-
-	my $logger = $self->{'logger'};
-	my $script_dir = $self->{'script_dir'};
-	my $core_dir = $self->_get_file('core_dir');
-	my $fasta_input = $self->_get_file('input_fasta_dir');
-	my $stage_dir = $self->_get_file('stage_dir');
-
-	die "Core dir undefined" if (not defined $core_dir or $core_dir eq '');
-	die "Core dir $core_dir does not exist" if (not -e $core_dir);
-
-	die "Fasta input undefined" if (not defined $fasta_input or $fasta_input eq '');
-	die "Fasta input $fasta_input does not exist" if (not -e $fasta_input);
-
-	# Create files to indicate previous stages have been done
-        system("touch \"$stage_dir/prepare-input.done\"");
-        system("touch \"$stage_dir/write-properties.done\"");
-        system("touch \"$stage_dir/build-database.done\"");
-        system("touch \"$stage_dir/split.done\"");
-        system("touch \"$stage_dir/blast.done\"");
-        system("touch \"$stage_dir/core.done\"");
-
-	$logger->log("Stage: Prepare Orthomcl\n", 0);
-
-	my $strain_ids = $self->_get_strain_ids($fasta_input);
-
-	require("$script_dir/../lib/alignments_orthomcl.pl");
-	AlignmentsOrthomcl::run($orthologs_group, $fasta_input, $core_dir, $strain_ids);
-
-	$logger->log("done\n",0);
+#	my ($self, $orthologs_group) = @_;
+#
+#	my $logger = $self->{'logger'};
+#	my $script_dir = $self->{'script_dir'};
+#	my $core_dir = $self->_get_file('core_dir');
+#	my $fasta_input = $self->_get_file('input_fasta_dir');
+#	my $stage_dir = $self->_get_file('stage_dir');
+#
+#	die "Core dir undefined" if (not defined $core_dir or $core_dir eq '');
+#	die "Core dir $core_dir does not exist" if (not -e $core_dir);
+#
+#	die "Fasta input undefined" if (not defined $fasta_input or $fasta_input eq '');
+#	die "Fasta input $fasta_input does not exist" if (not -e $fasta_input);
+#
+#	# Create files to indicate previous stages have been done
+#        system("touch \"$stage_dir/prepare-input.done\"");
+#        system("touch \"$stage_dir/write-properties.done\"");
+#        system("touch \"$stage_dir/build-database.done\"");
+#        system("touch \"$stage_dir/split.done\"");
+#        system("touch \"$stage_dir/blast.done\"");
+#        system("touch \"$stage_dir/core.done\"");
+#
+#	$logger->log("Stage: Prepare Orthomcl\n", 0);
+#
+#	my $strain_ids = $self->_get_strain_ids($fasta_input);
+#
+#	require("$script_dir/../lib/alignments_orthomcl.pl");
+#	AlignmentsOrthomcl::run($orthologs_group, $fasta_input, $core_dir, $strain_ids);
+#
+#	$logger->log("done\n",0);
 }
 
 sub set_start_stage
@@ -236,7 +240,7 @@ sub resubmit
     my $properties_path = "$abs_job_dir/$properties_filename";
     die "Cannot resubmit $abs_job_dir, file $properties_path not found" if (not -e $properties_path);
 
-    $self->{'job_dir'} = $abs_job_dir;
+    $self->{'file_manager'}->set_job_dir($abs_job_dir);
 
     $self->_read_properties($properties_path);
 }
@@ -291,8 +295,8 @@ sub set_verbose
 sub _set_split_file
 {
     my ($self,$file) = @_;
-    $self->{'job_properties'}->{'split_file'} = $file;
-    $self->{'job_properties'}->{'blast_base'} = basename($file).'.out';
+    $self->{'file_manager'}->set_file('split_file', $file);
+    $self->{'file_manager'}->set_file('blast_base', basename($file).'.out');
 }
 
 sub set_processors
@@ -323,7 +327,7 @@ sub set_input_fasta
 
     if (-d $abs_input_fasta)
     {
-        $self->{'job_properties'}->{'input_fasta_dir'} = $abs_input_fasta;
+        $self->{'file_manager'}->set_abs_dir('input_fasta_dir', $abs_input_fasta);
     }
     else
     {
@@ -378,7 +382,7 @@ sub _execute_stage
     my ($self,$stage) = @_;
 
     my $stage_sub = $stage_table{$stage};
-    my $stage_dir = $self->_get_file('stage_dir');
+    my $stage_dir = $self->{'file_manager'}->get_dir('stage_dir');
 
     if (defined $stage_sub)
     {
@@ -406,7 +410,7 @@ sub execute
 
     $self->_initialize;
 
-    my $log_dir = $self->_get_file('log_dir');
+    my $log_dir = $self->{'file_manager'}->get_dir('log_dir');
     my $logger = new Logger($log_dir, $verbose);
     $self->{'logger'} = $logger;
 
@@ -420,9 +424,10 @@ sub execute
     open(my $out_fh, '>-') or die "Could not open STDOUT";
     $logger->log("Running core SNP phylogenomic pipeline on ".`date`,0);
     $logger->log("\nParameters:\n",0);
-    $logger->log("\tjob_dir = ".$self->{'job_dir'}."\n",0);
+    $logger->log("\tjob_dir = ".$self->{'file_manager'}->get_job_dir."\n",0);
     $logger->log("\tstart_stage = ".$self->{'start_stage'}."\n",0);
     $logger->log("\tend_stage = ".$self->{'end_stage'}."\n",0);
+    $logger->log("\tinput_fasta_dir = ".($self->{'file_manager'}->get_abs_dir('input_fasta_dir'))."\n",0);
     $self->_perform_write_properties($out_fh,$self->{'job_properties'},"\t");
     $logger->log("\n",0);
     close($out_fh);
@@ -431,7 +436,7 @@ sub execute
     my $seen_end = 0;
 
     # remove "done" files from all stages after the starting stage
-    my $stage_dir = $self->_get_file('stage_dir');
+    my $stage_dir = $self->{'file_manager'}->get_dir('stage_dir');
     foreach my $stage (@stage_list)
     {
         $seen_start = 1 if ($stage eq $start_stage);
@@ -466,7 +471,7 @@ sub _is_stage_complete
 {
     my ($self,$stage) = @_;
 
-    my $stages_dir = $self->_get_file('stage_dir');
+    my $stages_dir = $self->{'file_manager'}->get_dir('stage_dir');
 
     return (-e "$stages_dir/$stage.done");
 }
@@ -475,15 +480,7 @@ sub _initialize
 {
     my ($self) = @_;
 
-    my $properties = $self->{'job_properties'};
-
-    mkdir $self->{'job_dir'} if (not -e $self->{'job_dir'});
-
-    for my $dir_name (@valid_job_dirs)
-    {
-        my $dir = $self->_get_file($dir_name);
-        mkdir $dir if (defined $dir and not -e $dir);    
-    }
+    $self->{'file_manager'}->build_job_dirs;
 }
 
 sub _check_job_queue_for
@@ -516,8 +513,8 @@ sub _build_phylogeny_graphic
 
     my $verbose = $self->{'verbose'};
     my $job_properties = $self->{'job_properties'};
-    my $working_dir = $self->_get_file('phylogeny_dir');
-    my $log_dir = $self->_get_file('log_dir');
+    my $working_dir = $self->{'file_manager'}->get_dir('phylogeny_dir');
+    my $log_dir = $self->{'file_manager'}->get_dir('log_dir');
 
     my $log_file = "$log_dir/figtree.log";
 
@@ -558,14 +555,14 @@ sub _generate_report
 
     my $verbose = $self->{'verbose'};
     my $job_properties = $self->{'job_properties'};
-    my $working_dir = $self->_get_file('pseudoalign_dir');
-    my $script_dir = $self->{'script_dir'};
-    my $core_dir = $self->_get_file('core_dir');
-    my $align_dir = $self->_get_file('align_dir');
-    my $fasta_dir = $self->_get_file('fasta_dir');
-    my $input_dir = $self->{'job_dir'};
+    my $working_dir = $self->{'file_manager'}->get_dir('pseudoalign_dir');
+    my $script_dir = $self->{'file_manager'}->get_script_dir;
+    my $core_dir = $self->{'file_manager'}->get_dir('core_dir');
+    my $align_dir = $self->{'file_manager'}->get_dir('align_dir');
+    my $fasta_dir = $self->{'file_manager'}->get_dir('fasta_dir');
+    my $input_dir = $self->{'file_manager'}->get_job_dir;
     my $output_file = "$working_dir/main.report";
-    my $log_dir = $self->_get_file('log_dir');
+    my $log_dir = $self->{'file_manager'}->get_dir('log_dir');
 
     my $log_file = "$log_dir/generate_report.log";
 
@@ -585,9 +582,9 @@ sub _build_phylogeny
 
     my $verbose = $self->{'verbose'};
     my $job_properties = $self->{'job_properties'};
-    my $input_dir = $self->_get_file('pseudoalign_dir');
-    my $output_dir = $self->_get_file('phylogeny_dir');
-    my $log_dir = $self->_get_file('log_dir');
+    my $input_dir = $self->{'file_manager'}->get_dir('pseudoalign_dir');
+    my $output_dir = $self->{'file_manager'}->get_dir('phylogeny_dir');
+    my $log_dir = $self->{'file_manager'}->get_dir('log_dir');
 
     my $pseudoalign_file_name = "pseudoalign.phy";
     my $pseudoalign_file = "$input_dir/$pseudoalign_file_name";
@@ -640,10 +637,10 @@ sub _perform_split
 
     my $verbose = $self->{'verbose'};
     my $job_properties = $self->{'job_properties'};
-    my $input_file = $self->_get_file('fasta_dir').'/'.$self->_get_file('split_file');
-    my $script_dir = $self->{'script_dir'};
-    my $log_dir = $self->_get_file('log_dir');
-    my $output_dir = $self->_get_file('split_dir');
+    my $input_file = $self->{'file_manager'}->get_file_dir('fasta_dir', 'split_file');
+    my $script_dir = $self->{'file_manager'}->get_script_dir;
+    my $log_dir = $self->{'file_manager'}->get_dir('log_dir');
+    my $output_dir = $self->{'file_manager'}->get_dir('split_dir');
     my $split_number = $job_properties->{'processors'};
 
     my $split_log = "$log_dir/split.log";
@@ -718,7 +715,7 @@ sub _write_properties
     my $verbose = $self->{'verbose'};
 
     my $job_properties = $self->{'job_properties'};
-    my $output = $self->{'job_dir'}."/$properties_filename";
+    my $output = $self->{'file_manager'}->get_job_dir."/$properties_filename";
     
     $logger->log("\nStage: $stage\n",1);
     $logger->log("Writing properties file to $output...\n",1);
@@ -795,30 +792,6 @@ sub _exists_in_array
     return 0;
 }
 
-sub _get_file
-{
-    my ($self,$file) = @_;
-
-    if (defined $file and $self->_exists_in_array($file,\@valid_job_dirs))
-    {
-        my $file_name = $self->{'job_properties'}->{$file};
-        if (defined $file_name)
-        {
-            return $self->{'job_dir'}.'/'.$file_name;
-        }
-    }
-    elsif (defined $file and $self->_exists_in_array($file,\@valid_other_files))
-    {
-        my $file_name = $self->{'job_properties'}->{$file};
-        if (defined $file_name)
-        {
-            return $file_name;
-        }
-    }
-
-    return undef;
-}
-
 sub _create_input_database
 {
     my ($self,$stage) = @_;
@@ -826,12 +799,12 @@ sub _create_input_database
 
     my $verbose = $self->{'verbose'};
     my $job_properties = $self->{'job_properties'};
-    my $input_file = $self->_get_file('fasta_dir').'/'.$job_properties->{'all_input_fasta'};
-    my $database_output = $self->_get_file('database_dir');
-    my $log_dir = $self->_get_file('log_dir');
-    my $script_dir = $self->{'script_dir'};
+    my $input_file = $self->{'file_manager'}->get_file_dir('fasta_dir', 'all_input_fasta');
+    my $database_output = $self->{'file_manager'}->get_dir('database_dir');
+    my $log_dir = $self->{'file_manager'}->get_dir('log_dir');
+    my $script_dir = $self->{'file_manager'}->get_script_dir;
 
-    my $input_fasta_path = $self->_get_file('database_dir').'/'.$job_properties->{'all_input_fasta'};
+    my $input_fasta_path = $self->{'file_manager'}->get_file_dir('database_dir', 'all_input_fasta');
 
     my $formatdb_log = "$log_dir/formatdb.log";
     my $formatdb_out = "$log_dir/formatdb.out";
@@ -905,12 +878,12 @@ sub _perform_blast
 {
     my ($self,$stage) = @_;
     my $job_properties = $self->{'job_properties'};
-    my $input_task_base = $self->_get_file('split_dir').'/'.(basename $job_properties->{'split_file'});
-    my $output_dir = $self->_get_file('blast_dir');
+    my $input_task_base = $self->{'file_manager'}->get_file_dir('split_dir', 'split_file');
+    my $output_dir = $self->{'file_manager'}->get_dir('blast_dir');
     my $processors = $job_properties->{'processors'};
-    my $database = $self->_get_file('database_dir').'/'.$job_properties->{'all_input_fasta'};
-    my $log_dir = $self->_get_file('log_dir');
-    my $blast_task_base = $job_properties->{'blast_base'}; 
+    my $database = $self->{'file_manager'}->get_file_dir('database_dir', 'all_input_fasta');
+    my $log_dir = $self->{'file_manager'}->get_dir('log_dir');
+    my $blast_task_base = $self->{'file_manager'}->get_file('blast_base'); 
     my $logger = $self->{'logger'};
 
     my $verbose = $self->{'verbose'};
@@ -950,18 +923,18 @@ sub _find_core
     my ($self,$stage) = @_;
 
     my $job_properties = $self->{'job_properties'};
-    my $snps_output = $self->_get_file('core_dir');
-    my $bioperl_index = $self->_get_file('database_dir').'/'.$job_properties->{'bioperl_index'};
+    my $snps_output = $self->{'file_manager'}->get_dir('core_dir');
+    my $bioperl_index = $self->{'file_manager'}->get_file_dir('database_dir', 'bioperl_index');
     my $processors = $job_properties->{'processors'};
     my $strain_count = $job_properties->{'strain_count'};
     my $pid_cutoff = $job_properties->{'pid_cutoff'};
     my $hsp_length = $job_properties->{'hsp_length'};
-    my $log_dir = $self->_get_file('log_dir');
-    my $core_snp_base = $job_properties->{'core_snp_base'};
-    my $script_dir = $self->{'script_dir'};
+    my $log_dir = $self->{'file_manager'}->get_dir('log_dir');
+    my $core_snp_base = $self->{'file_manager'}->get_file('core_snp_base');
+    my $script_dir = $self->{'file_manager'}->get_script_dir;
 
-    my $blast_dir = $self->_get_file('blast_dir');
-    my $blast_input_base = $blast_dir.'/'.$job_properties->{'blast_base'};
+    my $blast_dir = $self->{'file_manager'}->get_dir('blast_dir');
+    my $blast_input_base = $self->{'file_manager'}->get_file_dir('blast_dir', 'blast_base');
 
     my $logger = $self->{'logger'};
 
@@ -1033,11 +1006,11 @@ sub _align_orthologs
 {
     my ($self,$stage) = @_;
     my $job_properties = $self->{'job_properties'};
-    my $core_dir = $self->_get_file('core_dir');
-    my $input_task_base = "$core_dir/".$job_properties->{'core_snp_base'};
-    my $output_dir = $self->_get_file('align_dir');
-    my $log_dir = $self->_get_file('log_dir');
-    my $script_dir = $self->{'script_dir'};
+    my $core_dir = $self->{'file_manager'}->get_dir('core_dir');
+    my $input_task_base = $self->{'file_manager'}->get_file_dir('core_dir', 'core_snp_base');
+    my $output_dir = $self->{'file_manager'}->get_dir('align_dir');
+    my $log_dir = $self->{'file_manager'}->get_dir('log_dir');
+    my $script_dir = $self->{'file_manager'}->get_script_dir;
     my $logger = $self->{'logger'};
 
     my $verbose = $self->{'verbose'};
@@ -1052,7 +1025,7 @@ sub _align_orthologs
     $logger->log("\nStage: $stage\n",0);
     $logger->log("Performing multiple alignment of orthologs ...\n",0);
 
-    my $max_snp_number = $self->_largest_snp_file($core_dir, $job_properties->{'core_snp_base'});
+    my $max_snp_number = $self->_largest_snp_file($core_dir, $self->{'file_manager'}->get_file('core_snp_base'));
     die "Largest SNP number is invalid" if (not defined $max_snp_number or $max_snp_number <= 0);
 
     my $clustalw_sge = "$output_dir/clustalw.sge";
@@ -1095,14 +1068,14 @@ sub _pseudoalign
 {
     my ($self,$stage) = @_;
     my $job_properties = $self->{'job_properties'};
-    my $script_dir = $self->{'script_dir'};
+    my $script_dir = $self->{'file_manager'}->get_script_dir;
     my $logger = $self->{'logger'};
 
     my $verbose = $self->{'verbose'};
 
-    my $align_input = $self->_get_file('align_dir');
-    my $output_dir = $self->_get_file('pseudoalign_dir');
-    my $log_dir = $self->_get_file('log_dir');
+    my $align_input = $self->{'file_manager'}->get_dir('align_dir');
+    my $output_dir = $self->{'file_manager'}->get_dir('pseudoalign_dir');
+    my $log_dir = $self->{'file_manager'}->get_dir('log_dir');
 
     die "Error: align_input directory does not exist" if (not -e $align_input);
     die "Error: pseudoalign output directory does not exist" if (not -e $output_dir);
@@ -1131,11 +1104,11 @@ sub _build_input_fasta
 
     my $verbose = $self->{'verbose'};
     my $job_properties = $self->{'job_properties'};
-    my $input_dir = $self->_get_file('input_fasta_dir');
+    my $input_dir = $self->{'file_manager'}->get_abs_dir('input_fasta_dir');
     my $input_files = $job_properties->{'input_fasta_files'};
-    my $output_dir = $self->_get_file('fasta_dir');
+    my $output_dir = $self->{'file_manager'}->get_dir('fasta_dir');
 
-    my $all_input_file = $output_dir.'/'.$job_properties->{'all_input_fasta'};
+    my $all_input_file = $self->{'file_manager'}->get_file_dir('fasta_dir', 'all_input_fasta');
 
     die "Output directory is invalid" if (not -d $output_dir);
 
@@ -1145,7 +1118,7 @@ sub _build_input_fasta
     if (not defined $input_dir and (defined $input_files and (ref $input_files eq 'ARRAY')))
     {
         my $strain_count = 0;
-        my $temp_input_dir =  $self->{'job_dir'}.'/temp_input_dir';
+        my $temp_input_dir =  $self->{'file_manager'}->get_job_dir.'/temp_input_dir';
         (rmtree($temp_input_dir) or die "Could not delete $temp_input_dir: $!") if (-e $temp_input_dir);
         mkdir($temp_input_dir) or die "Could not create $temp_input_dir: $!";
         foreach my $input_file (@$input_files)
@@ -1181,7 +1154,7 @@ sub _build_input_fasta
             my $output_path = "$output_dir/$output_file";
             copy($input_path,$output_path) or die "Could not copy $file from $input_dir to $output_dir: $!";
 
-            if (not defined $job_properties->{'split_file'})
+            if (not defined $self->{'file_manager'}->get_file('split_file'))
             {
                 $logger->log("\t\tSetting split file to $output_path\n",1);
                 $self->_set_split_file($output_file);
@@ -1295,63 +1268,5 @@ sub _build_input_fasta
 
     $logger->log("...done\n",0);
 }
-
-#print "Storing all data under $job_dir\n";
-#mkdir $job_dir if (not -e $job_dir);
-#mkdir $log_dir if (not -e $log_dir);
-#
-#if (defined $input_dir)
-#{
-#    mkdir ($fasta_output) if (not -e $fasta_output);
-#
-#    print "Preparing files under $input_dir ...\n";
-#    print "We assume all files under $input_dir are fasta-formatted and should be included in pipeline\n";
-#    my ($input_fasta_auto, $strain_count_auto) = build_input_fasta($input_dir,$fasta_output);
-#    print "...done\n";
-#
-#    die "Error creating input fasta file" if (not -e $input_fasta_auto);
-#    die "Error getting strain count" if (not defined $strain_count_auto or $strain_count_auto !~ /\d+/);
-#
-#    $input_fasta = $input_fasta_auto;
-#
-#    # only set to auto-value if not already set
-#    $strain_count = $strain_count_auto if (not defined $strain_count);
-#}
-
-#if (not $keep_files)
-#{
-#    if (defined $input_dir)
-#    {
-#        print "Cleaning $fasta_output\n" if ($verbose);
-#        rmtree($fasta_output) or die "Error: could not delete $fasta_output";
-#    }
-#}
-#
-#if (not $keep_files)
-#{
-#    print "Cleaning $database_output\n" if ($verbose);
-#    rmtree($database_output) or die "Error: could not delete $database_output";
-#
-#    print "Cleaning $split_output\n" if ($verbose);
-#    rmtree($split_output) or die "Error: could not delete $split_output";
-#
-#    print "Cleaning $blast_output\n" if ($verbose);
-#    rmtree($blast_output) or die "Error: could not delete $blast_output";
-#}
-#
-#if (not $keep_files)
-#{
-#    print "Cleaning $core_snp_output\n" if ($verbose);
-#    rmtree($core_snp_output) or die "Error: could not delete $core_snp_output";
-#}
-#
-#if (not $keep_files)
-#{
-#    print "Cleaning $align_output\n" if ($verbose);
-#    rmtree($align_output) or die "Error: could not delete $align_output";
-#}
-#
-#print "\n\nPseudoalignment and snp report generated.\n";
-#print "Files can be found in $pseudoalign_output\n";
 
 1;
