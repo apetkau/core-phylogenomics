@@ -9,9 +9,9 @@ use warnings;
 
 sub new
 {
-        my ($proto, $file_manager, $job_properties, $logger) = @_;
+        my ($proto, $job_properties, $logger) = @_;
         my $class = ref($proto) || $proto;
-        my $self = $class->SUPER::new($file_manager, $job_properties, $logger);
+        my $self = $class->SUPER::new($job_properties, $logger);
 
         bless($self,$class);
 
@@ -28,18 +28,18 @@ sub execute
 	my $stage = $self->get_stage_name;
 
 	my $job_properties = $self->{'_job_properties'};
-	my $snps_output = $self->{'_file_manager'}->get_dir('core_dir');
-	my $bioperl_index = $self->{'_file_manager'}->get_file_dir('database_dir', 'bioperl_index');
-	my $processors = $job_properties->{'processors'};
-	my $strain_count = $job_properties->{'strain_count'};
-	my $pid_cutoff = $job_properties->{'pid_cutoff'};
-	my $hsp_length = $job_properties->{'hsp_length'};
-	my $log_dir = $self->{'_file_manager'}->get_dir('log_dir');
-	my $core_snp_base = $self->{'_file_manager'}->get_file('core_snp_base');
-	my $script_dir = $self->{'_file_manager'}->get_script_dir;
+	my $snps_output = $job_properties->get_dir('core_dir');
+	my $bioperl_index = $job_properties->get_file_dir('database_dir', 'bioperl_index');
+	my $processors = $job_properties->get_property('processors');
+	my $strain_count = $job_properties->get_property('strain_count');
+	my $pid_cutoff = $job_properties->get_property('pid_cutoff');
+	my $hsp_length = $job_properties->get_property('hsp_length');
+	my $log_dir = $job_properties->get_dir('log_dir');
+	my $core_snp_base = $job_properties->get_file('core_snp_base');
+	my $script_dir = $job_properties->get_script_dir;
 
-	my $blast_dir = $self->{'_file_manager'}->get_dir('blast_dir');
-	my $blast_input_base = $self->{'_file_manager'}->get_file_dir('blast_dir', 'blast_base');
+	my $blast_dir = $job_properties->get_dir('blast_dir');
+	my $blast_input_base = $job_properties->get_file_dir('blast_dir', 'blast_base');
 
 	die "Input files $blast_input_base.x do not exist" if (not -e "$blast_input_base.1");
 	die "Output directory $snps_output does not exist" if (not -e $snps_output);

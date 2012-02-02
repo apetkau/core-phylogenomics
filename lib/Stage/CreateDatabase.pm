@@ -11,9 +11,9 @@ use warnings;
 
 sub new
 {
-        my ($proto, $file_manager, $job_properties, $logger) = @_;
+        my ($proto, $job_properties, $logger) = @_;
         my $class = ref($proto) || $proto;
-        my $self = $class->SUPER::new($file_manager, $job_properties, $logger);
+        my $self = $class->SUPER::new($job_properties, $logger);
 
         bless($self,$class);
 
@@ -30,12 +30,12 @@ sub execute
 	my $logger = $self->{'_logger'};
 
 	my $job_properties = $self->{'_job_properties'};
-	my $input_file = $self->{'_file_manager'}->get_file_dir('fasta_dir', 'all_input_fasta');
-	my $database_output = $self->{'_file_manager'}->get_dir('database_dir');
-	my $log_dir = $self->{'_file_manager'}->get_dir('log_dir');
-	my $script_dir = $self->{'_file_manager'}->get_script_dir;
+	my $input_file = $job_properties->get_file_dir('fasta_dir', 'all_input_fasta');
+	my $database_output = $job_properties->get_dir('database_dir');
+	my $log_dir = $job_properties->get_dir('log_dir');
+	my $script_dir = $job_properties->get_script_dir;
 
-	my $input_fasta_path = $self->{'_file_manager'}->get_file_dir('database_dir', 'all_input_fasta');
+	my $input_fasta_path = $job_properties->get_file_dir('database_dir', 'all_input_fasta');
 
 	my $formatdb_log = "$log_dir/formatdb.log";
 	my $formatdb_out = "$log_dir/formatdb.out";

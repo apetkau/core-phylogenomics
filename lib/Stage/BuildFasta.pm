@@ -13,9 +13,9 @@ use warnings;
 
 sub new
 {
-        my ($proto, $file_manager, $job_properties, $logger) = @_;
+        my ($proto, $job_properties, $logger) = @_;
         my $class = ref($proto) || $proto;
-        my $self = $class->SUPER::new($file_manager, $job_properties, $logger);
+        my $self = $class->SUPER::new($job_properties, $logger);
 
         bless($self,$class);
 
@@ -32,11 +32,11 @@ sub execute
 	my $stage = $self->get_stage_name;
 
 	my $job_properties = $self->{'_job_properties'};
-	my $input_dir = $self->{'_file_manager'}->get_abs_dir('input_fasta_dir');
-	my $input_files = $job_properties->{'input_fasta_files'};
-	my $output_dir = $self->{'_file_manager'}->get_dir('fasta_dir');
+	my $input_dir = $job_properties->get_abs_dir('input_fasta_dir');
+	my $input_files = $job_properties->get_property('input_fasta_files');
+	my $output_dir = $job_properties->get_dir('fasta_dir');
 
-	my $all_input_file = $self->{'_file_manager'}->get_file_dir('fasta_dir', 'all_input_fasta');
+	my $all_input_file = $job_properties->get_file_dir('fasta_dir', 'all_input_fasta');
 
 	die "Output directory is invalid" if (not -d $output_dir);
 
@@ -46,7 +46,7 @@ sub execute
 	if (not defined $input_dir and (defined $input_files and (ref $input_files eq 'ARRAY')))
 	{
 		my $strain_count = 0;
-		my $temp_input_dir =  $self->{'_file_manager'}->get_job_dir.'/temp_input_dir';
+		my $temp_input_dir =  $job_properties->get_job_dir.'/temp_input_dir';
 		(rmtree($temp_input_dir) or die "Could not delete $temp_input_dir: $!") if (-e $temp_input_dir);
 		mkdir($temp_input_dir) or die "Could not create $temp_input_dir: $!";
 		foreach my $input_file (@$input_files)
@@ -55,7 +55,7 @@ sub execute
 			$strain_count++;
 		}
 
-		$job_properties->{'strain_count'} = $strain_count;
+		$job_properties->set_property('strain_count', $strain_count);
 		$input_dir = $temp_input_dir;
 	}
 
@@ -82,7 +82,7 @@ sub execute
 			my $output_path = "$output_dir/$output_file";
 			copy($input_path,$output_path) or die "Could not copy $file from $input_dir to $output_dir: $!";
 
-			if (not defined $self->{'_file_manager'}->get_file('split_file'))
+			if (not defined $job_properties->get_file('split_file'))
 			{
 				$logger->log("\t\tSetting split file to $output_path\n",1);
 				$self->_set_split_file($output_file);
@@ -185,13 +185,13 @@ sub execute
 		close ($out_fh);
 		$logger->log("\t...done\n",1);
 
-		if (not defined $job_properties->{'strain_count_manual'})
+		if (not defined $job_properties->get_property('strain_count_manual'))
 		{
-			$job_properties->{'strain_count'} = $strain_count;
+			$job_properties->set_property('strain_count', $strain_count);
 		}
 		else
 		{
-			$job_properties->{'strain_count'} = $job_properties->{'strain_count_manual'};
+			$job_properties->set_property('strain_count', $job_properties->get_property('strain_count_manual'));
 		}
 	}
 
@@ -201,8 +201,10 @@ sub execute
 sub _set_split_file
 {
 	my ($self,$file) = @_;
-	$self->{'_file_manager'}->set_file('split_file', $file);
-	$self->{'_file_manager'}->set_file('blast_base', basename($file).'.out');
+
+	my $job_properties = $self->{'_job_properties'};
+	$job_properties->set_file('split_file', $file);
+	$job_properties->set_file('blast_base', basename($file).'.out');
 }
 
 1;

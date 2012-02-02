@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-package FileManager;
+package JobProperties;
 
 use strict;
 use warnings;
@@ -19,8 +19,26 @@ sub new
 	$self->{'_files'} = {};
 	$self->{'_abs_dirs'} = {};
 	$self->{'_script_dir'} = $script_dir;
+	$self->{'_properties'} = {};
 
 	return $self;
+}
+
+sub set_property
+{
+	my ($self, $key, $value) = @_;
+
+	die "Undefined key" if (not defined $key);
+	die "Undefined value" if (not defined $value);
+
+	$self->{'_properties'}->{$key} = $value;
+}
+
+sub get_property
+{
+	my ($self, $key) = @_;
+
+	return $self->{'_properties'}->{$key};
 }
 
 sub get_script_dir
@@ -162,6 +180,69 @@ sub build_job_dirs
 	{
 		my $dir = $self->get_dir($key);
 		mkdir $dir if (defined $dir and not -e $dir);
+	}
+}
+
+sub write_properties
+{
+	my ($self, $file) = @_;
+
+	die "File is undefined" if (not defined $file);
+
+        open(my $out_fh, '>', $file) or die "Could not write to $file: $!";
+        print $out_fh "#Properties for snp-phylogenomics job\n";
+        print $out_fh "#Auto-generated on ".`date`."\n";
+        $self->_perform_write_properties($out_fh);
+        close($out_fh);
+}
+
+sub _perform_write_properties
+{
+        my ($self, $out_fh, $prefix) = @_;
+
+	my $job_properties = $self->{'_properties'};
+        my $real_prefix = defined $prefix ? $prefix : '';
+        foreach my $key (keys %$job_properties)
+        {
+                my $value = $job_properties->{$key};
+                if ((ref $value) eq 'ARRAY')
+                {
+                        print $out_fh "$real_prefix$key=".join(', ',@$value),"\n";
+                }
+                else
+                {
+                                print $out_fh "$real_prefix$key=".$job_properties->{$key}."\n";
+                }
+        }
+}
+
+sub read_properties
+{
+	my ($self,$file) = @_;
+
+	open(my $in_fh, '<', $file) or die "Could not open $file: $!\n";
+	while (my $line = <$in_fh>)
+	{
+		chomp $line;
+
+		my ($real_content) = ($line =~ /^([^#]*)/);
+		if (defined $real_content)
+		{
+			my ($key,$value) = ($real_content =~ /^([^=]+)=(.*)$/);
+
+			if (defined $key and defined $value)
+			{
+				if ($value =~ /,/)
+				{
+					my @values = split(/,/,$value);
+					$self->set_job_property($key, \@values);
+				}
+				else
+				{
+					$self->set_job_property($key, $value);
+				}
+			}
+		}
 	}
 }
 

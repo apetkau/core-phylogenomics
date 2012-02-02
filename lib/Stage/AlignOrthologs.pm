@@ -12,9 +12,9 @@ use warnings;
 
 sub new
 {
-        my ($proto, $file_manager, $job_properties, $logger) = @_;
+        my ($proto, $job_properties, $logger) = @_;
         my $class = ref($proto) || $proto;
-        my $self = $class->SUPER::new($file_manager, $job_properties, $logger);
+        my $self = $class->SUPER::new($job_properties, $logger);
 
         bless($self,$class);
 
@@ -31,11 +31,11 @@ sub execute
 	my $stage = $self->get_stage_name;
 
 	my $job_properties = $self->{'_job_properties'};
-	my $core_dir = $self->{'_file_manager'}->get_dir('core_dir');
-	my $input_task_base = $self->{'_file_manager'}->get_file_dir('core_dir', 'core_snp_base');
-	my $output_dir = $self->{'_file_manager'}->get_dir('align_dir');
-	my $log_dir = $self->{'_file_manager'}->get_dir('log_dir');
-	my $script_dir = $self->{'_file_manager'}->get_script_dir;
+	my $core_dir = $job_properties->get_dir('core_dir');
+	my $input_task_base = $job_properties->get_file_dir('core_dir', 'core_snp_base');
+	my $output_dir = $job_properties->get_dir('align_dir');
+	my $log_dir = $job_properties->get_dir('log_dir');
+	my $script_dir = $job_properties->get_script_dir;
 
 	die "Input files ${input_task_base}x do not exist" if (not -e "${input_task_base}1");
 	die "Output directory $output_dir does not exist" if (not -e $output_dir);
@@ -47,7 +47,7 @@ sub execute
 	$logger->log("\nStage: $stage\n",0);
 	$logger->log("Performing multiple alignment of orthologs ...\n",0);
 
-	my $max_snp_number = $self->_largest_snp_file($core_dir, $self->{'_file_manager'}->get_file('core_snp_base'));
+	my $max_snp_number = $self->_largest_snp_file($core_dir, $job_properties->get_file('core_snp_base'));
 	die "Largest SNP number is invalid" if (not defined $max_snp_number or $max_snp_number <= 0);
 
 	my $clustalw_sge = "$output_dir/clustalw.sge";

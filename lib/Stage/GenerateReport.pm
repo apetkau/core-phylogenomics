@@ -9,9 +9,9 @@ use warnings;
 
 sub new
 {
-        my ($proto, $file_manager, $job_properties, $logger) = @_;
+        my ($proto, $job_properties, $logger) = @_;
         my $class = ref($proto) || $proto;
-        my $self = $class->SUPER::new($file_manager, $job_properties, $logger);
+        my $self = $class->SUPER::new($job_properties, $logger);
 
         bless($self,$class);
 
@@ -29,14 +29,14 @@ sub execute
 
 	my $verbose = $self->{'_logger'}->{'verbose'};
 	my $job_properties = $self->{'_job_properties'};
-	my $working_dir = $self->{'_file_manager'}->get_dir('pseudoalign_dir');
-	my $script_dir = $self->{'_file_manager'}->get_script_dir;
-	my $core_dir = $self->{'_file_manager'}->get_dir('core_dir');
-	my $align_dir = $self->{'_file_manager'}->get_dir('align_dir');
-	my $fasta_dir = $self->{'_file_manager'}->get_dir('fasta_dir');
-	my $input_dir = $self->{'_file_manager'}->get_job_dir;
+	my $working_dir = $job_properties->get_dir('pseudoalign_dir');
+	my $script_dir = $job_properties->get_script_dir;
+	my $core_dir = $job_properties->get_dir('core_dir');
+	my $align_dir = $job_properties->get_dir('align_dir');
+	my $fasta_dir = $job_properties->get_dir('fasta_dir');
+	my $input_dir = $job_properties->get_job_dir;
 	my $output_file = "$working_dir/main.report";
-	my $log_dir = $self->{'_file_manager'}->get_dir('log_dir');
+	my $log_dir = $job_properties->get_dir('log_dir');
 
 	my $log_file = "$log_dir/generate_report.log";
 

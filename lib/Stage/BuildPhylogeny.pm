@@ -11,9 +11,9 @@ use warnings;
 
 sub new
 {
-        my ($proto, $file_manager, $job_properties, $logger) = @_;
+        my ($proto, $job_properties, $logger) = @_;
         my $class = ref($proto) || $proto;
-        my $self = $class->SUPER::new($file_manager, $job_properties, $logger);
+        my $self = $class->SUPER::new($job_properties, $logger);
 
         bless($self,$class);
 
@@ -30,9 +30,9 @@ sub execute
 	my $stage = $self->get_stage_name;
 
 	my $job_properties = $self->{'_job_properties'};
-	my $input_dir = $self->{'_file_manager'}->get_dir('pseudoalign_dir');
-	my $output_dir = $self->{'_file_manager'}->get_dir('phylogeny_dir');
-	my $log_dir = $self->{'_file_manager'}->get_dir('log_dir');
+	my $input_dir = $job_properties->get_dir('pseudoalign_dir');
+	my $output_dir = $job_properties->get_dir('phylogeny_dir');
+	my $log_dir = $job_properties->get_dir('log_dir');
 
 	my $pseudoalign_file_name = "pseudoalign.phy";
 	my $pseudoalign_file = "$input_dir/$pseudoalign_file_name";

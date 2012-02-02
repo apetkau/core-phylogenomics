@@ -9,9 +9,9 @@ use warnings;
 
 sub new
 {
-        my ($proto, $file_manager, $job_properties, $logger) = @_;
+        my ($proto, $job_properties, $logger) = @_;
         my $class = ref($proto) || $proto;
-        my $self = $class->SUPER::new($file_manager, $job_properties, $logger);
+        my $self = $class->SUPER::new($job_properties, $logger);
 
         bless($self,$class);
 
@@ -28,12 +28,12 @@ sub execute
 	my $stage = $self->get_stage_name;
 
 	my $job_properties = $self->{'_job_properties'};
-	my $input_task_base = $self->{'_file_manager'}->get_file_dir('split_dir', 'split_file');
-	my $output_dir = $self->{'_file_manager'}->get_dir('blast_dir');
-	my $processors = $job_properties->{'processors'};
-	my $database = $self->{'_file_manager'}->get_file_dir('database_dir', 'all_input_fasta');
-	my $log_dir = $self->{'_file_manager'}->get_dir('log_dir');
-	my $blast_task_base = $self->{'_file_manager'}->get_file('blast_base');
+	my $input_task_base = $job_properties->get_file_dir('split_dir', 'split_file');
+	my $output_dir = $job_properties->get_dir('blast_dir');
+	my $processors = $job_properties->get_property('processors');
+	my $database = $job_properties->get_file_dir('database_dir', 'all_input_fasta');
+	my $log_dir = $job_properties->get_dir('log_dir');
+	my $blast_task_base = $job_properties->get_file('blast_base');
 
 	die "Input files $input_task_base.x do not exist" if (not -e "$input_task_base.1");
 	die "Output directory $output_dir does not exist" if (not -e $output_dir);

@@ -7,14 +7,13 @@ use warnings;
 
 sub new
 {
-        my ($class, $file_manager, $job_properties, $logger) = @_;
+        my ($class, $job_properties, $logger) = @_;
 
         my $self = {};
         bless($self,$class);
 
 	$self->{'_logger'} = $logger;
 	$self->{'_job_properties'} = $job_properties;
-	$self->{'_file_manager'} = $file_manager;
 
 	$self->{'_stage_name'} = 'Invalid';
 

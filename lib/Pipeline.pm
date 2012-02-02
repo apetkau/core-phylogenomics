@@ -6,7 +6,7 @@ use strict;
 use warnings;
 
 use Logger;
-use FileManager;
+use JobProperties;
 use Stage;
 use Stage::BuildFasta;
 use Stage::WriteProperties;
@@ -73,31 +73,28 @@ sub new
     my $self = {};
     bless($self,$class);
 
-    my $file_manager = new FileManager($script_dir);
+    my $job_properties = new JobProperties($script_dir);
 
     $self->{'verbose'} = 0;
     $self->{'keep_files'} = 1;
-    $self->{'file_manager'} = 
-    $self->{'job_properties'} = {};
+    $self->{'job_properties'} = $job_properties;
     $self->_check_stages;
-    $self->{'job_properties'}->{'pid_cutoff'} = 99;
-    $self->{'job_properties'}->{'hsp_length'} = 400;
+    $job_properties->{'pid_cutoff'} = 99;
+    $job_properties->{'hsp_length'} = 400;
 
-    $file_manager->set_file('all_input_fasta', 'all.fasta');
-    $file_manager->set_file('bioperl_index', 'all.fasta.idx');
-    $file_manager->set_file('core_snp_base', 'snps');
-    $file_manager->set_dir('log_dir', "log");
-    $file_manager->set_dir('fasta_dir', "fasta");
-    $file_manager->set_dir('database_dir', "database");
-    $file_manager->set_dir('split_dir', "split");
-    $file_manager->set_dir('blast_dir', "blast");
-    $file_manager->set_dir('core_dir', "core");
-    $file_manager->set_dir('align_dir', "align");
-    $file_manager->set_dir('pseudoalign_dir', "pseudoalign");
-    $file_manager->set_dir('stage_dir', "stages");
-    $file_manager->set_dir('phylogeny_dir', 'phylogeny');
-
-    $self->{'file_manager'} = $file_manager;
+    $job_properties->set_file('all_input_fasta', 'all.fasta');
+    $job_properties->set_file('bioperl_index', 'all.fasta.idx');
+    $job_properties->set_file('core_snp_base', 'snps');
+    $job_properties->set_dir('log_dir', "log");
+    $job_properties->set_dir('fasta_dir', "fasta");
+    $job_properties->set_dir('database_dir', "database");
+    $job_properties->set_dir('split_dir', "split");
+    $job_properties->set_dir('blast_dir', "blast");
+    $job_properties->set_dir('core_dir', "core");
+    $job_properties->set_dir('align_dir', "align");
+    $job_properties->set_dir('pseudoalign_dir', "pseudoalign");
+    $job_properties->set_dir('stage_dir', "stages");
+    $job_properties->set_dir('phylogeny_dir', 'phylogeny');
 
     return $self;
 }
@@ -109,7 +106,7 @@ sub set_job_dir
     die "Job dir $job_dir does not exist" if (not -e $job_dir);
 
     my $abs_job_dir = abs_path($job_dir);
-    $self->{'file_manager'}->set_job_dir($abs_job_dir);
+    $self->{'job_properties'}->set_job_dir($abs_job_dir);
 }
 
 sub _get_strain_ids
@@ -233,15 +230,17 @@ sub resubmit
 
     die "Cannot resubmit to undefined job_dir" if (not defined $job_dir);
     die "Cannot resubmit to non-existant job_dir $job_dir" if (not -d $job_dir);
+
+    my $job_properties = $self->{'job_properties'};
     my $properties_filename = "run.properties";
 
     my $abs_job_dir = abs_path($job_dir);
     my $properties_path = "$abs_job_dir/$properties_filename";
     die "Cannot resubmit $abs_job_dir, file $properties_path not found" if (not -e $properties_path);
 
-    $self->{'file_manager'}->set_job_dir($abs_job_dir);
+    $job_properties->set_job_dir($abs_job_dir);
 
-    $self->_read_properties($properties_path);
+    $job_properties->read_properties($properties_path);
 }
 
 sub static_get_stage_descriptions
@@ -275,14 +274,14 @@ sub get_last_stage
 sub set_hsp_length
 {
     my ($self,$length) = @_;
-    $self->{'job_properties'}->{'hsp_length'} = $length;
+    $self->{'job_properties'}->set_property('hsp_length', $length);
 }
 
 sub set_pid_cutoff
 {
     my ($self,$pid_cutoff) = @_;
 
-    $self->{'job_properties'}->{'pid_cutoff'} = $pid_cutoff;
+    $self->{'job_properties'}->set_property('pid_cutoff', $pid_cutoff);
 }
 
 sub set_verbose
@@ -294,7 +293,7 @@ sub set_verbose
 sub set_processors
 {
     my ($self,$processors) = @_;
-    $self->{'job_properties'}->{'processors'} = $processors;
+    $self->{'job_properties'}->set_property('processors', $processors);
 }
 
 sub set_keep_files
@@ -306,7 +305,7 @@ sub set_keep_files
 sub set_strain_count
 {
     my ($self,$strain_count) = @_;
-    $self->{'job_properties'}->{'strain_count_manual'} = $strain_count;
+    $self->{'job_properties'}->set_property('strain_count_manual', $strain_count);
 }
 
 sub set_input_fasta
@@ -319,15 +318,15 @@ sub set_input_fasta
 
     if (-d $abs_input_fasta)
     {
-        $self->{'file_manager'}->set_abs_dir('input_fasta_dir', $abs_input_fasta);
+        $self->{'job_properties'}->set_abs_dir('input_fasta_dir', $abs_input_fasta);
     }
     else
     {
-        my $input_fasta_files = $self->{'job_properties'}->{'input_fasta_files'};
+        my $input_fasta_files = $self->{'job_properties'}->get_property('input_fasta_files');
         if (not defined $input_fasta_files)
         {
             $input_fasta_files = [];
-            $self->{'job_properties'}->{'input_fasta_files'} = $input_fasta_files;
+            $self->{'job_properties'}->set_property('input_fasta_files', $input_fasta_files);
         }
 
         push(@$input_fasta_files, $abs_input_fasta);
@@ -375,7 +374,7 @@ sub _execute_stage
 
     my $stage_table = $self->{'stage_table'};
     my $stage_obj = $stage_table->{$stage};
-    my $stage_dir = $self->{'file_manager'}->get_dir('stage_dir');
+    my $stage_dir = $self->{'job_properties'}->get_dir('stage_dir');
 
     if (defined $stage_obj)
     {
@@ -405,10 +404,8 @@ sub execute
 
     my $logger = $self->{'logger'};
 
-    my $stage_table = $self->{'stage_table'};
-    my $write_prop_obj = $stage_table->{'write-properties'};
-
-    my $log_dir = $self->{'file_manager'}->get_dir('log_dir');
+    my $job_properties = $self->{'job_properties'};
+    my $log_dir = $job_properties->get_dir('log_dir');
 
     my $start_stage = $self->{'start_stage'};
     my $end_stage = $self->{'end_stage'};
@@ -416,15 +413,14 @@ sub execute
     die "Start stage not defined" if (not defined $start_stage);
     die "End stage not defined" if (not defined $end_stage);
 
-    my $job_properties = $self->{'job_properties'};
     open(my $out_fh, '>-') or die "Could not open STDOUT";
     $logger->log("Running core SNP phylogenomic pipeline on ".`date`,0);
     $logger->log("\nParameters:\n",0);
-    $logger->log("\tjob_dir = ".$self->{'file_manager'}->get_job_dir."\n",0);
+    $logger->log("\tjob_dir = ".$self->{'job_properties'}->get_job_dir."\n",0);
     $logger->log("\tstart_stage = ".$self->{'start_stage'}."\n",0);
     $logger->log("\tend_stage = ".$self->{'end_stage'}."\n",0);
-    $logger->log("\tinput_fasta_dir = ".($self->{'file_manager'}->get_abs_dir('input_fasta_dir'))."\n",0);
-    $write_prop_obj->_perform_write_properties($out_fh,$self->{'job_properties'},"\t");
+    $logger->log("\tinput_fasta_dir = ".($job_properties->get_abs_dir('input_fasta_dir'))."\n",0);
+    $job_properties->_perform_write_properties($out_fh,"\t");
     $logger->log("\n",0);
     close($out_fh);
 
@@ -432,7 +428,7 @@ sub execute
     my $seen_end = 0;
 
     # remove "done" files from all stages after the starting stage
-    my $stage_dir = $self->{'file_manager'}->get_dir('stage_dir');
+    my $stage_dir = $job_properties->get_dir('stage_dir');
     foreach my $stage (@stage_list)
     {
         $seen_start = 1 if ($stage eq $start_stage);
@@ -467,7 +463,7 @@ sub _is_stage_complete
 {
     my ($self,$stage) = @_;
 
-    my $stages_dir = $self->{'file_manager'}->get_dir('stage_dir');
+    my $stages_dir = $self->{'job_properties'}->get_dir('stage_dir');
 
     return (-e "$stages_dir/$stage.done");
 }
@@ -476,62 +472,29 @@ sub _initialize
 {
     my ($self) = @_;
 
-    my $file_manager = $self->{'file_manager'};
-    $file_manager->build_job_dirs;
-
     my $job_properties = $self->{'job_properties'};
+    $job_properties->build_job_dirs;
 
-    my $log_dir = $file_manager->get_dir('log_dir');
+    my $log_dir = $job_properties->get_dir('log_dir');
     my $verbose = $self->{'verbose'};
 
     my $logger = new Logger($log_dir, $verbose);
     $self->{'logger'} = $logger;
 
-    my $stage_table = { 'prepare-input' => new Stage::BuildFasta($file_manager, $job_properties, $logger),
-                        'write-properties' => new Stage::WriteProperties($file_manager, $job_properties, $logger),
-                        'build-database' => new Stage::CreateDatabase($file_manager, $job_properties, $logger),
-                        'split' => new Stage::PerformSplit($file_manager, $job_properties, $logger),
-                        'blast' => new Stage::PerformBlast($file_manager, $job_properties, $logger),
-                        'core' => new Stage::FindCore($file_manager, $job_properties, $logger),
-                        'alignment' => new Stage::AlignOrthologs($file_manager, $job_properties, $logger),
-                        'pseudoalign' => new Stage::Pseudoalign($file_manager, $job_properties, $logger),
-                        'report' => new Stage::GenerateReport($file_manager, $job_properties, $logger),
-                        'build-phylogeny' => new Stage::BuildPhylogeny($file_manager, $job_properties, $logger),
-                        'phylogeny-graphic' => new Stage::BuildPhylogenyGraphic($file_manager, $job_properties, $logger)
+    my $stage_table = { 'prepare-input' => new Stage::BuildFasta($job_properties, $logger),
+                        'write-properties' => new Stage::WriteProperties($job_properties, $logger),
+                        'build-database' => new Stage::CreateDatabase($job_properties, $logger),
+                        'split' => new Stage::PerformSplit($job_properties, $logger),
+                        'blast' => new Stage::PerformBlast($job_properties, $logger),
+                        'core' => new Stage::FindCore($job_properties, $logger),
+                        'alignment' => new Stage::AlignOrthologs($job_properties, $logger),
+                        'pseudoalign' => new Stage::Pseudoalign($job_properties, $logger),
+                        'report' => new Stage::GenerateReport($job_properties, $logger),
+                        'build-phylogeny' => new Stage::BuildPhylogeny($job_properties, $logger),
+                        'phylogeny-graphic' => new Stage::BuildPhylogenyGraphic($job_properties, $logger)
         };
 
     $self->{'stage_table'} = $stage_table;
-}
-
-sub _read_properties
-{
-    my ($self,$file) = @_;
-    my $job_properties = $self->{'job_properties'};
-
-    open(my $in_fh, '<', $file) or die "Could not open $file: $!\n";
-    while (my $line = <$in_fh>)
-    {
-        chomp $line;
-
-        my ($real_content) = ($line =~ /^([^#]*)/);
-        if (defined $real_content)
-        {
-            my ($key,$value) = ($real_content =~ /^([^=]+)=(.*)$/);
-
-            if (defined $key and defined $value)
-            {
-                if ($value =~ /,/)
-                {
-                    my @values = split(/,/,$value);
-                    $job_properties->{$key} = \@values;
-                }
-                else
-                {
-                    $job_properties->{$key} = $value;
-                }
-            }
-        }
-    }
 }
 
 sub _exists_in_array

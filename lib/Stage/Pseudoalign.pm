@@ -9,9 +9,9 @@ use warnings;
 
 sub new
 {
-        my ($proto, $file_manager, $job_properties, $logger) = @_;
+        my ($proto, $job_properties, $logger) = @_;
         my $class = ref($proto) || $proto;
-        my $self = $class->SUPER::new($file_manager, $job_properties, $logger);
+        my $self = $class->SUPER::new($job_properties, $logger);
 
         bless($self,$class);
 
@@ -28,11 +28,11 @@ sub execute
 	my $stage = $self->get_stage_name;
 
 	my $job_properties = $self->{'_job_properties'};
-	my $script_dir = $self->{'_file_manager'}->get_script_dir;
+	my $script_dir = $job_properties->get_script_dir;
 
-	my $align_input = $self->{'_file_manager'}->get_dir('align_dir');
-	my $output_dir = $self->{'_file_manager'}->get_dir('pseudoalign_dir');
-	my $log_dir = $self->{'_file_manager'}->get_dir('log_dir');
+	my $align_input = $job_properties->get_dir('align_dir');
+	my $output_dir = $job_properties->get_dir('pseudoalign_dir');
+	my $log_dir = $job_properties->get_dir('log_dir');
 
 	die "Error: align_input directory does not exist" if (not -e $align_input);
 	die "Error: pseudoalign output directory does not exist" if (not -e $output_dir);
