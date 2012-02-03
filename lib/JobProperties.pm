@@ -16,10 +16,11 @@ sub new
 	bless($self,$class);
 
 	$self->{'_dirs'} = {};
-	$self->{'_files'} = {};
 	$self->{'_abs_dirs'} = {};
 	$self->{'_script_dir'} = $script_dir;
 	$self->{'_properties'} = {};
+	$self->{'_properties'}->{'files'} = {};
+	$self->{'_properties'}->{'properties'} = {};
 
 	return $self;
 }
@@ -31,14 +32,14 @@ sub set_property
 	die "Undefined key" if (not defined $key);
 	die "Undefined value" if (not defined $value);
 
-	$self->{'_properties'}->{$key} = $value;
+	$self->{'_properties'}->{'properties'}->{$key} = $value;
 }
 
 sub get_property
 {
 	my ($self, $key) = @_;
 
-	return $self->{'_properties'}->{$key};
+	return $self->{'_properties'}->{'properties'}->{$key};
 }
 
 sub get_script_dir
@@ -100,7 +101,7 @@ sub set_file
 	die "Undefined key" if (not defined $key);
 	die "Undefined value" if (not defined $file_value);
 
-	$self->{'_files'}->{$key} = $file_value;	
+	$self->{'_properties'}->{'files'}->{$key} = $file_value;	
 }
 
 sub get_dir
@@ -133,7 +134,7 @@ sub get_file
 	my $job_dir = $self->{'_job_dir'};
 	die "Undefined job_dir" if (not defined $job_dir);
 
-	my $file = $self->{'_files'}->{$file_key};
+	my $file = $self->{'_properties'}->{'files'}->{$file_key};
 
 	if (not defined $file)
 	{
@@ -155,7 +156,7 @@ sub get_file_dir
 	my $job_dir = $self->{'_job_dir'};
 	die "Undefined job_dir" if (not defined $job_dir);
 
-	my $file = $self->{'_files'}->{$file_key};
+	my $file = $self->{'_properties'}->{'files'}->{$file_key};
 	my $dir = $self->{'_dirs'}->{$dir_key};
 
 	if ((not defined $file) or (not defined $dir))
@@ -200,7 +201,7 @@ sub _perform_write_properties
 {
         my ($self, $out_fh, $prefix) = @_;
 
-	my $job_properties = $self->{'_properties'};
+	my $job_properties = $self->{'_properties'}->{'properties'};
         my $real_prefix = defined $prefix ? $prefix : '';
         foreach my $key (keys %$job_properties)
         {
