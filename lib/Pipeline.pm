@@ -410,6 +410,8 @@ sub execute
     my $start_stage = $self->{'start_stage'};
     my $end_stage = $self->{'end_stage'};
 
+    my $yaml_string = $job_properties->write_properties_string;
+
     die "Start stage not defined" if (not defined $start_stage);
     die "End stage not defined" if (not defined $end_stage);
 
@@ -420,7 +422,7 @@ sub execute
     $logger->log("\tstart_stage = ".$self->{'start_stage'}."\n",0);
     $logger->log("\tend_stage = ".$self->{'end_stage'}."\n",0);
     $logger->log("\tinput_fasta_dir = ".($job_properties->get_abs_dir('input_fasta_dir'))."\n",0);
-    $job_properties->_perform_write_properties($out_fh,"\t");
+    $logger->log($job_properties->write_properties_string."\n",0);
     $logger->log("\n",0);
     close($out_fh);
 

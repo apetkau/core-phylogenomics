@@ -2,6 +2,8 @@
 
 package JobProperties;
 
+use YAML::Tiny;
+
 use strict;
 use warnings;
 
@@ -190,61 +192,37 @@ sub write_properties
 
 	die "File is undefined" if (not defined $file);
 
-        open(my $out_fh, '>', $file) or die "Could not write to $file: $!";
-        print $out_fh "#Properties for snp-phylogenomics job\n";
-        print $out_fh "#Auto-generated on ".`date`."\n";
-        $self->_perform_write_properties($out_fh);
-        close($out_fh);
+	my $yaml_string = "# Properties for snp-phylogenomics job\n".
+			"# Auto-generated on ".(localtime)."\n";
+
+	open(my $out_fh, '>', $file) or die "Could not write to $file: $!";
+	print $out_fh $yaml_string;
+	print $out_fh $self->write_properties_string;
+	close($out_fh);
 }
 
-sub _perform_write_properties
+sub write_properties_string
 {
-        my ($self, $out_fh, $prefix) = @_;
+	my ($self) = @_;
 
-	my $job_properties = $self->{'_properties'}->{'properties'};
-        my $real_prefix = defined $prefix ? $prefix : '';
-        foreach my $key (keys %$job_properties)
-        {
-                my $value = $job_properties->{$key};
-                if ((ref $value) eq 'ARRAY')
-                {
-                        print $out_fh "$real_prefix$key=".join(', ',@$value),"\n";
-                }
-                else
-                {
-                                print $out_fh "$real_prefix$key=".$job_properties->{$key}."\n";
-                }
-        }
+	my $yaml_string;
+	my $yaml = YAML::Tiny->new;
+	$yaml->[0] = $self->{'_properties'};
+
+	$yaml_string = $yaml->write_string;
+
+	return $yaml_string;
 }
 
 sub read_properties
 {
 	my ($self,$file) = @_;
 
-	open(my $in_fh, '<', $file) or die "Could not open $file: $!\n";
-	while (my $line = <$in_fh>)
-	{
-		chomp $line;
+	die "File undefined" if (not defined $file);
+	die "File $file does not exist" if (not -e $file);
 
-		my ($real_content) = ($line =~ /^([^#]*)/);
-		if (defined $real_content)
-		{
-			my ($key,$value) = ($real_content =~ /^([^=]+)=(.*)$/);
-
-			if (defined $key and defined $value)
-			{
-				if ($value =~ /,/)
-				{
-					my @values = split(/,/,$value);
-					$self->set_job_property($key, \@values);
-				}
-				else
-				{
-					$self->set_job_property($key, $value);
-				}
-			}
-		}
-	}
+	my $yaml = YAML::Tiny->read($file) or die "Could not read config file $file: ".YAML::Tiny->errstr;
+	$self->{'_properties'} = $yaml->[0];
 }
 
 1;
