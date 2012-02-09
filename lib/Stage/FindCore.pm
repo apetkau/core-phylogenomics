@@ -52,23 +52,16 @@ sub execute
 
 	$logger->log("\nStage: $stage\n",0);
 	$logger->log("Performing core genome SNP identification ...\n",0);
-	my $core_sge = "$snps_output/core.sge";
-	$logger->log("\tWriting $core_sge script ...\n",1);
-	my $sge_command = "$script_dir/../lib/coresnp2.pl -b \"$blast_input_base.\$SGE_TASK_ID\" -i \"$bioperl_index\" -c $strain_count -p $pid_cutoff -l $hsp_length -o \"$snps_output\"\n";
-	$self->_print_sge_script($processors, $core_sge, $sge_command);
+	my $cores_command = 'perl';
+	my $cores_params = [];
+	for (my $i = 1; $i <= $processors; $i++)
+	{
+		push(@$cores_params, ["$script_dir/../lib/coresnp2.pl", '-b', "$blast_input_base.$i", '-i', "$bioperl_index", '-c', $strain_count, '-p', $pid_cutoff, '-l', $hsp_length, '-o', $snps_output]);
+	}
 	$logger->log("\t...done\n",1);
 
-	my $job_name = $self->_get_job_id;
-
-	my $error = "$log_dir/core.error.sge";
-	my $out = "$log_dir/core.out.sge";
-	my $submission_command = "qsub -N $job_name -cwd -S /bin/sh -e \"$error\" -o \"$out\" \"$core_sge\" 1>/dev/null";
-	$logger->log("\tSubmitting $core_sge for execution ...\n",1);
-	$logger->log("\t\tSee ($out) and ($error) for details.\n",1);
-	$logger->log("\t\t$submission_command\n",2);
-	system($submission_command) == 0 or die "Error submitting $submission_command: $!\n";
-	$logger->log("\t\tWaiting for completion of core sge job array $job_name",1);
-	$self->_wait_until_completion($job_name);
+	$logger->log("\tSubmitting coresnp2.pl for execution ...\n",1);
+	$self->_submit_jobs($cores_command, 'cores', $cores_params);
 	$logger->log("done\n",1);
 
 	require("$script_dir/../lib/rename.pl");

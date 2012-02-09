@@ -44,23 +44,16 @@ sub execute
 	mkdir "$output_dir" if (not -e $output_dir);
 	my $blast_base_path = "$output_dir/$blast_task_base";
 
-	my $job_name = $self->_get_job_id;
+	my @blast_params;
+	my $max_blast = $processors;
+	my $blast_command = "blastall";
+	for (my $i = 1; $i <= $max_blast; $i++)
+	{
+		push(@blast_params, ['-p', 'blastn', '-i', "$input_task_base.$i", '-F', 'F', '-o', "$blast_base_path.$i", '-d', "$database"]);
+	}
 
-	my $blast_sge = "$output_dir/blast.sge";
-	$logger->log("\tWriting $blast_sge script ...\n",1);
-	my $sge_command = "blastall -p blastn -i \"$input_task_base.\$SGE_TASK_ID\" -F F -o \"$blast_base_path.\$SGE_TASK_ID\" -d \"$database\"\n";
-	$self->_print_sge_script($processors, $blast_sge, $sge_command);
-	$logger->log("\t...done\n",1);
-
-	my $error = "$log_dir/blast.error.sge";
-	my $out = "$log_dir/blast.out.sge";
-	my $submission_command = "qsub -N $job_name -cwd -S /bin/sh -e \"$error\" -o \"$out\" \"$blast_sge\" 1>/dev/null";
-	$logger->log("\tSubmitting $blast_sge for execution ...\n",1);
-	$logger->log("\t\tSee ($out) and ($error) for details.\n",1);
-	$logger->log("\t\t$submission_command\n",2);
-	system($submission_command) == 0 or die "Error submitting $submission_command: $!\n";
-	$logger->log("\t\tWaiting for completion of blast job array $job_name",1);
-	$self->_wait_until_completion($job_name);
+	$logger->log("\tSubmitting blast jobs for execution ...",1);
+	$self->_submit_jobs($blast_command, 'blast', \@blast_params);
 	$logger->log("done\n",1);
 	$logger->log("...done\n",0);
 }

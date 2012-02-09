@@ -42,29 +42,24 @@ sub execute
 
 	my $input_dir = dirname($input_task_base);
 
-	my $job_name = $self->_get_job_id;
-
 	$logger->log("\nStage: $stage\n",0);
 	$logger->log("Performing multiple alignment of orthologs ...\n",0);
 
 	my $max_snp_number = $self->_largest_snp_file($core_dir, $job_properties->get_file('core_snp_base'));
 	die "Largest SNP number is invalid" if (not defined $max_snp_number or $max_snp_number <= 0);
 
-	my $clustalw_sge = "$output_dir/clustalw.sge";
-	$logger->log("\tWriting $clustalw_sge script ...\n",1);
-	my $sge_command = "clustalw2 -infile=${input_task_base}\$SGE_TASK_ID";
-	$self->_print_sge_script($max_snp_number, $clustalw_sge, $sge_command);
-	$logger->log("\t...done\n",1);
+	my $clustal_command = 'clustalw2';
+	my $clustal_params = [];
+	for (my $i = 1; $i <= $max_snp_number; $i++)
+	{
+		if (-e "${input_task_base}$i")
+		{
+			push(@$clustal_params, ["-infile=${input_task_base}$i"]);
+		}
+	}
 
-	my $error = "$log_dir/clustalw.error.sge";
-	my $out = "$log_dir/clustalw.out.sge";
-	my $submission_command = "qsub -N $job_name -cwd -S /bin/sh -e \"$error\" -o \"$out\" \"$clustalw_sge\" 1>/dev/null";
-	$logger->log("\tSubmitting $clustalw_sge for execution ...\n",1);
-	$logger->log("\t\tSee ($out) and ($error) for details.\n",1);
-	$logger->log("\t\t$submission_command\n",2);
-	system($submission_command) == 0 or die "Error submitting $submission_command: $!\n";
-	$logger->log("\t\tWaiting for completion of clustalw job array $job_name",1);
-	$self->_wait_until_completion($job_name);
+	$logger->log("\tSubmitting $clustal_command for execution ...",1);
+	$self->_submit_jobs($clustal_command, 'clustalw2', $clustal_params);
 	$logger->log("done\n",1);
 
 	opendir(my $align_dh, $input_dir) or die "Could not open $input_dir: $!";
