@@ -18,6 +18,10 @@ sub new
 
 	$self->{'_stage_name'} = 'Invalid';
 
+	# get perl environment variable to pass to jobs run on cluster nodes
+	my $perl_libs = $ENV{'PERL5LIB'};
+	$self->{'_perl_libs'} = $perl_libs if (defined $perl_libs);
+
         return $self;
 }
 
@@ -62,6 +66,8 @@ sub _submit_jobs
 	my $log_dir = $job_properties->get_dir('log_dir');
 	my $log_path = "$log_dir/$name";
 
+	my $perl_libs = $self->{'_perl_libs'};
+
 	my $number_tasks = scalar(@$job_params);
 	my @job_ids;
 
@@ -77,6 +83,12 @@ sub _submit_jobs
 		
                 ($drmerr,$jt,$drmdiag) = drmaa_allocate_job_template();
                 die drmaa_strerror($drmerr)."\n".$drmdiag if $drmerr;
+
+		if (defined $perl_libs)
+		{
+                	($drmerr,$drmdiag) = drmaa_set_vector_attribute($jt,$DRMAA_V_ENV,["PERL5LIB=$perl_libs"]);
+			die drmaa_strerror($drmerr)."\n".$drmdiag if $drmerr;
+		}
 
                 ($drmerr,$drmdiag) = drmaa_set_attribute($jt,$DRMAA_REMOTE_COMMAND,$bin); #sets the command for the job to be run
                 die drmaa_strerror($drmerr)."\n".$drmdiag if $drmerr;

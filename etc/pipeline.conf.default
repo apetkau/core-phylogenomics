@@ -1,0 +1,11 @@
+# move to pipeline.conf
+%YAML 1.1
+---
+path:
+	blastall: /path/to/blastall
+	formatdb: /path/to/formatdb
+	clustalw2: /path/to/clustalw2
+	phyml: /path/to/phyml
+	figtree: /path/to/figtree
+
+processors: 480

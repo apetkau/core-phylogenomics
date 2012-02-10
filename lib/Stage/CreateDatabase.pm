@@ -53,8 +53,8 @@ sub execute
 
 	copy($input_file, $input_fasta_path) or die "Could not copy $input_file to $input_fasta_path: $!";
 
-	my $formatdb_command = $job_properties->get_file('formatdb') 
-	$formatdb_command = 'formatdb' if ((not defined $formatdb) or (not -e $formatdb));
+	my $formatdb_command = $job_properties->get_file('formatdb');
+	$formatdb_command = 'formatdb' if ((not defined $formatdb_command) or (not -e $formatdb_command));
 	my $formatdb_params = [['-i', $input_fasta_path, '-p', 'F', '-l', $formatdb_log]];
 
 	my $index_command = "perl";

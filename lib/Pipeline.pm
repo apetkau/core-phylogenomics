@@ -8,6 +8,19 @@ use warnings;
 use Logger;
 use JobProperties;
 
+use Stage;
+use Stage::BuildFasta;
+use Stage::WriteProperties;
+use Stage::CreateDatabase;
+use Stage::PerformSplit;
+use Stage::PerformBlast;
+use Stage::FindCore;
+use Stage::AlignOrthologs;
+use Stage::Pseudoalign;
+use Stage::GenerateReport;
+use Stage::BuildPhylogeny;
+use Stage::BuildPhylogenyGraphic;
+
 use File::Basename qw(basename dirname);
 use File::Copy qw(copy move);
 use File::Path qw(rmtree);
@@ -62,13 +75,22 @@ sub new
     bless($self,$class);
 
     my $job_properties = new JobProperties($script_dir);
+    my $config_file = "$script_dir/../etc/pipeline.conf";
+    if (not -e $config_file)
+    {
+        print STDERR "Warning: no config file $config_file set, skipping ...\n";
+    }
+    else
+    {
+        $job_properties->read_config($config_file);
+    }
 
     $self->{'verbose'} = 0;
     $self->{'keep_files'} = 1;
     $self->{'job_properties'} = $job_properties;
     $self->_check_stages;
-    $job_properties->{'pid_cutoff'} = 99;
-    $job_properties->{'hsp_length'} = 400;
+    $job_properties->set_property('pid_cutoff', 99);
+    $job_properties->set_property('hsp_length', 400);
 
     $job_properties->set_file('all_input_fasta', 'all.fasta');
     $job_properties->set_file('bioperl_index', 'all.fasta.idx');

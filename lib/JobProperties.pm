@@ -27,6 +27,48 @@ sub new
 	return $self;
 }
 
+sub read_config
+{
+	my ($self, $config) = @_;
+
+	if (not defined $config)
+	{
+		warn "Warning: config file not defined";
+		return undef;
+	}
+	elsif (not -e $config)
+	{
+		warn "Warning: config file $config does not exist";
+		return undef;
+	}
+	else
+	{
+		my $yaml = YAML::Tiny->read($config) or warn "Could not read config file: ".YAML::Tiny->errstr;
+		$self->_set_defaults($yaml->[0]) if (defined $yaml);
+	}
+}
+
+sub _set_defaults
+{
+	my ($self, $defaults) = @_;
+
+	warn "Defaults undefined" if (not defined $defaults);
+
+	my $processors = $defaults->{'path'}->{'processors'};
+	my $formatdb = $defaults->{'path'}->{'formatdb'};
+	my $blastall = $defaults->{'path'}->{'blastall'};
+	my $clustalw2 = $defaults->{'path'}->{'clustalw2'};
+	my $figtree = $defaults->{'path'}->{'figtree'};
+	my $phyml = $defaults->{'path'}->{'phyml'};
+
+	$self->set_property('processors', $processors) if ((defined $processors) and ($processors =~ /\d+/));
+	$self->set_file('formatdb', $formatdb) if ((defined $formatdb) and (-e $formatdb));
+	$self->set_file('figtree', $figtree) if ((defined $figtree) and (-e $figtree));
+	$self->set_file('phyml', $phyml) if ((defined $phyml) and (-e $phyml));
+	$self->set_file('clustalw2', $clustalw2) if ((defined $clustalw2) and (-e $clustalw2));
+	$self->set_file('blastall', $blastall) if ((defined $blastall) and (-e $blastall));
+}
+
 sub set_property
 {
 	my ($self, $key, $value) = @_;
