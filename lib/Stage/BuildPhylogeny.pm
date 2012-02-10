@@ -41,17 +41,13 @@ sub execute
 	$logger->log("\nStage: $stage\n",0);
 	$logger->log("Building phylogeny ...\n",0);
 
-	$logger->log("\tChecking for phyml ...\n",1);
-	my $phyml_check_command = "which phyml 1>/dev/null 2>&1";
-	$logger->log("\t$phyml_check_command",2);
-	system($phyml_check_command) == 0 or warn "\tUnable to find phyml using \"$phyml_check_command\"";
-	$logger->log("\t...done\n",1);
-
+	my $phyml = $job_properties->get_file('phyml');
+	$phyml = 'phyml' if ((not defined $phyml) or (not -e $phyml));
 
 	$logger->log("\tRunning phyml ...\n",1);
 	$logger->log("\tMore information can be found at $phyml_log\n",1);
 	die "Error: pseudoalign file $pseudoalign_file does not exist" if (not -e $pseudoalign_file);
-	my $phylogeny_command = "phyml --quiet -i \"$pseudoalign_file\" 1>\"$phyml_log\" 2>&1";
+	my $phylogeny_command = "$phyml --quiet -i \"$pseudoalign_file\" 1>\"$phyml_log\" 2>&1";
 	$logger->log("\t$phylogeny_command",2);
 	if(system($phylogeny_command) != 0)
 	{

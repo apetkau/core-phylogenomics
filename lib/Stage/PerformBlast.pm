@@ -46,7 +46,8 @@ sub execute
 
 	my @blast_params;
 	my $max_blast = $processors;
-	my $blast_command = "blastall";
+	my $blast_command = $job_properties->get_file('blastall');
+	$blast_command = "blastall" if ((not defined $blast_command) or (not -e $blast_command));
 	for (my $i = 1; $i <= $max_blast; $i++)
 	{
 		push(@blast_params, ['-p', 'blastn', '-i', "$input_task_base.$i", '-F', 'F', '-o', "$blast_base_path.$i", '-d', "$database"]);

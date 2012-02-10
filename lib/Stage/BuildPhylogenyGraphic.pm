@@ -38,17 +38,14 @@ sub execute
 	$logger->log("\nStage: $stage\n",0);
 	$logger->log("Building phylogeny tree graphic ...\n",0);
 
-	$logger->log("\tChecking for figtree ...\n",1);
-	my $figtree_check = 'which figtree 1>/dev/null 2>&1';
-	$logger->log("$figtree_check",2);
-	system($figtree_check) == 0 or warn "Could not find figtree with $figtree_check";
-	$logger->log("\t...done\n",1);
+	my $figtree = $job_properties->get_file('figtree');
+	$figtree = 'figtree' if ((not defined $figtree) or (not -e $figtree));
 
 	$logger->log("\tGenerating image with figtree ...\n",1);
 	$logger->log("\tMore information can be found at $log_file\n",1);
 	die "Error: file $tree_file does not exist" if (not -e $tree_file);
 	my $tree_image = "$tree_file.pdf";
-	my $figtree_command = "figtree -graphic PDF \"$tree_file\" \"$tree_image\" 1>\"$log_file\" 2>&1";
+	my $figtree_command = "$figtree -graphic PDF \"$tree_file\" \"$tree_image\" 1>\"$log_file\" 2>&1";
 	$logger->log("\t$figtree_command",2);
 	if(system($figtree_command) != 0)
 	{

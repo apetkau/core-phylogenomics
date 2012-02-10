@@ -48,7 +48,8 @@ sub execute
 	my $max_snp_number = $self->_largest_snp_file($core_dir, $job_properties->get_file('core_snp_base'));
 	die "Largest SNP number is invalid" if (not defined $max_snp_number or $max_snp_number <= 0);
 
-	my $clustal_command = 'clustalw2';
+	my $clustal_command = $job_properties->get_file('clustalw2');
+	$clustal_command = 'clustalw2' if ((not defined $clustal_command) or (not -e $clustal_command));
 	my $clustal_params = [];
 	for (my $i = 1; $i <= $max_snp_number; $i++)
 	{

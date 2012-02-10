@@ -7,18 +7,6 @@ use warnings;
 
 use Logger;
 use JobProperties;
-use Stage;
-use Stage::BuildFasta;
-use Stage::WriteProperties;
-use Stage::CreateDatabase;
-use Stage::PerformSplit;
-use Stage::PerformBlast;
-use Stage::FindCore;
-use Stage::AlignOrthologs;
-use Stage::Pseudoalign;
-use Stage::GenerateReport;
-use Stage::BuildPhylogeny;
-use Stage::BuildPhylogenyGraphic;
 
 use File::Basename qw(basename dirname);
 use File::Copy qw(copy move);
