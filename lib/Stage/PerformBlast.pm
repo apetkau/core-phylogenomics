@@ -31,6 +31,11 @@ sub execute
 	my $input_task_base = $job_properties->get_file_dir('split_dir', 'split_file');
 	my $output_dir = $job_properties->get_dir('blast_dir');
 	my $processors = $job_properties->get_property('processors');
+	if (not defined $processors)
+	{
+		warn "Warning: processors not defined, defaulting to 1 ...\n";
+		$processors = 1;
+	}
 	my $database = $job_properties->get_file_dir('database_dir', 'all_input_fasta');
 	my $log_dir = $job_properties->get_dir('log_dir');
 	my $blast_task_base = $job_properties->get_file('blast_base');

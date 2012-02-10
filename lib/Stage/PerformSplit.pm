@@ -33,6 +33,11 @@ sub execute
 	my $log_dir = $job_properties->get_dir('log_dir');
 	my $output_dir = $job_properties->get_dir('split_dir');
 	my $split_number = $job_properties->get_property('processors');
+	if (not defined $split_number)
+	{
+		warn "Warning: processors not defined, defaulting to 1 ...\n";
+		$split_number = 1;
+	}
 
 	my $split_log = "$log_dir/split.log";
 

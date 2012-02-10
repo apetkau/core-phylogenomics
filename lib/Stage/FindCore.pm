@@ -31,6 +31,11 @@ sub execute
 	my $snps_output = $job_properties->get_dir('core_dir');
 	my $bioperl_index = $job_properties->get_file_dir('database_dir', 'bioperl_index');
 	my $processors = $job_properties->get_property('processors');
+	if (not defined $processors)
+	{
+		warn "Warning: processors not defined, defaulting to 1 ...\n";
+		$processors = 1;
+	}
 	my $strain_count = $job_properties->get_property('strain_count');
 	my $pid_cutoff = $job_properties->get_property('pid_cutoff');
 	my $hsp_length = $job_properties->get_property('hsp_length');

@@ -54,14 +54,14 @@ sub _set_defaults
 
 	warn "Defaults undefined" if (not defined $defaults);
 
-	my $processors = $defaults->{'path'}->{'processors'};
+	my $processors = $defaults->{'processors'};
 	my $formatdb = $defaults->{'path'}->{'formatdb'};
 	my $blastall = $defaults->{'path'}->{'blastall'};
 	my $clustalw2 = $defaults->{'path'}->{'clustalw2'};
 	my $figtree = $defaults->{'path'}->{'figtree'};
 	my $phyml = $defaults->{'path'}->{'phyml'};
 
-	$self->set_property('processors', $processors) if ((defined $processors) and ($processors =~ /\d+/));
+	$self->set_property('processors', $processors) if ((defined $processors) and ($processors =~ /^\d+$/));
 	$self->set_file('formatdb', $formatdb) if ((defined $formatdb) and (-e $formatdb));
 	$self->set_file('figtree', $figtree) if ((defined $figtree) and (-e $figtree));
 	$self->set_file('phyml', $phyml) if ((defined $phyml) and (-e $phyml));

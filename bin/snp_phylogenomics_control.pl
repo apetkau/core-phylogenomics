@@ -35,7 +35,7 @@ sub usage
     print "\t-i|--input-file [file]:  Specify an individual input fasta file.\n";
     print "\t-h|--help:  Print help.\n";
     print "\t-o|--output [directory]:  The directory to store output (optional).\n";
-    print "\t-p|--processors [integer]:  The number of processors to use.\n";
+    print "\t-p|--processors [integer]:  The number of processors to use (optional).\n";
     print "\t--pid-cutoff [real]:  The pid cutoff to use (default $pid_cutoff_default).\n";
     print "\t--hsp-length [integer]:   The hsp length to use (default $hsp_length_default).\n";
     print "\t--use-orthomcl:  The directory containing the orthomcl groups file.\n";
@@ -46,8 +46,10 @@ sub usage
     print Pipeline::static_get_stage_descriptions("\t");
 
     print "\nExample:\n";
-    print "\t".basename($0)." --processors 480 --input-dir sample/ --output data\n";
-    print "\tRuns ".basename($0)." on data under sample/ with the passed number of processors.\n\n";
+    print "\t".basename($0)." --input-dir sample/ --output data\n";
+    print "\tRuns ".basename($0)." on data under sample/.\n\n";
+    print "\t".basename($0)." --processors 480 --input-dir sample/ --output data --pid-cutoff 90\n";
+    print "\tRuns ".basename($0)." on data under sample/ with the passed number of processors and pid-cutoff.\n\n";
     print "\t".basename($0)." --resubmit data --start-stage pseudoalign\n";
     print "\tRe-runs the job stored under data/ at the pseudoalignment stage.\n\n";
 }
@@ -232,21 +234,18 @@ elsif (defined $orthomcl_groups)
 }
 else
 {
-    if (not defined $processors_opt)
+    if (defined $processors_opt)
     {
-        print STDERR "Must specify number of processors\n";
-        usage;
-        exit 1;
-    }
-    elsif ($processors_opt !~ /^\d+$/)
-    {
-        print STDERR "Processors option must be a number\n";
-        usage;
-        exit 1;
-    }
-    else
-    {
-        $pipeline->set_processors($processors_opt);
+        if ($processors_opt !~ /^\d+$/)
+        {
+            print STDERR "Processors option must be a number\n";
+            usage;
+            exit 1;
+        }
+        else
+        {
+            $pipeline->set_processors($processors_opt);
+        }
     }
     
     if (defined $keep_files_opt and $keep_files_opt)
