@@ -12,6 +12,7 @@ use File::Copy qw(copy move);
 use File::Path qw(rmtree);
 use Getopt::Long;
 use Pipeline;
+use Pipeline::Blast;
 
 my $script_dir = $FindBin::Bin;
 
@@ -43,7 +44,7 @@ sub usage
     print "\t--force-output-dir: Forces use of output directory even if it exists (optional).\n";
 
     print "\nStages:\n";
-    print Pipeline::static_get_stage_descriptions("\t");
+#    print Pipeline::static_get_stage_descriptions("\t");
 
     print "\nExample:\n";
     print "\t".basename($0)." --input-dir sample/ --output data\n";
@@ -175,7 +176,7 @@ if (defined $help_opt and $help_opt)
     exit 0;
 }
 
-my $pipeline = new Pipeline($script_dir);
+my $pipeline = new Pipeline::Blast($script_dir);
 
 if (defined $verbose_opt)
 {
