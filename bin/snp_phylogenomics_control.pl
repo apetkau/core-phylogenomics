@@ -10,11 +10,13 @@ use lib $FindBin::Bin.'/../lib';
 use File::Basename qw(basename dirname);
 use File::Copy qw(copy move);
 use File::Path qw(rmtree);
+use Pod::Usage;
 use Getopt::Long;
 use Pipeline;
 use Pipeline::Blast;
 use Pipeline::Orthomcl;
 
+my $pod_sections = "NAME|SYNOPSIS|OPTIONS|STAGES";
 my $script_dir = $FindBin::Bin;
 
 my $verbose = 0;
@@ -22,39 +24,6 @@ my $keep_files = 0;
 
 my $pid_cutoff_default = 99;
 my $hsp_length_default = 400;
-
-sub usage
-{
-    print "Usage: ".basename($0)." [Options]\n\n";
-    print "Options:\n";
-    print "\t-r|--resubmit [job_dir]:  Resubmits an already run job through the pipeline.\n";
-    print "\t\tUses options --start-stage and --end-stage to determine stages to submit to.\n";
-    print "\t--start-stage:  The starting stage to resubmit to (only when performing a resubmission).\n";
-    print "\t\tWill resubmit from beginning if not defined.\n";
-    print "\t--end-stage:  The ending stage to resubmit to (can be used without a resubmission).\n";
-    print "\t\tWill resubmit to ending if not defined.\n";
-    print "\t-d|--input-dir [directory]:  The directory containing the input fasta files.\n";
-    print "\t-i|--input-file [file]:  Specify an individual input fasta file.\n";
-    print "\t-h|--help:  Print help.\n";
-    print "\t-o|--output [directory]:  The directory to store output (optional).\n";
-    print "\t-p|--processors [integer]:  The number of processors to use (optional).\n";
-    print "\t--pid-cutoff [real]:  The pid cutoff to use (default $pid_cutoff_default).\n";
-    print "\t--hsp-length [integer]:   The hsp length to use (default $hsp_length_default).\n";
-    print "\t--orthomcl-groups:  The orthomcl groups file.\n";
-    print "\t-v|--verbose:  Print extra information, define multiple times for more information.\n";
-    print "\t--force-output-dir: Forces use of output directory even if it exists (optional).\n";
-
-    print "\nStages:\n";
-#    print Pipeline::static_get_stage_descriptions("\t");
-
-    print "\nExample:\n";
-    print "\t".basename($0)." --input-dir sample/ --output data\n";
-    print "\tRuns ".basename($0)." on data under sample/.\n\n";
-    print "\t".basename($0)." --processors 480 --input-dir sample/ --output data --pid-cutoff 90\n";
-    print "\tRuns ".basename($0)." on data under sample/ with the passed number of processors and pid-cutoff.\n\n";
-    print "\t".basename($0)." --resubmit data --start-stage pseudoalign\n";
-    print "\tRe-runs the job stored under data/ at the pseudoalignment stage.\n\n";
-}
 
 sub handle_input_fasta
 {
@@ -65,7 +34,7 @@ sub handle_input_fasta
 		if (not -d $input_dir_opt)
 		{
 			print STDERR "Error: input fasta directory $input_dir_opt is not a directory\n";
-			usage;
+			pod2usage(-verbose => 99, -sections => [$pod_sections]);
 			exit 1;
 		}
 		else
@@ -77,7 +46,7 @@ sub handle_input_fasta
 				if ($strain_count_opt <= 0)
 				{
 					print STDERR "Error: strain count $strain_count_opt must be positive\n";
-					usage;
+					pod2usage(-verbose => 99, -sections => [$pod_sections]);
 					exit 1;
 				}
 				else
@@ -167,13 +136,13 @@ if (!GetOptions(
     'orthomcl-groups=s' => \$orthomcl_groups,
     'c|strain-count=i' => \$strain_count_opt))
 {
-    usage;
+    pod2usage(-verbose => 99, -sections => [$pod_sections]);
     die "$!";
 }
 
 if (defined $help_opt and $help_opt)
 {
-    usage;
+    pod2usage(-verbose => 99, -sections => [$pod_sections]);
     exit 0;
 }
 
@@ -197,7 +166,7 @@ if (defined $resubmit_opt)
     if (not -d $resubmit_opt)
     {
         print STDERR "Error: $resubmit_opt is an invalid job directory to resubmit from\n";
-        usage;
+        pod2usage(-verbose => 99, -sections => [$pod_sections]);
         exit 1;
     }
     else
@@ -245,7 +214,7 @@ else
         if ($processors_opt !~ /^\d+$/)
         {
             print STDERR "Processors option must be a number\n";
-            usage;
+            pod2usage(-verbose => 99, -sections => [$pod_sections]);
             exit 1;
         }
         else
@@ -280,14 +249,14 @@ else
         else
         {
             print STDERR "Error: input-files not properly defined\n";
-            usage;
+            pod2usage(-verbose => 99, -sections => [$pod_sections]);
             exit 1;
         }
     }
     else
     {
         print STDERR "Error: no input files defined, please specify --input-dir or --input-file\n";
-        usage;
+        pod2usage(-verbose => 99, -sections => [$pod_sections]);
         exit 1;
     }
     
@@ -298,13 +267,13 @@ else
         if ($pid_cutoff_opt !~ /^\d+\.?\d*$/)
         {
             print STDERR "pid-cutoff value $pid_cutoff_opt is invalid\n";
-            usage;
+            pod2usage(-verbose => 99, -sections => [$pod_sections]);
             exit 1;
         }
         elsif ($pid_cutoff_opt < 0 or $pid_cutoff_opt > 100)
         {
             print STDERR "pid-cutoff value $pid_cutoff_opt must be in [0,100]\n";
-            usage;
+            pod2usage(-verbose => 99, -sections => [$pod_sections]);
             exit 1;
         }
         else
@@ -322,13 +291,13 @@ else
         if ($hsp_length_opt !~ /^\d+$/)
         {
             print STDERR "hsp-length value $hsp_length_opt is invalid\n";
-            usage;
+            pod2usage(-verbose => 99, -sections => [$pod_sections]);
             exit 1;
         }
         elsif ($hsp_length_opt < 0)
         {
             print STDERR "hsp-length value $hsp_length_opt must be > 0\n";
-            usage;
+            pod2usage(-verbose => 99, -sections => [$pod_sections]);
             exit 1;
         }
         else
@@ -374,6 +343,16 @@ $pipeline->execute;
 
 snp_phylogenomics_control.pl:  Script to automate running of core SNP analysis.
 
+=head1 SYNOPSIS
+
+=over
+
+=item snp_phylogenomics_control.pl --input-dir sample/ --output out
+
+=item snp_phylogenomics_control.pl --resubmit out/ --start-stage pseudoalign
+
+=back
+
 =head1 DESCRIPTION
 
 Runs the core SNP phylogenomic analysis stages.  The input is either a directory containing the FASTA files to analyize, or the multi-fasta file to analyze.  The output is the pseudoalign.phy alignment file and the snpreport.txt. The intermediate files are kept under a directory (named using --output), and can be used to resubmit the analysis at different stages later.
@@ -390,27 +369,67 @@ Use B<--input-dir [name]> to define the fasta input directory.  The input files 
 
 Use B<--output [OUT_NAME]> to define an output directory.  The output directory must be accessible by the cluster nodes.  Files for each stage will be written under the output directory.  In addition, a log/ directory will be written with log files for each stage.  The final results will be available under OUT_NAME/pseudoalign.
 
-=head1 REQUIRED
+=head1 OPTIONS
 
-=over 8
+=head2 REQUIRED
 
-=item B<--output [directory> :  The directory to store the analysis data, required only for a new analysis.
+=over
 
-=item B<--input-dir [directory]> :  The input directory to process.
+=item B<-d|--input-dir [directory]> :  The input directory to process.
 
-=item B<--processors [integer]>:  The number of processors we will run the SGE jobs with.
+=item B<-o|--output [directory> :  The directory to store the analysis data, required only for a new analysis.
 
 =back
 
-=head1 OPTIONAL
+=head2 OPTIONAL
 
-=over 8
+=over
 
-=item B<--verbose>:  Print more information.
+=item B<-p|--resubmit [job dir]>:  Resubmits the given job directory through the pipeline.
+
+=item B<-p|--processors [integer]>:  The number of processors we will run the SGE jobs with.
+
+=item B<-i|--input-file [file]>:  Specify an individual fasta file to process.
+
+=item B<-h|--help>:  Display documentation.
+
+=item B<-v|--verbose>:  Print more information.
 
 =item B<--pid-cutoff [real]>:  The pid cutoff to use.
 
 =item B<--hsp-length [integer]>:  The hsp length to use.
+
+=item B<--start-stage [stage]>:  The stage to start on.
+
+=item B<--end-stage [stage]>:  The stage to end on.
+
+=item B<--force-output-dir>:  Forces use of output directory even if it already exists.
+
+=item B<--orthomcl-groups>:  The orthomcl groups file.
+
+=back
+
+=head1 STAGES
+
+=over
+
+=item B<prepare-input>:  Prepares and checks input files.
+
+=item B<build-database>:  Builds database for blasts.
+
+=item B<split>:  Splits input file among processors.
+
+=item B<blast>:  Performs blast to find core genome.
+
+=item B<core>:  Attempts to identify snps from core genome.
+
+=item B<alignment>:  Performs multiple alignment on each ortholog.
+
+=item B<pseudoalign>:  Creates a pseudoalignment.
+
+=item B<build-phylogeny>:  Builds the phylogeny based on the pseudoalignment.
+
+=item B<phylogeny-graphic>:  Builds a graphic image of the phylogeny.
 
 =back
 
@@ -420,25 +439,19 @@ This script assumes you are running on a cluster environment.  Standard batch-qu
 
 =head1 EXAMPLE
 
-=over 1
-
-=item snp_phylogenomics_control.pl --processors 480 --input-dir sample/ --output data
-
-=back
+=head2 snp_phylogenomics_control.pl --processors 480 --input-dir sample/ --output data
 
 This example will run the analysis on all fasta files under sample/, using a randomly chosing file from sample/ as the split file, and data/ as the directory to place all analysis files.  We will run the job using 480 processors on the cluster.
 
-=over 1
-
-=item snp_phylogenomics_control.pl --resubmit data --start-stage alignment
+=head2 snp_phylogenomics_control.pl --resubmit data --start-stage alignment
 
 This example will resubmit a previously run job (under directory data/), starting from the alignment stage.
 
-=head1 AUTHOR
+=head1 AUTHORS
 
-Aaron Petkau - aaron.petkau@phac-aspc.gc.ca
+Aaron Petkau <aaron.petkau@phac-aspc.gc.ca>
 
-Gary Van Domselaar - gary_van_domselaar@phac-aspc.gc.ca
+Gary Van Domselaar <gary_van_domselaar@phac-aspc.gc.ca>
 
 =cut
 
