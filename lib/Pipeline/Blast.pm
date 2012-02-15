@@ -42,6 +42,8 @@ sub new
     $self->_check_stages;
 
     my $job_properties = $self->{'job_properties'};
+    $job_properties->set_property('mode', 'blast');
+
     $job_properties->set_property('pid_cutoff', 99);
     $job_properties->set_property('hsp_length', 400);
 

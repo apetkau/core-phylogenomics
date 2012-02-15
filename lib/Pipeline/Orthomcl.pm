@@ -37,6 +37,7 @@ sub new
     $self->_check_stages;
 
     my $job_properties = $self->{'job_properties'};
+    $job_properties->set_property('mode', 'orthomcl');
 
     $job_properties->set_file('core_snp_base', 'snps');
     $job_properties->set_dir('log_dir', "log");

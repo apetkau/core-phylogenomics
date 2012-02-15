@@ -16,7 +16,8 @@ use Pipeline;
 use Pipeline::Blast;
 use Pipeline::Orthomcl;
 
-my $pod_sections = "NAME|SYNOPSIS|OPTIONS|STAGES";
+my $pod_sections = "SYNOPSIS";
+my $pod_sections_long = "NAME|SYNOPSIS|OPTIONS|STAGES";
 my $script_dir = $FindBin::Bin;
 
 my $verbose = 0;
@@ -54,6 +55,25 @@ sub handle_input_fasta
 					$pipeline->set_strain_count($strain_count_opt);
 				}
 			}
+		}
+	}
+}
+
+sub handle_processors
+{
+	my ($pipeline, $processors) = @_;
+
+	if (defined $processors)
+	{
+		if ($processors !~ /^\d+$/)
+		{
+			print STDERR "Processors option must be a number\n";
+			pod2usage(-verbose => 99, -sections => [$pod_sections]);
+			exit 1;
+		}
+		else
+		{
+			$pipeline->set_processors($processors);
 		}
 	}
 }
@@ -97,20 +117,28 @@ sub handle_output_opt
 	}
 }
 
-sub parse_blast_opts
+sub parse_ortho_opts
 {
-	my ($options) = @_;
+	my ($options, $pipeline) = @_;
 
-	my $pipeline;
-	
 	if (defined $options->{'orthomcl-groups'})
 	{
-		$pipeline = new Pipeline::Orthomcl($script_dir);
+		die "Orthomcl groups file ".$options->{'orthomcl-groups'}." does not exist" if (not -e $options->{'orthomcl-groups'});
+	
+		$pipeline->set_orthologs_group($options->{'orthomcl-groups'});
+
+		handle_input_fasta($pipeline, $options->{'d'}, $options->{'c'});
+		handle_output_opt($pipeline, $options->{'o'});
 	}
 	else
 	{
-		$pipeline = new Pipeline::Blast($script_dir);
+		die "Error: orthomcl-groups option not defined\n";
 	}
+}
+
+sub parse_blast_opts
+{
+	my ($options, $pipeline) = @_;
 	
 	if (defined $options->{'v'})
 	{
@@ -154,29 +182,11 @@ sub parse_blast_opts
 			}
 		}
 	}
-	elsif (defined $options->{'orthomcl-groups'})
-	{
-		die "Orthomcl groups file ".$options->{'orthomcl-groups'}." does not exist" if (not -e $options->{'orthomcl-groups'});
-	
-		handle_input_fasta($pipeline, $options->{'d'}, $options->{'c'});
-		handle_output_opt($pipeline, $options->{'o'});
-	
-		$pipeline->set_orthologs_group($options->{'orthomcl-groups'});
-	}
 	else
 	{
 		if (defined $options->{'p'})
 		{
-			if ($options->{'p'} !~ /^\d+$/)
-			{
-				print STDERR "Processors option must be a number\n";
-				pod2usage(-verbose => 99, -sections => [$pod_sections]);
-				exit 1;
-			}
-			else
-			{
-				$pipeline->set_processors($options->{'p'});
-			}
+			handle_processors($pipeline, $options->{'p'});
 		}
 		
 		if (defined $options->{'keep-files'} and $options->{'keep-files'})
@@ -309,6 +319,7 @@ my $help;
 my %options;
 
 if (!GetOptions(\%options,
+	'm|mode=s',
 	'r|resubmit=s',
 	'start-stage=s',
 	'end-stage=s',
@@ -331,11 +342,35 @@ if (!GetOptions(\%options,
 
 if (defined $options{'h'})
 {
-	pod2usage(-verbose => 99, -sections => [$pod_sections], -exitval => 0);
+	pod2usage(-verbose => 99, -sections => [$pod_sections_long], -exitval => 0);
 }
 
-my $pipeline = parse_blast_opts(\%options);
-$pipeline->execute;
+my $pipeline;
+if (not defined $options{'m'})
+{
+	warn "Warning: no mode defined, defaulting to BLAST pipeline mode.\n";
+	$pipeline = new Pipeline::Blast($script_dir);
+	parse_blast_opts(\%options, $pipeline);
+	$pipeline->execute;
+}
+elsif ($options{'m'} eq 'blast')
+{
+	$pipeline = new Pipeline::Blast($script_dir);
+	parse_blast_opts(\%options, $pipeline);
+	$pipeline->execute;
+}
+elsif ($options{'m'} eq 'orthomcl')
+{
+	$pipeline = new Pipeline::Orthomcl($script_dir);
+	parse_ortho_opts(\%options, $pipeline);
+	$pipeline->execute;
+}
+else
+{
+	print STDERR "Error: invalid mode (".$options{'m'}.") defined\n";
+	pod2usage(-verbose => 99, -sections => [$pod_sections], -exitval => 1);
+}
+
 
 =pod
 
@@ -345,11 +380,21 @@ snp_phylogenomics_control.pl:  Script to automate running of core SNP analysis.
 
 =head1 SYNOPSIS
 
+=head2 BLAST
+
 =over
 
-=item snp_phylogenomics_control.pl --input-dir sample/ --output out
+=item snp_phylogenomics_control.pl --mode blast --input-dir sample/ --output out
 
-=item snp_phylogenomics_control.pl --resubmit out/ --start-stage pseudoalign
+=item snp_phylogenomics_control.pl --mode blast --resubmit out/ --start-stage pseudoalign
+
+=back
+
+=head2 ORTHOMCL
+
+=over
+
+=item snp_phylogenomics_control.pl --mode orthomcl --input-dir sample/ --output out --orthomcl-groups groups.txt
 
 =back
 
@@ -375,7 +420,7 @@ Use B<--output [OUT_NAME]> to define an output directory.  The output directory 
 
 =over
 
-=item B<-d|--input-dir [directory]> :  The input directory to process.
+=item B<-d|--input-dir [directory]> :  The input directory containing the fasta files to process.
 
 =item B<-o|--output [directory> :  The directory to store the analysis data, required only for a new analysis.
 
@@ -385,19 +430,13 @@ Use B<--output [OUT_NAME]> to define an output directory.  The output directory 
 
 =over
 
+=item B<-m|--mode [mode]>:  The mode to run the pipeline in.  One of 'blast' or 'orthomcl'.
+
 =item B<-p|--resubmit [job dir]>:  Resubmits the given job directory through the pipeline.
 
 =item B<-p|--processors [integer]>:  The number of processors we will run the SGE jobs with.
 
 =item B<-i|--input-file [file]>:  Specify an individual fasta file to process.
-
-=item B<-h|--help>:  Display documentation.
-
-=item B<-v|--verbose>:  Print more information.
-
-=item B<--pid-cutoff [real]>:  The pid cutoff to use.
-
-=item B<--hsp-length [integer]>:  The hsp length to use.
 
 =item B<--start-stage [stage]>:  The stage to start on.
 
@@ -405,11 +444,33 @@ Use B<--output [OUT_NAME]> to define an output directory.  The output directory 
 
 =item B<--force-output-dir>:  Forces use of output directory even if it already exists.
 
+=item B<-v|--verbose>:  Print more information.
+
+=item B<-h|--help>:  Display documentation.
+
+=back
+
+=head3 BLAST
+
+=over
+
+=item B<--pid-cutoff [real]>:  The pid cutoff to use.
+
+=item B<--hsp-length [integer]>:  The hsp length to use.
+
+=back
+
+=head3 ORTHOMCL
+
+=over
+
 =item B<--orthomcl-groups>:  The orthomcl groups file.
 
 =back
 
 =head1 STAGES
+
+=head2 BLAST
 
 =over
 
@@ -422,6 +483,22 @@ Use B<--output [OUT_NAME]> to define an output directory.  The output directory 
 =item B<blast>:  Performs blast to find core genome.
 
 =item B<core>:  Attempts to identify snps from core genome.
+
+=item B<alignment>:  Performs multiple alignment on each ortholog.
+
+=item B<pseudoalign>:  Creates a pseudoalignment.
+
+=item B<build-phylogeny>:  Builds the phylogeny based on the pseudoalignment.
+
+=item B<phylogeny-graphic>:  Builds a graphic image of the phylogeny.
+
+=back
+
+=head2 ORTHOMCL
+
+=over
+
+=item B<prepare-orthomcl>:  Prepares the core gene files from the orthomcl groups file.
 
 =item B<alignment>:  Performs multiple alignment on each ortholog.
 
