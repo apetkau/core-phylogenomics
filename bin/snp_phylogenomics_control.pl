@@ -60,281 +60,281 @@ sub handle_input_fasta
 
 sub handle_output_opt
 {
-    my ($pipeline, $output_opt, $force_output_dir_opt) = @_;
+	my ($pipeline, $output_opt, $force_output_dir_opt) = @_;
 
-    if (defined $output_opt)
-    {
-        if (-e $output_opt)
-        {
-            if (-d $output_opt and (defined $force_output_dir_opt) and $force_output_dir_opt)
-            {
-                $pipeline->set_job_dir($output_opt);
-            }
-            else
-            {
-                print "Warning: directory \"$output_opt\" already exists, are you sure you want to store data here [Y]? ";
-                my $response = <>;
-                chomp $response;
-                if ($response eq 'y' or $response eq 'Y' or $response eq '')
-                {
-                    $pipeline->set_job_dir($output_opt);
-                }
-                else
-                {
-                    die "Directory \"$output_opt\" already exists, could not continue.";
-                }
-            }
-        }
-        else
-        {
-            mkdir $output_opt if (not -e $output_opt);
-            $pipeline->set_job_dir($output_opt);
-        }
-    }
-    else
-    {
-        die "No value defined for --output.";
-    }
+	if (defined $output_opt)
+	{
+		if (-e $output_opt)
+		{
+			if (-d $output_opt and (defined $force_output_dir_opt) and $force_output_dir_opt)
+			{
+				$pipeline->set_job_dir($output_opt);
+			}
+			else
+			{
+				print "Warning: directory \"$output_opt\" already exists, are you sure you want to store data here [Y]? ";
+				my $response = <>;
+				chomp $response;
+				if ($response eq 'y' or $response eq 'Y' or $response eq '')
+				{
+					$pipeline->set_job_dir($output_opt);
+				}
+				else
+				{
+					die "Directory \"$output_opt\" already exists, could not continue.";
+				}
+			}
+		}
+		else
+		{
+			mkdir $output_opt if (not -e $output_opt);
+			$pipeline->set_job_dir($output_opt);
+		}
+	}
+	else
+	{
+		die "No value defined for --output.";
+	}
+}
+
+sub parse_blast_opts
+{
+	my ($options) = @_;
+
+	my $pipeline;
+	
+	if (defined $options->{'orthomcl-groups'})
+	{
+		$pipeline = new Pipeline::Orthomcl($script_dir);
+	}
+	else
+	{
+		$pipeline = new Pipeline::Blast($script_dir);
+	}
+	
+	if (defined $options->{'v'})
+	{
+		$pipeline->set_verbose($options->{'v'}); 
+	}
+	
+	if (defined $options->{'r'})
+	{
+		if (not -d $options->{'r'})
+		{
+			print STDERR "Error: ".$options->{'r'}." is an invalid job directory to resubmit from\n";
+			pod2usage(-verbose => 99, -sections => [$pod_sections]);
+			exit 1;
+		}
+		else
+		{
+			$pipeline->resubmit($options->{'r'});
+		}
+	
+		if (defined $options->{'end-stage'})
+		{
+			if (not $pipeline->is_valid_stage($options->{'end-stage'}))
+			{
+				die "Cannot resubmit to invalid stage ".$options->{'end-stage'};
+			}
+			else
+			{
+				$pipeline->set_end_stage($options->{'end-stage'});
+			}
+		}
+		
+		if (defined $options->{'start-stage'})
+		{
+			if (not $pipeline->is_valid_stage($options->{'start-stage'}))
+			{
+				die "Cannot resubmit to invalid stage ".$options->{'start-stage'};
+			}
+			else
+			{
+				$pipeline->set_start_stage($options->{'start-stage'});
+			}
+		}
+	}
+	elsif (defined $options->{'orthomcl-groups'})
+	{
+		die "Orthomcl groups file ".$options->{'orthomcl-groups'}." does not exist" if (not -e $options->{'orthomcl-groups'});
+	
+		handle_input_fasta($pipeline, $options->{'d'}, $options->{'c'});
+		handle_output_opt($pipeline, $options->{'o'});
+	
+		$pipeline->set_orthologs_group($options->{'orthomcl-groups'});
+	}
+	else
+	{
+		if (defined $options->{'p'})
+		{
+			if ($options->{'p'} !~ /^\d+$/)
+			{
+				print STDERR "Processors option must be a number\n";
+				pod2usage(-verbose => 99, -sections => [$pod_sections]);
+				exit 1;
+			}
+			else
+			{
+				$pipeline->set_processors($options->{'p'});
+			}
+		}
+		
+		if (defined $options->{'keep-files'} and $options->{'keep-files'})
+		{
+			$pipeline->set_keep_files(1);
+		}
+		
+		if (defined $options->{'d'})
+		{
+			handle_input_fasta($pipeline, $options->{'d'}, $options->{'c'});
+		}
+		elsif (defined $options->{'i'})
+		{
+			my $input_files_opt = $options->{'i'};
+			if ((ref $input_files_opt) eq 'ARRAY' and (@$input_files_opt > 0))
+			{
+				foreach my $in_file (@$input_files_opt)
+				{
+					die "Error: one of passed input files is undefind" if (not defined $in_file);
+					die "Error: file=$in_file does not exist" if (not -e $in_file);
+					die "Error: file=$in_file does not end in .fasta" if ($in_file !~ /\.fasta$/);
+					die "Error: file=$in_file is a directory" if (-d $in_file);
+	
+					$pipeline->set_input_fasta($in_file);
+				}
+			}
+			else
+			{
+				print STDERR "Error: input-files not properly defined\n";
+				pod2usage(-verbose => 99, -sections => [$pod_sections]);
+				exit 1;
+			}
+		}
+		else
+		{
+			print STDERR "Error: no input files defined, please specify --input-dir or --input-file\n";
+			pod2usage(-verbose => 99, -sections => [$pod_sections]);
+			exit 1;
+		}
+		
+		handle_output_opt($pipeline, $options->{'o'}, $options->{'force-output-dir'});
+		
+		if (defined $options->{'pid-cutoff'})
+		{
+			my $pid_cutoff_opt = $options->{'pid-cutoff'};
+			if ($pid_cutoff_opt !~ /^\d+\.?\d*$/)
+			{
+				print STDERR "pid-cutoff value $pid_cutoff_opt is invalid\n";
+				pod2usage(-verbose => 99, -sections => [$pod_sections]);
+				exit 1;
+			}
+			elsif ($pid_cutoff_opt < 0 or $pid_cutoff_opt > 100)
+			{
+				print STDERR "pid-cutoff value $pid_cutoff_opt must be in [0,100]\n";
+				pod2usage(-verbose => 99, -sections => [$pod_sections]);
+				exit 1;
+			}
+			else
+			{
+				$pipeline->set_pid_cutoff($pid_cutoff_opt);
+			}
+		}
+		else
+		{
+			$pipeline->set_pid_cutoff($pid_cutoff_default);
+		}
+		
+		if (defined $options->{'hsp-length'})
+		{
+			my $hsp_length_opt = $options->{'hsp-length'};
+			if ($hsp_length_opt !~ /^\d+$/)
+			{
+				print STDERR "hsp-length value $hsp_length_opt is invalid\n";
+				pod2usage(-verbose => 99, -sections => [$pod_sections]);
+				exit 1;
+			}
+			elsif ($hsp_length_opt < 0)
+			{
+				print STDERR "hsp-length value $hsp_length_opt must be > 0\n";
+				pod2usage(-verbose => 99, -sections => [$pod_sections]);
+				exit 1;
+			}
+			else
+			{
+				$pipeline->set_hsp_length($hsp_length_opt);
+			}
+		}
+		else
+		{
+			$pipeline->set_hsp_length($hsp_length_default);
+		}
+		
+		if (defined $options->{'end-stage'})
+		{
+			my $end_stage_opt = $options->{'end-stage'};
+			if (not $pipeline->is_valid_stage($end_stage_opt))
+			{
+				die "Cannot resubmit to invalid stage $end_stage_opt";
+			}
+			else
+			{
+				$pipeline->set_end_stage($end_stage_opt);
+			}
+		}
+		
+		if (defined $options->{'start-stage'})
+		{
+			my $start_stage_opt = $options->{'start-stage'};
+			if (not $pipeline->is_valid_stage($start_stage_opt))
+			{
+				die "Cannot resubmit to invalid stage $start_stage_opt";
+			}
+			else
+			{
+				$pipeline->set_start_stage($start_stage_opt);
+			}
+		}
+	}
+
+	return $pipeline;
 }
 
 ############
 ##  MAIN  ##
 ############
 
-my $verbose_opt;
-my $processors_opt;
-my $input_fasta_opt;
-my $help_opt;
-my $strain_count_opt;
-my $input_dir_opt;
-my $keep_files_opt;
-my $output_opt;
-my $force_output_dir_opt;
-my $pid_cutoff_opt;
-my $hsp_length_opt;
-my $input_files_opt;
-my $orthomcl_groups;
+my $mode;
+my $help;
 
-my $resubmit_opt;
-my $start_stage_opt;
-my $end_stage_opt;
+my %options;
 
-if (!GetOptions(
-    'r|resubmit=s' => \$resubmit_opt,
-    'start-stage=s' => \$start_stage_opt,
-    'end-stage=s' => \$end_stage_opt,
-    'p|processors=i' => \$processors_opt,
-    'd|input-dir=s' => \$input_dir_opt,
-    'i|input-file=s@' => \$input_files_opt,
-    'o|output=s' => \$output_opt,
-    'k|keep-files' => \$keep_files_opt,
-    'pid-cutoff=f' => \$pid_cutoff_opt,
-    'hsp-length=i' => \$hsp_length_opt,
-    'v|verbose+' => \$verbose_opt,
-    'h|help' => \$help_opt,
-    'force-output-dir' => \$force_output_dir_opt,
-    'orthomcl-groups=s' => \$orthomcl_groups,
-    'c|strain-count=i' => \$strain_count_opt))
+if (!GetOptions(\%options,
+	'r|resubmit=s',
+	'start-stage=s',
+	'end-stage=s',
+	'p|processors=i',
+	'd|input-dir=s',
+	'i|input-file=s@',
+	'o|output=s',
+	'k|keep-files',
+	'pid-cutoff=f',
+	'hsp-length=i',
+	'v|verbose+',
+	'h|help',
+	'force-output-dir',
+	'orthomcl-groups=s',
+	'c|strain-count=i'))
 {
-    pod2usage(-verbose => 99, -sections => [$pod_sections]);
-    die "$!";
+	pod2usage(-verbose => 99, -sections => [$pod_sections]);
+	die "$!";
 }
 
-if (defined $help_opt and $help_opt)
+if (defined $options{'h'})
 {
-    pod2usage(-verbose => 99, -sections => [$pod_sections]);
-    exit 0;
+	pod2usage(-verbose => 99, -sections => [$pod_sections], -exitval => 0);
 }
 
-my $pipeline;
-if (defined $orthomcl_groups)
-{
-	$pipeline = new Pipeline::Orthomcl($script_dir);
-}
-else
-{
-	$pipeline = new Pipeline::Blast($script_dir);
-}
-
-if (defined $verbose_opt)
-{
-    $pipeline->set_verbose($verbose_opt); 
-}
-
-if (defined $resubmit_opt)
-{
-    if (not -d $resubmit_opt)
-    {
-        print STDERR "Error: $resubmit_opt is an invalid job directory to resubmit from\n";
-        pod2usage(-verbose => 99, -sections => [$pod_sections]);
-        exit 1;
-    }
-    else
-    {
-        $pipeline->resubmit($resubmit_opt);
-    }
-
-    if (defined $end_stage_opt)
-    {
-        if (not $pipeline->is_valid_stage($end_stage_opt))
-        {
-            die "Cannot resubmit to invalid stage $end_stage_opt";
-        }
-        else
-        {
-            $pipeline->set_end_stage($end_stage_opt);
-        }
-    }
-    
-    if (defined $start_stage_opt)
-    {
-        if (not $pipeline->is_valid_stage($start_stage_opt))
-        {
-            die "Cannot resubmit to invalid stage $start_stage_opt";
-        }
-        else
-        {
-            $pipeline->set_start_stage($start_stage_opt);
-        }
-    }
-}
-elsif (defined $orthomcl_groups)
-{
-	die "Orthomcl groups file $orthomcl_groups does not exist" if (not -e $orthomcl_groups);
-
-	handle_input_fasta($pipeline, $input_dir_opt, $strain_count_opt);
-	handle_output_opt($pipeline, $output_opt);
-
-	$pipeline->set_orthologs_group($orthomcl_groups);
-}
-else
-{
-    if (defined $processors_opt)
-    {
-        if ($processors_opt !~ /^\d+$/)
-        {
-            print STDERR "Processors option must be a number\n";
-            pod2usage(-verbose => 99, -sections => [$pod_sections]);
-            exit 1;
-        }
-        else
-        {
-            $pipeline->set_processors($processors_opt);
-        }
-    }
-    
-    if (defined $keep_files_opt and $keep_files_opt)
-    {
-        $pipeline->set_keep_files($keep_files_opt);
-    }
-    
-    if (defined $input_dir_opt)
-    {
-        handle_input_fasta($pipeline, $input_dir_opt, $strain_count_opt);
-    }
-    elsif (defined $input_files_opt)
-    {
-        if ((ref $input_files_opt) eq 'ARRAY' and (@$input_files_opt > 0))
-        {
-            foreach my $in_file (@$input_files_opt)
-            {
-                die "Error: one of passed input files is undefind" if (not defined $in_file);
-                die "Error: file=$in_file does not exist" if (not -e $in_file);
-                die "Error: file=$in_file does not end in .fasta" if ($in_file !~ /\.fasta$/);
-                die "Error: file=$in_file is a directory" if (-d $in_file);
-
-            	$pipeline->set_input_fasta($in_file);
-            }
-        }
-        else
-        {
-            print STDERR "Error: input-files not properly defined\n";
-            pod2usage(-verbose => 99, -sections => [$pod_sections]);
-            exit 1;
-        }
-    }
-    else
-    {
-        print STDERR "Error: no input files defined, please specify --input-dir or --input-file\n";
-        pod2usage(-verbose => 99, -sections => [$pod_sections]);
-        exit 1;
-    }
-    
-    handle_output_opt($pipeline, $output_opt, $force_output_dir_opt);
-    
-    if (defined $pid_cutoff_opt)
-    {
-        if ($pid_cutoff_opt !~ /^\d+\.?\d*$/)
-        {
-            print STDERR "pid-cutoff value $pid_cutoff_opt is invalid\n";
-            pod2usage(-verbose => 99, -sections => [$pod_sections]);
-            exit 1;
-        }
-        elsif ($pid_cutoff_opt < 0 or $pid_cutoff_opt > 100)
-        {
-            print STDERR "pid-cutoff value $pid_cutoff_opt must be in [0,100]\n";
-            pod2usage(-verbose => 99, -sections => [$pod_sections]);
-            exit 1;
-        }
-        else
-        {
-            $pipeline->set_pid_cutoff($pid_cutoff_opt);
-        }
-    }
-    else
-    {
-        $pipeline->set_pid_cutoff($pid_cutoff_default);
-    }
-    
-    if (defined $hsp_length_opt)
-    {
-        if ($hsp_length_opt !~ /^\d+$/)
-        {
-            print STDERR "hsp-length value $hsp_length_opt is invalid\n";
-            pod2usage(-verbose => 99, -sections => [$pod_sections]);
-            exit 1;
-        }
-        elsif ($hsp_length_opt < 0)
-        {
-            print STDERR "hsp-length value $hsp_length_opt must be > 0\n";
-            pod2usage(-verbose => 99, -sections => [$pod_sections]);
-            exit 1;
-        }
-        else
-        {
-            $pipeline->set_hsp_length($hsp_length_opt);
-        }
-    }
-    else
-    {
-        $pipeline->set_hsp_length($hsp_length_default);
-    }
-    
-    if (defined $end_stage_opt)
-    {
-        if (not $pipeline->is_valid_stage($end_stage_opt))
-        {
-            die "Cannot resubmit to invalid stage $end_stage_opt";
-        }
-        else
-        {
-            $pipeline->set_end_stage($end_stage_opt);
-        }
-    }
-    
-    if (defined $start_stage_opt)
-    {
-        if (not $pipeline->is_valid_stage($start_stage_opt))
-        {
-            die "Cannot resubmit to invalid stage $start_stage_opt";
-        }
-        else
-        {
-            $pipeline->set_start_stage($start_stage_opt);
-        }
-    }
-}
-
+my $pipeline = parse_blast_opts(\%options);
 $pipeline->execute;
 
 =pod
