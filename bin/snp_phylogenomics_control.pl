@@ -13,6 +13,7 @@ use File::Path qw(rmtree);
 use Getopt::Long;
 use Pipeline;
 use Pipeline::Blast;
+use Pipeline::Orthomcl;
 
 my $script_dir = $FindBin::Bin;
 
@@ -39,7 +40,7 @@ sub usage
     print "\t-p|--processors [integer]:  The number of processors to use (optional).\n";
     print "\t--pid-cutoff [real]:  The pid cutoff to use (default $pid_cutoff_default).\n";
     print "\t--hsp-length [integer]:   The hsp length to use (default $hsp_length_default).\n";
-    print "\t--use-orthomcl:  The directory containing the orthomcl groups file.\n";
+    print "\t--orthomcl-groups:  The orthomcl groups file.\n";
     print "\t-v|--verbose:  Print extra information, define multiple times for more information.\n";
     print "\t--force-output-dir: Forces use of output directory even if it exists (optional).\n";
 
@@ -163,7 +164,7 @@ if (!GetOptions(
     'v|verbose+' => \$verbose_opt,
     'h|help' => \$help_opt,
     'force-output-dir' => \$force_output_dir_opt,
-    'use-orthomcl=s' => \$orthomcl_groups,
+    'orthomcl-groups=s' => \$orthomcl_groups,
     'c|strain-count=i' => \$strain_count_opt))
 {
     usage;
@@ -176,7 +177,15 @@ if (defined $help_opt and $help_opt)
     exit 0;
 }
 
-my $pipeline = new Pipeline::Blast($script_dir);
+my $pipeline;
+if (defined $orthomcl_groups)
+{
+	$pipeline = new Pipeline::Orthomcl($script_dir);
+}
+else
+{
+	$pipeline = new Pipeline::Blast($script_dir);
+}
 
 if (defined $verbose_opt)
 {
@@ -227,11 +236,7 @@ elsif (defined $orthomcl_groups)
 	handle_input_fasta($pipeline, $input_dir_opt, $strain_count_opt);
 	handle_output_opt($pipeline, $output_opt);
 
-	$pipeline->_initialize;
-	$pipeline->_build_input_fasta;
-	$pipeline->_write_properties;
-	$pipeline->prepare_orthomcl($orthomcl_groups);
-	$pipeline->set_start_stage('alignment');
+	$pipeline->set_orthologs_group($orthomcl_groups);
 }
 else
 {

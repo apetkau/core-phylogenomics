@@ -11,6 +11,8 @@ use Cwd;
 use File::Copy;
 use File::Basename;
 
+my $out_fh;
+
 __PACKAGE__->run() unless caller;
 
 1;
@@ -18,12 +20,13 @@ __PACKAGE__->run() unless caller;
 sub usage
 {
 	return
-"Usage: ".basename($0).".pl -i <orthomcl input> -f <fasta_input> -o <output_dir> --strain-id <strain id> ...
+"Usage: ".basename($0).".pl -i <orthomcl input> -f <fasta_input> -o <output_dir> --strain-id <strain id> ... -l <log>
 Options:
 	-i|--orthomcl-input:  The orthomcl groups file to use for clusters of core genes.
 	-f|--fasta-input:  The fasta input directory containing the nucleotide files.
 	-o|--output-dir:  The output dir to store the core gene files.
-	-s|--strain-id:  The ids of each strain to include in the set to filter out (multiple).\n";
+	-s|--strain-id:  The ids of each strain to include in the set to filter out (multiple).
+	-l|--log:  Log file\n";
 }
 
 sub create_set_table
@@ -82,7 +85,7 @@ sub handle_ortho_groups
 
 			if (not exists $ortho_group->{$strain})
 			{
-				print "No ortholog group name for $strain in set, skipping ...\n";
+				print $out_fh "No ortholog group name for $strain in set, skipping ...\n";
 			}
 			elsif (not exists $existence_hash{$strain})
 			{
@@ -91,7 +94,7 @@ sub handle_ortho_groups
 			}
 			else
 			{
-				print "Duplicate for strain $strain found, skipping ...\n";
+				print $out_fh "Duplicate for strain $strain found, skipping ...\n";
 			}
 		}
 
@@ -102,7 +105,7 @@ sub handle_ortho_groups
 		}
 		else
 		{
-			print STDERR "Skipping group as it does not contain a complete valid set of strains: $line\n";
+			print $out_fh "Skipping group as it does not contain a complete valid set of strains: $line\n";
 			$group_filtered++;
 		}
 		
@@ -131,7 +134,7 @@ sub create_seq_gene_table
 			my ($orf) = ($seq->display_id);
 			if (not defined $orf)
 			{
-				print STDERR "Warning: no id in file $file_path for $seq";
+				print $out_fh "Warning: no id in file $file_path for $seq";
 			}
 			else
 			{
@@ -148,18 +151,19 @@ sub create_seq_gene_table
 
 sub run
 {
-	my ($orthomcl_input,$fasta_input,$output_dir, $strain_id);
+	my ($orthomcl_input,$fasta_input,$output_dir, $strain_id,$log);
 
 	if ( @_ && $_[0] eq __PACKAGE__)
 	{
 		GetOptions('i|orthomcl-input=s' => \$orthomcl_input,
 		   'f|fasta-input=s' => \$fasta_input,
 		   'o|output-dir=s' => \$output_dir,
-		   's|strain-id=s@' => \$strain_id) or die "Invalid options\n".usage;
+		   's|strain-id=s@' => \$strain_id,
+		   'l|log=s' => \$log) or die "Invalid options\n".usage;
 	}
 	else
 	{
-		($orthomcl_input, $fasta_input, $output_dir, $strain_id) = @_;
+		($orthomcl_input, $fasta_input, $output_dir, $strain_id, $log) = @_;
 	}
 
 	die "othomcl-input not defined\n".usage if (not defined $orthomcl_input);
@@ -173,12 +177,21 @@ sub run
 
 	die "output not defined\n".usage if (not defined $output_dir);
 
+	if (defined $log)
+	{
+		open($out_fh, '>', $log) or die "Could not open $log: $!";
+	}
+	else
+	{
+		open($out_fh, '>-') or die "Could not open stdout for writing";
+	}
+
 	my ($ortho_group, $ortho_group_string) = create_set_table($strain_id); # hash table defining which strains we want to filter out for defining group of orthologs
-	print "Filtering $ortho_group_string using orthomcl file $orthomcl_input and fasta input directory $fasta_input\n";
+	print $out_fh "Filtering $ortho_group_string using orthomcl file $orthomcl_input and fasta input directory $fasta_input\n";
 	my $seq_gene = create_seq_gene_table($fasta_input);
 
 	my ($groups, $group_kept, $group_filtered) = handle_ortho_groups($orthomcl_input,$ortho_group);
-	print "Kept a total of $group_kept of ".($group_kept + $group_filtered)." groups\n";
+	print $out_fh "Kept a total of $group_kept of ".($group_kept + $group_filtered)." groups\n";
 
 	my %strain_locus;
 	mkdir $output_dir if (not -e $output_dir);
@@ -207,7 +220,7 @@ sub run
 
 	                        if (not defined $seq)
 	                        {
-	                                print STDERR "Warning: no in sequence list for entry $seq_gene_string\n";
+	                                print $out_fh "Warning: no in sequence list for entry $seq_gene_string\n";
 	                        }
 	                        else
 	                        {

@@ -143,31 +143,6 @@ sub set_processors
     $self->{'job_properties'}->set_property('processors', $processors);
 }
 
-sub set_input_fasta
-{
-    my ($self,$file) = @_;
-
-    die "File $file does not exists" if (not -e $file);
-
-    my $abs_input_fasta = abs_path($file);
-
-    if (-d $abs_input_fasta)
-    {
-        $self->{'job_properties'}->set_abs_dir('input_fasta_dir', $abs_input_fasta);
-    }
-    else
-    {
-        my $input_fasta_files = $self->{'job_properties'}->get_property('input_fasta_files');
-        if (not defined $input_fasta_files)
-        {
-            $input_fasta_files = [];
-            $self->{'job_properties'}->set_property('input_fasta_files', $input_fasta_files);
-        }
-
-        push(@$input_fasta_files, $abs_input_fasta);
-    }
-}
-
 sub _initialize
 {
     my ($self) = @_;
