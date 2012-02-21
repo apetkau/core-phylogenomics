@@ -9,10 +9,9 @@ use warnings;
 
 use File::Basename;
 use Getopt::Long;
-use Bio::Seq;
-use Bio::SeqIO;
 
 use Report;
+use Report::OrthoMCL;
 
 sub new
 {
@@ -46,7 +45,7 @@ sub execute
         my $output_file = "$working_dir/main.report";
         my $log_dir = $job_properties->get_dir('log_dir');
 
-	my $reporter = new Report($logger);
+	my $reporter = new Report::OrthoMCL($logger);
 
         my $log_file = "$log_dir/generate_report.log";
 	open(my $output_fh, ">$output_file") or die "Could not open output file $output_file: $!";

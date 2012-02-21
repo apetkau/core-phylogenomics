@@ -62,7 +62,7 @@ sub _setup_stage_tables
 			  'prepare-orthomcl',
 	                  'alignment',
 	                  'pseudoalign',
-	                  #'report',
+	                  'report',
 	                  'build-phylogeny',
 	                  'phylogeny-graphic'
 	                 ];
@@ -115,7 +115,7 @@ sub _initialize
                         'prepare-orthomcl' => new Stage::PrepareOrthomcl($job_properties, $logger),
                         'alignment' => new Stage::AlignOrthologs($job_properties, $logger),
                         'pseudoalign' => new Stage::Pseudoalign($job_properties, $logger),
-                        #'report' => new Stage::GenerateReportOrthoMCL($job_properties, $logger),
+                        'report' => new Stage::GenerateReportOrthoMCL($job_properties, $logger),
                         'build-phylogeny' => new Stage::BuildPhylogeny($job_properties, $logger),
                         'phylogeny-graphic' => new Stage::BuildPhylogenyGraphic($job_properties, $logger)
         };

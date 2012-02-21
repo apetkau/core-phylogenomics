@@ -12,6 +12,8 @@ use Getopt::Long;
 use Bio::Seq;
 use Bio::SeqIO;
 use Report;
+use Report::Blast;
+use Report::OrthoMCL;
 
 my $verbose = 0;
 
@@ -27,6 +29,7 @@ sub usage
 	print "\t-f|--fasta-input-dir:  The job data fasta input directory\n";
 	print "\t-i|--input-dir:  The main input directory\n";
 	print "\t-o|--output-file:  The output file (optional)\n";
+	print "\t-m|--mode:  The mode (blast or orthomcl)\n";
 	print "\t-v|--verbose:  Verbosity (optional)\n";
 	print "\t-h|--help:  Help.\n";
 	print "\nExample:\n";
@@ -36,7 +39,7 @@ sub usage
 
 sub run
 {
-	my ($core_dir,$align_dir,$fasta_dir,$input_dir,$output_file,$help);
+	my ($core_dir,$align_dir,$fasta_dir,$input_dir,$output_file,$mode,$help);
 
 	if ( @_ && $_[0] eq __PACKAGE__)
 	{
@@ -45,6 +48,7 @@ sub run
 			'o|output-file=s' => \$output_file,
 			'f|fasta-input-dir=s' => \$fasta_dir,
 			'i|input-dir=s' => \$input_dir,
+			'm|mode=s' => \$mode,
 			'v|verbose' => \$verbose,
 			'h|help' => \$help) or die "Invalid options\n".usage;
 
@@ -56,11 +60,26 @@ sub run
 	}
 	else
 	{
-		($core_dir,$align_dir,$fasta_dir,$input_dir,$output_file,$verbose) = @_;
+		($core_dir,$align_dir,$fasta_dir,$input_dir,$output_file,$mode,$verbose) = @_;
 	}
 
+	die "No defined mode\n".usage if (not defined $mode);
+
 	my $pseudoalign_dir = undef;
-	my $reporter = new Report();
+	my $reporter;
+
+	if ($mode eq 'blast')
+	{
+		$reporter = new Report::Blast();
+	}
+	elsif ($mode eq 'orthomcl')
+	{
+		$reporter = new Report::OrthoMCL();
+	}
+	else
+	{
+		die "Mode $mode is invalid\n".usage;
+	}
 
 	$verbose = 0 if (not defined $verbose);
 

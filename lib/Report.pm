@@ -1,9 +1,11 @@
-#!/usr/binperl
+#!/usr/bin/perl
 
 package Report;
 
 use strict;
 use warnings;
+
+use Bio::SeqIO;
 
 sub new
 {
@@ -110,6 +112,13 @@ sub process_ortholog_file
         return $success;
 }
 
+sub _is_proper_core_file
+{
+	my ($self, $file) = @_;
+
+	return 0;
+}
+
 sub report_core_locus
 {
         my ($self, $core_dir) = @_;
@@ -122,7 +131,7 @@ sub report_core_locus
         my $file = readdir($core_dh);
         while($file)
         {
-                if ($file =~ /^core.*\.ffn$/ or $file =~ /^100pid_core.*\.ffn/)
+                if ($self->_is_proper_core_file($file))
                 {
                         my $full_file_path = "$core_dir/$file";
                         if ($self->process_ortholog_file($full_file_path,\%total_locus_lengths))
@@ -137,6 +146,13 @@ sub report_core_locus
         return ($core_locus_count,\%total_locus_lengths);
 }
 
+sub _is_proper_input_file
+{
+	my ($self, $file) = @_;
+
+	return 0;
+}
+
 sub report_initial_strains
 {
         my ($self, $fasta_dir) = @_;
@@ -149,7 +165,7 @@ sub report_initial_strains
 
         for my $file (@files)
         {
-                if ($file =~ /\.prepended\.fasta$/)
+                if ($self->_is_proper_input_file($file))
                 {
                         next if ($file =~ /^all/);
 
