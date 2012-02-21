@@ -68,8 +68,12 @@ sub handle_ortho_groups
 
 	my $group_kept = 0;
 	my $group_filtered = 0;
+	my $skip_group = 0; # used to skip a group if invalid
 	while (defined $line)
 	{
+		$skip_group = 0;
+		chomp $line;
+
 		my @group_en = split(/\s+/, $line);
 		my %existence_hash;
 		my @good_ortho_values; # stores the combined strain/locus tag names for the current group
@@ -77,7 +81,7 @@ sub handle_ortho_groups
 		my ($group_name) = ($group_en[0] =~ /^([^:]*)/);
 		die "Error: invalid group name ".(defined $group_name ? $group_name : 'undefined') if (not defined $group_name);
 
-		for(my $g = 1; $g < scalar(@group_en); $g++)
+		for(my $g = 1; (not $skip_group) and ($g < scalar(@group_en)); $g++)
 		{
 			my ($strain,$locus_id) = split(/\|/, $group_en[$g]);
 			die "No strain name found for $group_en[$g] on $line" if ((not defined $strain) or $strain eq '');
@@ -85,7 +89,8 @@ sub handle_ortho_groups
 
 			if (not exists $ortho_group->{$strain})
 			{
-				print $out_fh "No ortholog group name for $strain in set, skipping ...\n";
+				print $out_fh "No ortholog group name for $strain in set \"$line\", skipping\n";
+				$skip_group = 1;
 			}
 			elsif (not exists $existence_hash{$strain})
 			{
@@ -94,19 +99,23 @@ sub handle_ortho_groups
 			}
 			else
 			{
-				print $out_fh "Duplicate for strain $strain found, skipping ...\n";
+				$skip_group = 1;
+				print $out_fh "Duplicate strains found in group \"$line\", skipping\n";
 			}
 		}
 
-		if (scalar(@good_ortho_values) == $number_valid_strains_in_set)
+		if (not $skip_group)
 		{
-			push(@ortho_good_group, \@good_ortho_values);
-			$group_kept++;
-		}
-		else
-		{
-			print $out_fh "Skipping group as it does not contain a complete valid set of strains: $line\n";
-			$group_filtered++;
+			if (scalar(@good_ortho_values) == $number_valid_strains_in_set)
+			{
+				push(@ortho_good_group, \@good_ortho_values);
+				$group_kept++;
+			}
+			else
+			{
+				print $out_fh "Group \"$line\" does not contain a complete valid set of strains, skipping\n";
+				$group_filtered++;
+			}
 		}
 		
 		$line = readline($g_h);
