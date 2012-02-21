@@ -1,6 +1,9 @@
 #!/usr/bin/perl
 
-package Report;
+package Reporter;
+
+use FindBin;
+use lib "$FindBin::Bin/../lib";
 
 use strict;
 
@@ -8,6 +11,7 @@ use File::Basename;
 use Getopt::Long;
 use Bio::Seq;
 use Bio::SeqIO;
+use Report;
 
 my $verbose = 0;
 
@@ -28,159 +32,6 @@ sub usage
 	print "\nExample:\n";
 	print "To generate a report for a job stored under sample_out/ use:\n";
 	print "\t".basename($0)." --input-dir sample_out\n\n";
-}
-
-sub process_ortholog_file
-{
-	my ($ortho_file, $total_locus_lengths) = @_;
-	my $success = 0;
-
-	if (not -e $ortho_file)
-	{
-		print "Warning: ortho_file=$ortho_file does not exist, skipping...";
-		return $success;
-	}
-
-	print "processing $ortho_file\n" if ($verbose);
-	my $in = new Bio::SeqIO(-file=>"$ortho_file", -format=>"fasta");
-	my  @orfs;
-	while (my $seq = $in->next_seq)
-	{
-		my ($orf) = $seq->desc =~ /^(.*?)\s/;
-		my ($strain_id) = ($orf =~ /^([^\|]*)\|/);
-		die "Error, found invalid strain_id=$strain_id in orf=$orf" if (not defined $strain_id or $strain_id eq '');
-		if (not exists $total_locus_lengths->{$strain_id})
-		{
-			$total_locus_lengths->{$strain_id} = $seq->length;
-		}
-		else
-		{
-			$total_locus_lengths->{$strain_id} += $seq->length;
-		}
-	}
-
-	$success = 1;
-	return $success;
-}
-
-sub report_snp_locus
-{
-	my ($core_dir,$pseudoalign_dir) = @_;
-	my %total_locus_lengths;
-	my $snp_locus_count = 0;
-	my $snp_report_file = "$pseudoalign_dir/snp.report.txt";
-
-	# gets snps/core genes used in pipeline (from snp report)
-	open(my $snp_report_fh, $snp_report_file) or die "Could not open snp report $snp_report_file: $!";
-	my %align_files;
-	my $line = readline($snp_report_fh);
-	while ($line)
-	{
-		my ($align_file) = ($line =~ /(snps\d+\.aln\.trimmed)/);
-		$align_files{$align_file} = 1;
-
-		$line = readline($snp_report_fh);
-	}
-	close($snp_report_fh);
-
-	# loci count
-	for my $align_file (keys %align_files)
-	{
-		if ($align_file =~ /^(snps\d+)\.aln.trimmed$/)
-		{
-			my $core_file = $1;
-			if (not defined $core_file)
-			{
-				print "Warning: core_file for $align_file not defined, skipping...";
-				next;
-			}
-
-			my $full_file_path = "$core_dir/$core_file";
-			if (process_ortholog_file($full_file_path,\%total_locus_lengths))
-			{
-				$snp_locus_count++;
-			}
-		}
-	}	
-
-	return ($snp_locus_count,\%total_locus_lengths);
-}
-
-sub report_core_locus
-{
-	my ($core_dir) = @_;
-	my %total_locus_lengths;
-	my $core_locus_count = 0;
-
-	opendir(my $core_dh, $core_dir) or die "Could not open directory $core_dir: $!";
-
-	# loci count
-	my $file = readdir($core_dh);
-	while($file)
-	{
-		if ($file =~ /^core.*\.ffn$/ or $file =~ /^100pid_core.*\.ffn/)
-		{
-			my $full_file_path = "$core_dir/$file";
-			if (process_ortholog_file($full_file_path,\%total_locus_lengths))
-			{
-				$core_locus_count++;
-			}
-		}
-
-		$file = readdir($core_dh);
-	}	
-
-	return ($core_locus_count,\%total_locus_lengths);
-}
-
-sub report_initial_strains
-{
-	my ($fasta_dir) = @_;
-	my %total_features_lengths;
-	my %total_strain_loci;
-
-	opendir(my $fasta_dh, $fasta_dir) or die "Could not open directory $fasta_dir: $!";
-	my @files = readdir($fasta_dh);
-	closedir($fasta_dh);
-
-	for my $file (@files)
-	{
-		if ($file =~ /\.prepended\.fasta$/)
-		{
-			next if ($file =~ /^all/);
-
-			my $strain_id = undef;
-			my $full_file_path = "$fasta_dir/$file";
-			print "processing $full_file_path\n" if ($verbose);
-			my $in = new Bio::SeqIO(-file=>"$full_file_path", -format=>"fasta");
-			while (my $seq = $in->next_seq)
-			{
-				my ($orf) = ($seq->display_id);
-				my ($strain_id_curr) = ($orf =~ /^([^\|]*)\|/);
-				if (not defined $strain_id)
-				{
-					$strain_id = $strain_id_curr;
-				}
-				else
-				{
-					die "Error: found two entries in file $full_file_path with different strain ids: $strain_id and $strain_id_curr" if ($strain_id_curr ne $strain_id);
-				}
-
-				if (not exists $total_features_lengths{$strain_id})
-				{
-					$total_features_lengths{$strain_id} = $seq->length;
-					$total_strain_loci{$strain_id} = 1;
-				}
-				else
-				{
-					$total_features_lengths{$strain_id} += $seq->length;
-					$total_strain_loci{$strain_id}++;
-				}
-			}
-		}
-	}	
-
-	return (\%total_strain_loci,\%total_features_lengths);
 }
 
 sub run
@@ -209,6 +60,7 @@ sub run
 	}
 
 	my $pseudoalign_dir = undef;
+	my $reporter = new Report();
 
 	$verbose = 0 if (not defined $verbose);
 
@@ -242,9 +94,9 @@ sub run
 		open($output_fh, '>-') or die "Could not open stdout for writing";
 	}
 
-	my ($snp_locus_count,$total_snp_lengths) = report_snp_locus($core_dir,$pseudoalign_dir);
-	my ($core_locus_count,$total_core_lengths) = report_core_locus($core_dir);
-	my ($total_strain_loci,$total_features_lengths) = report_initial_strains($fasta_dir);
+	my ($snp_locus_count,$total_snp_lengths) = $reporter->report_snp_locus($core_dir,$pseudoalign_dir);
+	my ($core_locus_count,$total_core_lengths) = $reporter->report_core_locus($core_dir);
+	my ($total_strain_loci,$total_features_lengths) = $reporter->report_initial_strains($fasta_dir);
 
 	print $output_fh "# Numbers given as (core kept for analysis / total core / total)\n";
 	foreach my $strain (sort keys %$total_strain_loci)

@@ -17,6 +17,7 @@ use Stage::AlignOrthologs;
 use Stage::Pseudoalign;
 use Stage::BuildPhylogeny;
 use Stage::BuildPhylogenyGraphic;
+use Stage::GenerateReportOrthoMCL;
 
 use File::Basename qw(basename dirname);
 use File::Copy qw(copy move);
@@ -114,7 +115,7 @@ sub _initialize
                         'prepare-orthomcl' => new Stage::PrepareOrthomcl($job_properties, $logger),
                         'alignment' => new Stage::AlignOrthologs($job_properties, $logger),
                         'pseudoalign' => new Stage::Pseudoalign($job_properties, $logger),
-                        #'report' => new Stage::GenerateReport($job_properties, $logger),
+                        #'report' => new Stage::GenerateReportOrthoMCL($job_properties, $logger),
                         'build-phylogeny' => new Stage::BuildPhylogeny($job_properties, $logger),
                         'phylogeny-graphic' => new Stage::BuildPhylogenyGraphic($job_properties, $logger)
         };
