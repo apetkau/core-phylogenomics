@@ -43,7 +43,11 @@ sub execute
         my $input_dir = $job_properties->get_job_dir;
 	my $pseudoalign_dir = $job_properties->get_dir('pseudoalign_dir');
         my $output_file = "$working_dir/main.report";
+	my $orthologs_group_file = $job_properties->get_file('orthologs_group');
         my $log_dir = $job_properties->get_dir('log_dir');
+
+	my $groups_kept = $job_properties->get_property('groups_kept');
+	my $groups_filtered = $job_properties->get_property('groups_filtered');
 
 	my $reporter = new Report::OrthoMCL($logger);
 
@@ -58,6 +62,15 @@ sub execute
 	my ($total_strain_loci,$total_features_lengths) = $reporter->report_initial_strains($fasta_dir, $logger);
 
 	print $output_fh "# Numbers given as (core kept for analysis / total core / total)\n";
+	if ((defined $groups_kept) and (defined $groups_filtered))
+	{
+		print $output_fh "OrthoMCL: kept $groups_kept / ".($groups_filtered + $groups_kept)." ortholog sets from file $orthologs_group_file\n";
+	}
+	else
+	{
+		print $output_fh "OrthoMCL: invalid data for values filtered/kept\n";
+	}
+
 	foreach my $strain (sort keys %$total_strain_loci)
 	{
 		my $curr_total_loci = $total_strain_loci->{$strain};

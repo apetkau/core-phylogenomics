@@ -37,10 +37,15 @@ sub execute
 	
 	my $parse_log = "$log_dir/parse-orthomcl.log";
 
+	my ($groups_kept, $groups_filtered);
+
 	$logger->log("\nStage: $stage\n",0);
 	$logger->log("Parsing orthomcl ...\n", 0);
 	require("$script_dir/../lib/alignments_orthomcl.pl");
-	AlignmentsOrthomcl::run($orthologs_group, $input_fasta_dir, $core_dir, $strain_ids, $parse_log);
+	($groups_kept, $groups_filtered) = AlignmentsOrthomcl::run($orthologs_group, $input_fasta_dir, $core_dir, $strain_ids, $parse_log);
+
+	$job_properties->set_property('groups_kept', $groups_kept);
+	$job_properties->set_property('groups_filtered', $groups_filtered);
 	$logger->log("...done\n",0);
 }
 

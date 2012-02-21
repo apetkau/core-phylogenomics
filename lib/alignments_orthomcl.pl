@@ -186,6 +186,8 @@ sub run
 
 	die "output not defined\n".usage if (not defined $output_dir);
 
+	my ($groups, $groups_kept, $groups_filtered);
+
 	if (defined $log)
 	{
 		open($out_fh, '>', $log) or die "Could not open $log: $!";
@@ -199,8 +201,8 @@ sub run
 	print $out_fh "Filtering $ortho_group_string using orthomcl file $orthomcl_input and fasta input directory $fasta_input\n";
 	my $seq_gene = create_seq_gene_table($fasta_input);
 
-	my ($groups, $group_kept, $group_filtered) = handle_ortho_groups($orthomcl_input,$ortho_group);
-	print $out_fh "Kept a total of $group_kept of ".($group_kept + $group_filtered)." groups\n";
+	($groups, $groups_kept, $groups_filtered) = handle_ortho_groups($orthomcl_input,$ortho_group);
+	print $out_fh "Kept a total of $groups_kept of ".($groups_kept + $groups_filtered)." groups\n";
 
 	my %strain_locus;
 	mkdir $output_dir if (not -e $output_dir);
@@ -240,4 +242,6 @@ sub run
 		}
 		close($fh);
         }
+
+	return ($groups_kept, $groups_filtered);
 }
