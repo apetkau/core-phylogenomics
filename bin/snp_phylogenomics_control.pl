@@ -35,7 +35,7 @@ sub handle_input_fasta
 		if (not -d $input_dir_opt)
 		{
 			print STDERR "Error: input fasta directory $input_dir_opt is not a directory\n";
-			pod2usage(-verbose => 99, -sections => [$pod_sections]);
+			pod2usage(-verbose => 99, -sections => $pod_sections);
 			exit 1;
 		}
 		else
@@ -47,7 +47,7 @@ sub handle_input_fasta
 				if ($strain_count_opt <= 0)
 				{
 					print STDERR "Error: strain count $strain_count_opt must be positive\n";
-					pod2usage(-verbose => 99, -sections => [$pod_sections]);
+					pod2usage(-verbose => 99, -sections => $pod_sections);
 					exit 1;
 				}
 				else
@@ -68,7 +68,7 @@ sub handle_processors
 		if ($processors !~ /^\d+$/)
 		{
 			print STDERR "Processors option must be a number\n";
-			pod2usage(-verbose => 99, -sections => [$pod_sections]);
+			pod2usage(-verbose => 99, -sections => $pod_sections);
 			exit 1;
 		}
 		else
@@ -150,7 +150,7 @@ sub parse_blast_opts
 		if (not -d $options->{'r'})
 		{
 			print STDERR "Error: ".$options->{'r'}." is an invalid job directory to resubmit from\n";
-			pod2usage(-verbose => 99, -sections => [$pod_sections]);
+			pod2usage(-verbose => 99, -sections => $pod_sections);
 			exit 1;
 		}
 		else
@@ -216,14 +216,15 @@ sub parse_blast_opts
 			else
 			{
 				print STDERR "Error: input-files not properly defined\n";
-				pod2usage(-verbose => 99, -sections => [$pod_sections]);
+				pod2usage(-verbose => 99, -sections => $pod_sections);
 				exit 1;
 			}
 		}
 		else
 		{
 			print STDERR "Error: no input files defined, please specify --input-dir or --input-file\n";
-			pod2usage(-verbose => 99, -sections => [$pod_sections]);
+			print STDERR "Or specify --help for more information\n";
+			pod2usage(-verbose => 99, -sections => $pod_sections);
 			exit 1;
 		}
 		
@@ -235,13 +236,13 @@ sub parse_blast_opts
 			if ($pid_cutoff_opt !~ /^\d+\.?\d*$/)
 			{
 				print STDERR "pid-cutoff value $pid_cutoff_opt is invalid\n";
-				pod2usage(-verbose => 99, -sections => [$pod_sections]);
+				pod2usage(-verbose => 99, -sections => $pod_sections);
 				exit 1;
 			}
 			elsif ($pid_cutoff_opt < 0 or $pid_cutoff_opt > 100)
 			{
 				print STDERR "pid-cutoff value $pid_cutoff_opt must be in [0,100]\n";
-				pod2usage(-verbose => 99, -sections => [$pod_sections]);
+				pod2usage(-verbose => 99, -sections => $pod_sections);
 				exit 1;
 			}
 			else
@@ -260,13 +261,13 @@ sub parse_blast_opts
 			if ($hsp_length_opt !~ /^\d+$/)
 			{
 				print STDERR "hsp-length value $hsp_length_opt is invalid\n";
-				pod2usage(-verbose => 99, -sections => [$pod_sections]);
+				pod2usage(-verbose => 99, -sections => $pod_sections);
 				exit 1;
 			}
 			elsif ($hsp_length_opt < 0)
 			{
 				print STDERR "hsp-length value $hsp_length_opt must be > 0\n";
-				pod2usage(-verbose => 99, -sections => [$pod_sections]);
+				pod2usage(-verbose => 99, -sections => $pod_sections);
 				exit 1;
 			}
 			else
@@ -336,13 +337,13 @@ if (!GetOptions(\%options,
 	'orthomcl-groups=s',
 	'c|strain-count=i'))
 {
-	pod2usage(-verbose => 99, -sections => [$pod_sections]);
+	pod2usage(-verbose => 99, -sections => $pod_sections);
 	die "$!";
 }
 
 if (defined $options{'h'})
 {
-	pod2usage(-verbose => 99, -sections => [$pod_sections_long], -exitval => 0);
+	pod2usage(-verbose => 99, -sections => $pod_sections_long, -exitval => 0);
 }
 
 my $pipeline;
@@ -368,7 +369,7 @@ elsif ($options{'m'} eq 'orthomcl')
 else
 {
 	print STDERR "Error: invalid mode (".$options{'m'}.") defined\n";
-	pod2usage(-verbose => 99, -sections => [$pod_sections], -exitval => 1);
+	pod2usage(-verbose => 99, -sections => $pod_sections, -exitval => 1);
 }
 
 

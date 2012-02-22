@@ -10,24 +10,53 @@ use Bio::SeqIO;
 use Cwd;
 use File::Copy;
 use File::Basename;
+use Pod::Usage;
+
+=pod
+
+=head1 NAME
+
+alignments_orthomcl.pl:  Script to generate core gene files (for alignment) from orthomcl group data.
+
+=head1 SYNOPSIS
+
+alignments_orthomcl.pl -i groups.txt -f input_fasta/ -o core_out/ --strain-id strain_1 --strain-id strain_2
+
+OR
+
+require("alignments_orthomcl.pl");
+
+my $strain_ids = ['strain1', 'strain2'];
+
+# groups_kept is a count of the number of groups used to generate the core sets
+
+# groups_filtered is a count of the number of groups filtered because they did not contain complete proper sets of strains
+
+my ($groups_kept, $groups_filtered) = AlignmentsOrthomcl::run($orthologs_group, $input_fasta_dir, $core_dir, $strain_ids, $parse_log);
+
+=head1 OPTIONS
+
+=over
+
+=item B<-i|--orthomcl-input [group file]> :  The orthomcl groups file to use.
+
+=item B<-f|--fasta-input [dir]> :  The fasta input directory to process (should be DNA fasta files).
+
+=item B<-o|--output-dir [dir]> :  The directory to write the core gene files to.
+
+=item B<-s|--strain-id [strain id]> :  The ids of the strains to include in the core gene set.
+
+=item B<-l|--log [file]> :  The log file to write to.
+
+=back
+
+=cut
 
 my $out_fh;
 
 __PACKAGE__->run() unless caller;
 
 1;
-
-sub usage
-{
-	return
-"Usage: ".basename($0).".pl -i <orthomcl input> -f <fasta_input> -o <output_dir> --strain-id <strain id> ... -l <log>
-Options:
-	-i|--orthomcl-input:  The orthomcl groups file to use for clusters of core genes.
-	-f|--fasta-input:  The fasta input directory containing the nucleotide files.
-	-o|--output-dir:  The output dir to store the core gene files.
-	-s|--strain-id:  The ids of each strain to include in the set to filter out (multiple).
-	-l|--log:  Log file\n";
-}
 
 sub create_set_table
 {
@@ -168,23 +197,23 @@ sub run
 		   'f|fasta-input=s' => \$fasta_input,
 		   'o|output-dir=s' => \$output_dir,
 		   's|strain-id=s@' => \$strain_id,
-		   'l|log=s' => \$log) or die "Invalid options\n".usage;
+		   'l|log=s' => \$log) or pod2usage(-message => "Invalid options", -verbose => 1, -exitval => 1);
 	}
 	else
 	{
 		($orthomcl_input, $fasta_input, $output_dir, $strain_id, $log) = @_;
 	}
 
-	die "othomcl-input not defined\n".usage if (not defined $orthomcl_input);
-	die "orthomcl-input $orthomcl_input does not exist.\n".usage if (not -e $orthomcl_input);
+	pod2usage(-message => "orthomcl-input not defined", -verbose => 1, -exitval => 1) if (not defined $orthomcl_input);
+	pod2usage(-message => "orthomcl-input $orthomcl_input does not exist.", -verbose => 1, -exitval => 1) if (not -e $orthomcl_input);
 
-	die "fasta-input not defined\n".usage if (not defined $fasta_input);
-	die "fasta-input $fasta_input not a valid directory\n".usage if (not -d $fasta_input);
+	pod2usage(-message => "fasta-input not defined", -verbose => 1, -exitval => 1) if (not defined $fasta_input);
+	pod2usage(-message => "fasta-input $fasta_input not a valid directory", -verbose => 1, -exitval => 1) if (not -d $fasta_input);
 
-	die "strain-id not defined, must define at least one".usage if (not defined $strain_id);
-	die "strain-id not defined, must define at least one".usage if (not (@$strain_id > 0));
+	pod2usage(-message => "strain-id not defined, must be defined at least once", -verbose => 1, -exitval => 1) if (not defined $strain_id);
+	pod2usage(-message => "strain-id not defined, must be defined at least once", -verbose => 1, -exitval => 1) if (not (@$strain_id > 0));
 
-	die "output not defined\n".usage if (not defined $output_dir);
+	pod2usage(-message => "output not defined", -verbose => 1, -exitval => 1) if (not defined $output_dir);
 
 	my ($groups, $groups_kept, $groups_filtered);
 
