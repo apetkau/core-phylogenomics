@@ -28,12 +28,12 @@ sub execute
 	my $stage = $self->get_stage_name;
 
 	my $job_properties = $self->{'_job_properties'};
-	my $input_fasta_dir = $job_properties->get_abs_dir('input_fasta_dir');
+	my $fasta_dir = $job_properties->get_dir('fasta_dir');
 	my $orthologs_group = $job_properties->get_file('orthologs_group');
 	my $core_dir = $job_properties->get_dir('core_dir');
 	my $script_dir = $job_properties->get_script_dir;
 	my $log_dir = $job_properties->get_dir('log_dir');
-	my $strain_ids = $self->_get_strain_ids($input_fasta_dir);
+	my $strain_ids = $self->_get_strain_ids($fasta_dir);
 	
 	my $parse_log = "$log_dir/parse-orthomcl.log";
 
@@ -42,7 +42,9 @@ sub execute
 	$logger->log("\nStage: $stage\n",0);
 	$logger->log("Parsing orthomcl ...\n", 0);
 	require("$script_dir/../lib/alignments_orthomcl.pl");
-	($groups_kept, $groups_filtered) = AlignmentsOrthomcl::run($orthologs_group, $input_fasta_dir, $core_dir, $strain_ids, $parse_log);
+	($groups_kept, $groups_filtered) = AlignmentsOrthomcl::run($orthologs_group, $fasta_dir, $core_dir, $strain_ids, $parse_log);
+
+	$logger->log("\tKept $groups_kept/".($groups_kept+$groups_filtered)." groups\n");
 
 	$job_properties->set_property('groups_kept', $groups_kept);
 	$job_properties->set_property('groups_filtered', $groups_filtered);

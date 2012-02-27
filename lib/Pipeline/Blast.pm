@@ -64,6 +64,35 @@ sub new
     return $self;
 }
 
+sub new_resubmit
+{
+    my ($proto,$script_dir, $job_properties) = @_;
+
+    my $class = ref($proto) || $proto;
+    my $self = $class->SUPER::new_resubmit($script_dir, $job_properties);
+    bless($self,$class);
+
+    $self->_setup_stage_tables;
+
+    $self->_check_stages;
+
+    $job_properties->set_file('all_input_fasta', 'all.fasta');
+    $job_properties->set_file('bioperl_index', 'all.fasta.idx');
+    $job_properties->set_file('core_snp_base', 'snps');
+    $job_properties->set_dir('log_dir', "log");
+    $job_properties->set_dir('fasta_dir', "fasta");
+    $job_properties->set_dir('database_dir', "database");
+    $job_properties->set_dir('split_dir', "split");
+    $job_properties->set_dir('blast_dir', "blast");
+    $job_properties->set_dir('core_dir', "core");
+    $job_properties->set_dir('align_dir', "align");
+    $job_properties->set_dir('pseudoalign_dir', "pseudoalign");
+    $job_properties->set_dir('stage_dir', "stages");
+    $job_properties->set_dir('phylogeny_dir', 'phylogeny');
+
+    return $self;
+}
+
 sub _setup_stage_tables
 {
 	my ($self) = @_;
@@ -82,7 +111,7 @@ sub _setup_stage_tables
 	                  'build-phylogeny',
 	                  'phylogeny-graphic'
 	                 ];
-	my %all_hash = map { $_ => 1} \@{$stage->{'all'}};
+	my %all_hash = map { $_ => 1} @{$stage->{'all'}};
 	$stage->{'all_hash'} = \%all_hash;
 	
 	$stage->{'user'} = ['prepare-input',

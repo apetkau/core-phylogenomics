@@ -38,6 +38,20 @@ sub new
     return $self;
 }
 
+sub new_resubmit
+{
+    my ($class,$script_dir, $job_properties) = @_;
+
+    my $self = {};
+    bless($self,$class);
+
+    $self->{'verbose'} = 0;
+    $self->{'keep_files'} = 1;
+    $self->{'job_properties'} = $job_properties;
+
+    return $self;
+}
+
 sub set_input_fasta
 {
     my ($self,$file) = @_;
@@ -144,23 +158,51 @@ sub _validate_stages
 # Purpose: Resubmits the passed job through the pipeline going through the given stages
 # Input:  $job_dir  The directory of the previously run job
 # Output: Sets up the pipeline to run with the given properties
-sub resubmit
+sub ResubmitFrom
 {
-    my ($self,$job_dir) = @_;
+    my ($script_dir, $job_dir) = @_;
+
+    my $pipeline;
 
     die "Cannot resubmit to undefined job_dir" if (not defined $job_dir);
     die "Cannot resubmit to non-existant job_dir $job_dir" if (not -d $job_dir);
 
-    my $job_properties = $self->{'job_properties'};
-    my $properties_filename = "run.properties";
+    my $job_properties = new JobProperties($script_dir);
+    my $config_file = "$script_dir/../etc/pipeline.conf";
+    if (not -e $config_file)
+    {
+        print STDERR "Warning: no config file $config_file set, skipping ...\n";
+    }
+    else
+    {
+        $job_properties->read_config($config_file);
+    }
 
+    my $properties_filename = "run.properties";
     my $abs_job_dir = abs_path($job_dir);
     my $properties_path = "$abs_job_dir/$properties_filename";
     die "Cannot resubmit $abs_job_dir, file $properties_path not found" if (not -e $properties_path);
+    $job_properties->read_properties($properties_path);
 
     $job_properties->set_job_dir($abs_job_dir);
 
-    $job_properties->read_properties($properties_path);
+    my $mode = $job_properties->get_property('mode');
+
+    die "Error: no mode found in $properties_path, cannot resubmit job" if (not defined $mode);
+    if ($mode eq 'blast')
+    {
+        $pipeline = Pipeline::Blast->new_resubmit($script_dir, $job_properties);
+    }
+    elsif ($mode eq 'orthomcl')
+    {
+        $pipeline = Pipeline::Orthomcl->new_resubmit($script_dir, $job_properties);
+    }
+    else
+    {
+        die "Error: unknown pipeline mode '$mode' found in properties file '$properties_path'";
+    }
+
+    return $pipeline;
 }
 
 sub get_first_stage

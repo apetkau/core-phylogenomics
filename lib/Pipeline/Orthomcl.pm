@@ -12,6 +12,7 @@ use JobProperties;
 
 use Stage;
 use Stage::WriteProperties;
+use Stage::CopyInputFasta;
 use Stage::PrepareOrthomcl;
 use Stage::AlignOrthologs;
 use Stage::Pseudoalign;
@@ -47,6 +48,31 @@ sub new
     $job_properties->set_dir('pseudoalign_dir', "pseudoalign");
     $job_properties->set_dir('stage_dir', "stages");
     $job_properties->set_dir('phylogeny_dir', 'phylogeny');
+    $job_properties->set_dir('fasta_dir', 'fasta');
+
+    return $self;
+}
+
+sub new_resubmit
+{
+    my ($proto,$script_dir, $job_properties) = @_;
+
+    my $class = ref($proto) || $proto;
+    my $self = $class->SUPER::new_resubmit($script_dir, $job_properties);
+    bless($self,$class);
+
+    $self->_setup_stage_tables;
+
+    $self->_check_stages;
+
+    $job_properties->set_file('core_snp_base', 'snps');
+    $job_properties->set_dir('log_dir', "log");
+    $job_properties->set_dir('core_dir', "core");
+    $job_properties->set_dir('align_dir', "align");
+    $job_properties->set_dir('pseudoalign_dir', "pseudoalign");
+    $job_properties->set_dir('stage_dir', "stages");
+    $job_properties->set_dir('phylogeny_dir', 'phylogeny');
+    $job_properties->set_dir('fasta_dir', 'fasta');
 
     return $self;
 }
@@ -59,6 +85,7 @@ sub _setup_stage_tables
 	$self->{'stage'} = $stage;
 	$stage->{'all'} = [
 	                  'write-properties',
+			  'copy-input-fasta',
 			  'prepare-orthomcl',
 	                  'alignment',
 	                  'pseudoalign',
@@ -66,7 +93,7 @@ sub _setup_stage_tables
 	                  'build-phylogeny',
 	                  'phylogeny-graphic'
 	                 ];
-	my %all_hash = map { $_ => 1} \@{$stage->{'all'}};
+	my %all_hash = map { $_ => 1} @{$stage->{'all'}};
 	$stage->{'all_hash'} = \%all_hash;
 	
 	$stage->{'user'} = [
@@ -77,7 +104,7 @@ sub _setup_stage_tables
 	                    'phylogeny-graphic',
 			];
 	
-	$stage->{'valid_job_dirs'} = ['job_dir','log_dir','core_dir','align_dir','pseudoalign_dir','stage_dir','phylogeny_dir'];
+	$stage->{'valid_job_dirs'} = ['job_dir','log_dir','core_dir','align_dir','pseudoalign_dir','stage_dir','phylogeny_dir', 'fasta_dir'];
 	$stage->{'valid_other_files'} = ['input_fasta_dir'];
 
 	my @valid_properties = join(@{$stage->{'valid_job_dirs'}},@{$stage->{'valid_other_files'}});
@@ -112,6 +139,7 @@ sub _initialize
 
     my $stage_table = {
                         'write-properties' => new Stage::WriteProperties($job_properties, $logger),
+			'copy-input-fasta' => new Stage::CopyInputFasta($job_properties, $logger),
                         'prepare-orthomcl' => new Stage::PrepareOrthomcl($job_properties, $logger),
                         'alignment' => new Stage::AlignOrthologs($job_properties, $logger),
                         'pseudoalign' => new Stage::Pseudoalign($job_properties, $logger),

@@ -48,6 +48,56 @@ sub read_config
 	}
 }
 
+sub _merge_properties
+{
+	my ($self, $prop_a, $prop_b) = @_;
+
+	return undef if (not defined $prop_a and not defined $prop_b);
+	return $prop_a if (not defined $prop_b);
+	return $prop_b if (not defined $prop_a);
+
+	return merge_hash_r($prop_a, $prop_b);
+}
+
+sub merge_hash_r
+{
+        my ($a, $b) = @_;
+
+        my $new_hash = {};
+
+        foreach my $key (keys %$a)
+        {
+                $new_hash->{$key} = $a->{$key};
+        }
+
+        foreach my $key (keys %$b)
+        {
+                my $value_b = $b->{$key};
+                my $value_a = $new_hash->{$key};
+
+                # if both defined, must merge
+                if (defined $value_a and defined $value_b)
+                {
+                        # if the value is another hash, go through another level
+                        if (defined $value_a and (ref $value_a eq 'HASH'))
+                        {
+                                $new_hash->{$key} = merge_hash_r($value_a,$value_b);
+                        } # else if not another hash, overwrite a with b
+                        else
+                        {
+                                $new_hash->{$key} = $value_b;
+                        }
+                } # if only b defined, copy over to a
+                elsif (defined $value_b)
+                {
+                        $new_hash->{$key} = $value_b;
+                }
+                # else if only a defined, do nothing
+        }
+
+        return $new_hash;
+}
+
 sub _set_defaults
 {
 	my ($self, $defaults) = @_;
@@ -264,7 +314,7 @@ sub read_properties
 	die "File $file does not exist" if (not -e $file);
 
 	my $yaml = YAML::Tiny->read($file) or die "Could not read config file $file: ".YAML::Tiny->errstr;
-	$self->{'_properties'} = $yaml->[0];
+	$self->{'_properties'} = $self->_merge_properties($self->{'_properties'}, $yaml->[0]);
 }
 
 1;

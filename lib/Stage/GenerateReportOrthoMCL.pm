@@ -39,7 +39,7 @@ sub execute
         my $script_dir = $job_properties->get_script_dir;
         my $core_dir = $job_properties->get_dir('core_dir');
         my $align_dir = $job_properties->get_dir('align_dir');
-        my $fasta_dir = $job_properties->get_abs_dir('input_fasta_dir');
+        my $fasta_dir = $job_properties->get_dir('fasta_dir');
         my $input_dir = $job_properties->get_job_dir;
 	my $pseudoalign_dir = $job_properties->get_dir('pseudoalign_dir');
         my $output_file = "$working_dir/main.report";
