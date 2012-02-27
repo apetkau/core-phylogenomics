@@ -4,6 +4,8 @@ package Stage::PrepareOrthomcl;
 use Stage;
 @ISA = qw(Stage);
 
+use YAML::Tiny;
+
 use strict;
 use warnings;
 
@@ -34,7 +36,9 @@ sub execute
 	my $script_dir = $job_properties->get_script_dir;
 	my $log_dir = $job_properties->get_dir('log_dir');
 	my $strain_ids = $self->_get_strain_ids($fasta_dir);
+	my $group_stats = $job_properties->get_file_dir('core_dir', 'group_stats');
 	
+	my $yaml = YAML::Tiny->new;
 	my $parse_log = "$log_dir/parse-orthomcl.log";
 
 	my ($groups_kept, $groups_filtered);
@@ -45,9 +49,11 @@ sub execute
 	($groups_kept, $groups_filtered) = AlignmentsOrthomcl::run($orthologs_group, $fasta_dir, $core_dir, $strain_ids, $parse_log);
 
 	$logger->log("\tKept $groups_kept/".($groups_kept+$groups_filtered)." groups\n",0);
+	
+	# write status for groups kept/filtered (store for resubmitting)
+	$yaml->[0] = {'groups_kept' => $groups_kept, 'groups_filtered' => $groups_filtered};
+	$yaml->write($group_stats);
 
-	$job_properties->set_property('groups_kept', $groups_kept);
-	$job_properties->set_property('groups_filtered', $groups_filtered);
 	$logger->log("...done\n",0);
 }
 

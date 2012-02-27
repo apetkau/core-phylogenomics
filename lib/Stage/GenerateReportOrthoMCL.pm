@@ -7,6 +7,7 @@ use Stage;
 use strict;
 use warnings;
 
+use YAML::Tiny;
 use File::Basename;
 use Getopt::Long;
 
@@ -46,8 +47,10 @@ sub execute
 	my $orthologs_group_file = $job_properties->get_file('orthologs_group');
         my $log_dir = $job_properties->get_dir('log_dir');
 
-	my $groups_kept = $job_properties->get_property('groups_kept');
-	my $groups_filtered = $job_properties->get_property('groups_filtered');
+	my $group_stats = $job_properties->get_file_dir('core_dir', 'group_stats');
+	my $yaml = YAML::Tiny->read($group_stats) or die "Could not read file $group_stats";
+	my $groups_kept = $yaml->[0]->{'groups_kept'};
+	my $groups_filtered = $yaml->[0]->{'groups_filtered'};
 
 	my $reporter = new Report::OrthoMCL($logger);
 

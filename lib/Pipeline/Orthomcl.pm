@@ -42,6 +42,7 @@ sub new
     $job_properties->set_property('mode', 'orthomcl');
 
     $job_properties->set_file('core_snp_base', 'snps');
+    $job_properties->set_file('group_stats', 'group_stats');
     $job_properties->set_dir('log_dir', "log");
     $job_properties->set_dir('core_dir', "core");
     $job_properties->set_dir('align_dir', "align");
@@ -66,6 +67,7 @@ sub new_resubmit
     $self->_check_stages;
 
     $job_properties->set_file('core_snp_base', 'snps');
+    $job_properties->set_file('group_stats', 'group_stats');
     $job_properties->set_dir('log_dir', "log");
     $job_properties->set_dir('core_dir', "core");
     $job_properties->set_dir('align_dir', "align");
