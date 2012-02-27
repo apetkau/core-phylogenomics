@@ -305,13 +305,16 @@ sub execute
     die "Start stage not defined" if (not defined $start_stage);
     die "End stage not defined" if (not defined $end_stage);
 
+    my $yaml = YAML::Tiny->new;
+    $yaml->[0] = {'job_dir' => $self->{'job_properties'}->get_job_dir,
+		  'start_stage' => $self->{'start_stage'},
+		  'end_stage' => $self->{'end_stage'}};
+    my $yaml_string = $yaml->write_string;
+
     open(my $out_fh, '>-') or die "Could not open STDOUT";
     $logger->log("Running core SNP phylogenomic pipeline on ".`date`,0);
     $logger->log("\nParameters:\n",0);
-    $logger->log("\tjob_dir = ".$self->{'job_properties'}->get_job_dir."\n",0);
-    $logger->log("\tstart_stage = ".$self->{'start_stage'}."\n",0);
-    $logger->log("\tend_stage = ".$self->{'end_stage'}."\n",0);
-    $logger->log("\tinput_fasta_dir = ".($job_properties->get_abs_dir('input_fasta_dir'))."\n",0);
+    $logger->log($yaml_string."\n", 0);
     $logger->log($job_properties->write_properties_string."\n",0);
     $logger->log("\n",0);
     close($out_fh);

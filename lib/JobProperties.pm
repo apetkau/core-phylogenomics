@@ -18,11 +18,11 @@ sub new
 	bless($self,$class);
 
 	$self->{'_dirs'} = {};
-	$self->{'_abs_dirs'} = {};
 	$self->{'_script_dir'} = $script_dir;
 	$self->{'_properties'} = {};
 	$self->{'_properties'}->{'files'} = {};
 	$self->{'_properties'}->{'properties'} = {};
+	$self->{'_properties'}->{'abs_dirs'} = {};
 
 	return $self;
 }
@@ -176,7 +176,7 @@ sub set_abs_dir
 	die "Undefined key" if (not defined $key);
 	die "Undefined value" if (not defined $dir_value);
 
-	$self->{'_abs_dirs'}->{$key} = $dir_value;	
+	$self->{'_properties'}->{'abs_dirs'}->{$key} = $dir_value;	
 }
 
 sub get_abs_dir
@@ -185,7 +185,7 @@ sub get_abs_dir
 
 	die "dir_key not defined" if (not defined $dir_key);
 
-	return $self->{'_abs_dirs'}->{$dir_key};
+	return $self->{'_properties'}->{'abs_dirs'}->{$dir_key};
 }
 
 sub set_file

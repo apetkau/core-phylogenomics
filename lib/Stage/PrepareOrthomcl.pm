@@ -44,7 +44,7 @@ sub execute
 	require("$script_dir/../lib/alignments_orthomcl.pl");
 	($groups_kept, $groups_filtered) = AlignmentsOrthomcl::run($orthologs_group, $fasta_dir, $core_dir, $strain_ids, $parse_log);
 
-	$logger->log("\tKept $groups_kept/".($groups_kept+$groups_filtered)." groups\n");
+	$logger->log("\tKept $groups_kept/".($groups_kept+$groups_filtered)." groups\n",0);
 
 	$job_properties->set_property('groups_kept', $groups_kept);
 	$job_properties->set_property('groups_filtered', $groups_filtered);
