@@ -300,8 +300,6 @@ sub execute
     my $start_stage = $self->{'start_stage'};
     my $end_stage = $self->{'end_stage'};
 
-    my $yaml_string = $job_properties->write_properties_string;
-
     die "Start stage not defined" if (not defined $start_stage);
     die "End stage not defined" if (not defined $end_stage);
 
@@ -309,12 +307,12 @@ sub execute
     $yaml->[0] = {'job_dir' => $self->{'job_properties'}->get_job_dir,
 		  'start_stage' => $self->{'start_stage'},
 		  'end_stage' => $self->{'end_stage'}};
-    my $yaml_string = $yaml->write_string;
+    my $other_string = $yaml->write_string;
 
     open(my $out_fh, '>-') or die "Could not open STDOUT";
     $logger->log("Running core SNP phylogenomic pipeline on ".`date`,0);
     $logger->log("\nParameters:\n",0);
-    $logger->log($yaml_string."\n", 0);
+    $logger->log($other_string."\n", 0);
     $logger->log($job_properties->write_properties_string."\n",0);
     $logger->log("\n",0);
     close($out_fh);
