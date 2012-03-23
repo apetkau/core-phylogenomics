@@ -438,7 +438,7 @@ Use B<--output [OUT_NAME]> to define an output directory.  The output directory 
 
 =item B<-m|--mode [mode]>:  The mode to run the pipeline in.  One of 'blast' or 'orthomcl'.
 
-=item B<-p|--resubmit [job dir]>:  Resubmits the given job directory through the pipeline.
+=item B<-r|--resubmit [job dir]>:  Resubmits the given job directory through the pipeline.
 
 =item B<-p|--processors [integer]>:  The number of processors we will run the SGE jobs with.
 
