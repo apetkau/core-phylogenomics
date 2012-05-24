@@ -1,22 +1,50 @@
 #!/usr/bin/perl
 use strict;
+use File::Basename;
 use Bio::AlignIO;
 use Bio::SimpleAlign;
 use Bio::LocatableSeq;
 use Cwd;
+
+my $script_name = $0;
+
+sub usage
+{
+	"Usage: ".basename($script_name)." [pseudoalign.phy]\n".
+	"Constructs a snp matrix from the pseudoalignment file of the pipeline\n";
+}
+
+my $input_file = $ARGV[0];
+
+die "Invalid file\n".usage if (not defined $input_file);
+die "File $input_file does not exist\n".usage if (not -e $input_file);
+die "File $input_file is not readable\n".usage if (not -r $input_file);
+die "Invalid file $input_file\n".usage if (-d $input_file);
+
 my $outputreport = "snp.matrix.txt";
-my $in =  new Bio::AlignIO(-file=>$ARGV[0], -format=>"phylip");
+my $in =  new Bio::AlignIO(-file=>$input_file, -format=>"phylip");
+die "Could not open $input_file as phylip formatted file\n" if (not defined $in);
+
 my $aln = $in->next_aln;
+die "No phylip formatted alignment found in $input_file\n" if (not defined $aln);
+
 my %longseq;
 my @columns;
 for my $seq ($aln->each_alphabetically) {
+
+    my ($invalid_base) = ($seq->seq =~ /([^ACTGactg])/);
+    if (defined $invalid_base)
+    {
+        die "Alignment for sequence ".$seq->display_id." has invalid nucleotide bases ($1)\n";
+    }
+
     my @nucleotides = split //, $seq->seq;
     $longseq{$seq->display_id} .= $seq->seq;
     $longseq{$seq->display_id} .= "*";
 }
 
 my @accessions = sort {$a cmp $b } keys %longseq;
-for my $acc (sort {$a cmp $b } keys %longseq) {
+for my $acc (@accessions) {
     my @chars  = split undef, $longseq{$acc};
     for (my $x=0;$x<@chars;$x++) {
 	$columns[$x] .= $chars[$x];
@@ -34,10 +62,10 @@ column: for my $column (@columns) {
 	
     }
     if (scalar (keys %strain)>2){ 
-	warn "whoa, \"$column\" has too many snps!\n"; 
+	warn "warning: \"$column\" has more than 2 snp differences!\n"; 
     }  
     if (scalar (keys %strain)<2){ 
-	warn "whoa, \"$column\" has too few snps!\n"; 
+	warn "warning: \"$column\" has no SNP differences!\n"; 
 	next column;
     }
     
