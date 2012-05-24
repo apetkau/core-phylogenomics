@@ -113,6 +113,9 @@ sub run
     my $locus = shift @files;
     #open PQUAL, ">pseudoquals.txt";
     my $locuscount=1;
+    my $ambiguous_count = 0;
+    my $gap_count = 0;
+    my $other_count = 0;
     column: for my $column (@columns) {
     #	my $quals = join " " , @{shift @qualumns};
     	my @chars = split undef, $column;
@@ -123,8 +126,24 @@ sub run
     	my $lowest;
         (my $minorsnp) = sort{$char{$a} <=> $char{$b}} keys %char;
     	my $snpval = $char{$minorsnp};
-    	next column unless $snpval>=1; # there must be one snp at least
-     	next column if $column =~ /N/ || $column =~ /-/; # no gaps no ambiguities
+	next column unless $snpval>=1; # there must be one snp at least
+	if ($column =~ /[^ATCG\*]/i)
+	{
+		if ($column =~ /-/)
+		{
+			$gap_count++;
+		}
+		elsif ($column =~ /^[A-Z]+$/i) # matchs not gap, but only alpha, must be ambiguous base
+		{
+			$ambiguous_count++;
+		}
+		else
+		{
+			print STDERR "Skipping column $column\n";
+			$other_count++;
+		}
+		next column;
+	}
     	if ($column =~ /\*/) { # file separator
     			$locus = shift @files;
     			$locuscount++;
@@ -179,4 +198,7 @@ sub run
     print $out_fh "there are ", length($pseudoalign[0]), " strains in the pseudoalignment.\n";
     print $out_fh "there are $pseudolength snps in the alignment\n";
     print $out_fh "there are $locuscount loci in the alignment\n";
+    print $out_fh "removed $gap_count gaps in all alignments\n";
+    print $out_fh "removed $ambiguous_count ambiguous base pair characters in all alignments\n";
+    print $out_fh "removed $other_count other columns in alignments\n";
 }
