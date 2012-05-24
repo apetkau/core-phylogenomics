@@ -6,6 +6,6 @@
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-#export PERL5LIB=$SCRIPT_DIR/cpanlib/lib/perl5:$PERL5LIB
+#export PERL5LIB=$SCRIPT_DIR/../cpanlib/lib/perl5:$PERL5LIB
 
-$SCRIPT_DIR/bin/snp_phylogenomics_control.pl $@
+$SCRIPT_DIR/../perl_bin/snp_phylogenomics_control.pl $@
