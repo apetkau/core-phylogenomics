@@ -5,13 +5,22 @@ use Bio::AlignIO;
 use Bio::SimpleAlign;
 use Bio::LocatableSeq;
 use Cwd;
+use Getopt::Long;
 
 my $script_name = $0;
 
 sub usage
 {
 	"Usage: ".basename($script_name)." [pseudoalign.phy]\n".
-	"Constructs a snp matrix from the pseudoalignment file of the pipeline\n";
+	"Constructs a snp matrix from the pseudoalignment file of the pipeline\n".
+	"Options:\n".
+	"\t-v:  Print more information (to stderr)\n";
+}
+
+my $verbose = 0;
+if (not GetOptions('v' => \$verbose))
+{
+	die "Invalid options\n".usage;
 }
 
 my $input_file = $ARGV[0];
@@ -62,10 +71,10 @@ column: for my $column (@columns) {
 	
     }
     if (scalar (keys %strain)>2){ 
-	warn "warning: \"$column\" has more than 2 snp differences!\n"; 
+	warn "warning: \"$column\" has more than 2 snp differences!\n" if ($verbose); 
     }  
     if (scalar (keys %strain)<2){ 
-	warn "warning: \"$column\" has no SNP differences!\n"; 
+	warn "warning: \"$column\" has no SNP differences!\n" if ($verbose); 
 	next column;
     }
     
