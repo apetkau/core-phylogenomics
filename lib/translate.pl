@@ -24,5 +24,5 @@ for my $file (@files)
 {
 	my $in = new Bio::SeqIO(-file=>"$input_dir/$file",-format=>"fasta");
 	my $out = new Bio::SeqIO(-file=>">$output_dir/$file", -format=>"fasta");
-	while (my $seq=$in->next_seq) {$out->write_seq($seq->translate(-complete => 1));}
+	while (my $seq=$in->next_seq) {$out->write_seq($seq->translate(-complete => 1, -codontable_id =>11));}
 }
