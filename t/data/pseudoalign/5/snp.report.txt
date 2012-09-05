@@ -1,0 +1,4 @@
+column 1: C(A) from snps1.aln.trimmed in:	 a
+column 2: G(C) from snps1.aln.trimmed in:	 c
+column 3: A(G) from snps1.aln.trimmed in:	 b
+column 4: A(T) from snps1.aln.trimmed in:	 a
