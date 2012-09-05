@@ -1,0 +1,1 @@
+column 1: C(A) from snps1.aln.trimmed in:	 a
