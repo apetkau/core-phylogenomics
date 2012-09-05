@@ -40,13 +40,6 @@ die "No phylip formatted alignment found in $input_file\n" if (not defined $aln)
 my %longseq;
 my @columns;
 for my $seq ($aln->each_alphabetically) {
-
-    my ($invalid_base) = ($seq->seq =~ /([^ACTGactg])/);
-    if (defined $invalid_base)
-    {
-        die "Alignment for sequence ".$seq->display_id." has invalid nucleotide bases ($1)\n";
-    }
-
     my @nucleotides = split //, $seq->seq;
     $longseq{$seq->display_id} .= $seq->seq;
     $longseq{$seq->display_id} .= "*";
@@ -76,6 +69,13 @@ column: for my $column (@columns) {
     if (scalar (keys %strain)<2){ 
 	warn "warning: \"$column\" has no SNP differences!\n" if ($verbose); 
 	next column;
+    }
+
+    my ($invalid_base) = ($column =~ /([^ACTGactg])/);
+    if (defined $invalid_base)
+    {
+        warn "warning: \"$column\" has an invalid base ($invalid_base), skipping column\n" if ($verbose);
+        next column;
     }
     
     my @nucleotides  = keys %strain;
