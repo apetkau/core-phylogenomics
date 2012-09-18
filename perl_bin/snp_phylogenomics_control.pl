@@ -15,6 +15,7 @@ use Getopt::Long;
 use Pipeline;
 use Pipeline::Blast;
 use Pipeline::Orthomcl;
+use Pipeline::Mapping;
 
 my $pod_sections = "SYNOPSIS";
 my $pod_sections_long = "NAME|SYNOPSIS|OPTIONS|STAGES";
@@ -25,6 +26,24 @@ my $keep_files = 0;
 
 my $pid_cutoff_default = 99;
 my $hsp_length_default = 400;
+
+sub handle_input_fastq
+{
+	my ($pipeline,$input_dir_opt) = @_;
+
+	if (not defined $input_dir_opt)
+	{
+		die "Error: no input directory defined";
+	}
+	elsif (not -d $input_dir_opt)
+	{
+		die "Error: input_dir=$input_dir_opt is not a directory";
+	}
+	else
+	{
+		$pipeline->set_input_fastq($input_dir_opt);
+	}
+}
 
 sub handle_input_fasta
 {
@@ -113,7 +132,27 @@ sub handle_output_opt
 	}
 	else
 	{
-		die "No value defined for --output.";
+		print STDERR "No value defined for --output\n";
+		pod2usage(-verbose => 99, -sections => $pod_sections);
+		exit 1;
+	}
+}
+
+sub parse_mapping_opts
+{
+	my ($options, $pipeline) = @_;
+
+	if (defined $options->{'reference'})
+	{
+		die "Reference file ".$options->{'reference'}." does not exist" if (not -e $options->{'reference'});
+		$pipeline->set_reference($options->{'reference'});
+
+		handle_output_opt($pipeline, $options->{'o'});
+		handle_input_fastq($pipeline, $options->{'d'});
+	}
+	else
+	{
+		die "Error: reference not defined";
 	}
 }
 
@@ -319,6 +358,7 @@ if (!GetOptions(\%options,
 	'p|processors=i',
 	'd|input-dir=s',
 	'i|input-file=s@',
+	'reference=s',
 	'o|output=s',
 	'k|keep-files',
 	'pid-cutoff=f',
@@ -371,6 +411,12 @@ elsif ($options{'m'} eq 'orthomcl')
 	parse_ortho_opts(\%options, $pipeline);
 	$pipeline->execute;
 }
+elsif ($options{'m'} eq 'mapping')
+{
+	$pipeline = new Pipeline::Mapping($script_dir);
+	parse_mapping_opts(\%options,$pipeline);
+	$pipeline->execute;
+}
 else
 {
 	print STDERR "Error: invalid mode (".$options{'m'}.") defined\n";
@@ -404,17 +450,25 @@ snp_phylogenomics_control.pl:  Script to automate running of core SNP analysis.
 
 =back
 
+=head2 MAPPING
+
+=over
+
+=item snp_phylogenomics_control.pl --mode mapping --input-dir sample_fastq/ --output out --reference ref.fasta
+
+=back
+
 =head1 DESCRIPTION
 
-Runs the core SNP phylogenomic analysis stages.  The input is either a directory containing the FASTA files to analyize, or the multi-fasta file to analyze.  The output is the pseudoalign.phy alignment file and the snpreport.txt. The intermediate files are kept under a directory (named using --output), and can be used to resubmit the analysis at different stages later.
+Runs the core SNP phylogenomic analysis stages.  The input is either a directory containing the FASTA files to analyize, the multi-fasta file to analyze, or the raw reads to analyze.  The output is the pseudoalign.phy alignment file and the snpreport.txt. The intermediate files are kept under a directory (named using --output), and can be used to resubmit the analysis at different stages later.
 
 =head1 INPUT
 
-Input is in the form of a directory of fasta-formatted files, one file per strain.  The files should be multi-fasta files containing all of the genes for that particular strain.
+Input is in the form of a directory of fasta or fastq formatted files, one file per strain.  The fastq files should be multi-fasta files containing all of the genes for that particular strain.  The fastq files should be all the raw reads for each particular strain.
 
-=head2 FASTA Directory
+=head2 FASTA/FASTQ Directory
 
-Use B<--input-dir [name]> to define the fasta input directory.  The input files will be checked for validity.  The count of the files in this directory will be used for the strain count.
+Use B<--input-dir [name]> to define the fasta/fastq input directory.  The input files will be checked for validity.  The count of the files in this directory will be used for the strain count.
 
 =head1 OUTPUT
 
@@ -426,7 +480,7 @@ Use B<--output [OUT_NAME]> to define an output directory.  The output directory 
 
 =over
 
-=item B<-d|--input-dir [directory]> :  The input directory containing the fasta files to process.
+=item B<-d|--input-dir [directory]> :  The input directory containing the fasta/fastq files to process.
 
 =item B<-o|--output [directory> :  The directory to store the analysis data, required only for a new analysis.
 
@@ -436,7 +490,7 @@ Use B<--output [OUT_NAME]> to define an output directory.  The output directory 
 
 =over
 
-=item B<-m|--mode [mode]>:  The mode to run the pipeline in.  One of 'blast' or 'orthomcl'.
+=item B<-m|--mode [mode]>:  The mode to run the pipeline in.  One of 'blast', 'orthomcl', or 'mapping'.
 
 =item B<-r|--resubmit [job dir]>:  Resubmits the given job directory through the pipeline.
 
@@ -471,6 +525,14 @@ Use B<--output [OUT_NAME]> to define an output directory.  The output directory 
 =over
 
 =item B<--orthomcl-groups>:  The orthomcl groups file.
+
+=back
+
+=head3 MAPPING
+
+=over
+
+=item B<--reference>:  The reference file (multi-fasta, one entry per chromosome) to map to.
 
 =back
 
