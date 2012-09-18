@@ -14,7 +14,7 @@ use Stage;
 use Stage::CopyInputReference;
 use Stage::CopyInputFastq;
 use Stage::WriteProperties;
-#use Stage::SmaltMapping;
+use Stage::SmaltMapping;
 use Stage::BuildPhylogeny;
 use Stage::BuildPhylogenyGraphic;
 use Stage::GenerateReportOrthoMCL;
@@ -41,11 +41,12 @@ sub new
     $job_properties->set_property('mode', 'mapping');
 
     $job_properties->set_dir('log_dir', "log");
-    $job_properties->set_dir('align_dir', "align");
+    $job_properties->set_dir('mapping_dir', "mapping");
     $job_properties->set_dir('pseudoalign_dir', "pseudoalign");
     $job_properties->set_dir('stage_dir', "stages");
     $job_properties->set_dir('phylogeny_dir', 'phylogeny');
     $job_properties->set_dir('fastq_dir', 'fastq');
+    $job_properties->set_dir('sam_dir', 'sam');
     $job_properties->set_dir('reference_dir', 'reference');
 
     return $self;
@@ -110,6 +111,7 @@ sub _setup_stage_tables
 	                  'write-properties',
 			  'copy-input-reference',
 			  'copy-input-fastq',
+			  'reference-mapping',
 	                  #'alignment',
 	                  #'pseudoalign',
 	                  #'report',
@@ -120,6 +122,7 @@ sub _setup_stage_tables
 	$stage->{'all_hash'} = \%all_hash;
 	
 	$stage->{'user'} = [
+			    'reference-mapping',
 			    #'prepare-orthomcl',
 	                    #'alignment',
 	                    #'pseudoalign',
@@ -127,7 +130,7 @@ sub _setup_stage_tables
 	                    #'phylogeny-graphic',
 			];
 	
-	$stage->{'valid_job_dirs'} = ['reference_dir','job_dir','log_dir','core_dir','align_dir','pseudoalign_dir','stage_dir','phylogeny_dir', 'fastq_dir'];
+	$stage->{'valid_job_dirs'} = ['sam_dir', 'mapping_dir', 'reference_dir','job_dir','log_dir','core_dir','align_dir','pseudoalign_dir','stage_dir','phylogeny_dir', 'fastq_dir'];
 	#$stage->{'valid_other_files'} = ['input_fastq_dir'];
 	$stage->{'valid_other_files'} = [];
 
@@ -152,6 +155,7 @@ sub _initialize
                         'write-properties' => new Stage::WriteProperties($job_properties, $logger),
 			'copy-input-reference' => new Stage::CopyInputReference($job_properties, $logger),
 			'copy-input-fastq' => new Stage::CopyInputFastq($job_properties, $logger),
+			'reference-mapping' => new Stage::SmaltMapping($job_properties, $logger),
                         #'prepare-orthomcl' => new Stage::PrepareOrthomcl($job_properties, $logger),
                         #'alignment' => new Stage::AlignOrthologs($job_properties, $logger),
                         #'pseudoalign' => new Stage::Pseudoalign($job_properties, $logger),

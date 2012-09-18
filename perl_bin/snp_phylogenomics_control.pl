@@ -211,10 +211,6 @@ sub parse_blast_opts
 {
 	my ($options, $pipeline) = @_;
 	
-	if (defined $options->{'v'})
-	{
-		$pipeline->set_verbose($options->{'v'}); 
-	}
 	
 	if (defined $options->{'p'})
 	{
@@ -396,24 +392,28 @@ elsif (not defined $options{'m'})
 {
 	warn "Warning: no mode defined, defaulting to BLAST pipeline mode.\n";
 	$pipeline = new Pipeline::Blast($script_dir);
+	$pipeline->set_verbose($options{'v'}) if (defined $options{'v'}); 
 	parse_blast_opts(\%options, $pipeline);
 	$pipeline->execute;
 }
 elsif ($options{'m'} eq 'blast')
 {
 	$pipeline = new Pipeline::Blast($script_dir);
+	$pipeline->set_verbose($options{'v'}) if (defined $options{'v'}); 
 	parse_blast_opts(\%options, $pipeline);
 	$pipeline->execute;
 }
 elsif ($options{'m'} eq 'orthomcl')
 {
 	$pipeline = new Pipeline::Orthomcl($script_dir);
+	$pipeline->set_verbose($options{'v'}) if (defined $options{'v'}); 
 	parse_ortho_opts(\%options, $pipeline);
 	$pipeline->execute;
 }
 elsif ($options{'m'} eq 'mapping')
 {
 	$pipeline = new Pipeline::Mapping($script_dir);
+	$pipeline->set_verbose($options{'v'}) if (defined $options{'v'}); 
 	parse_mapping_opts(\%options,$pipeline);
 	$pipeline->execute;
 }
