@@ -12,7 +12,7 @@ use JobProperties;
 
 use Stage;
 use Stage::CopyInputReference;
-#use Stage::CopyInputFastq;
+use Stage::CopyInputFastq;
 use Stage::WriteProperties;
 #use Stage::SmaltMapping;
 use Stage::BuildPhylogeny;
@@ -40,9 +40,7 @@ sub new
     my $job_properties = $self->{'job_properties'};
     $job_properties->set_property('mode', 'mapping');
 
-    $job_properties->set_file('group_stats', 'group_stats');
     $job_properties->set_dir('log_dir', "log");
-    $job_properties->set_dir('input_fastq_dir', "fastq");
     $job_properties->set_dir('align_dir', "align");
     $job_properties->set_dir('pseudoalign_dir', "pseudoalign");
     $job_properties->set_dir('stage_dir', "stages");
@@ -87,7 +85,7 @@ sub set_reference
 
 	my $abs_reference_path = abs_path($reference);
 	die "Error: abs path for reference not defined" if (not defined $abs_reference_path);
-	$self->{'job_properties'}->set_file('input_reference',$abs_reference_path);
+	$self->{'job_properties'}->set_abs_file('input_reference',$abs_reference_path);
 }
 
 sub set_input_fastq
@@ -99,7 +97,7 @@ sub set_input_fastq
 
 	my $abs_fastq_path = abs_path($fastq_dir);
 	die "Error: abs path for fastq_dir not defined" if (not defined $abs_fastq_path);
-	$self->{'job_properties'}->set_abs_file('input_fastq',$abs_fastq_path);
+	$self->{'job_properties'}->set_abs_file('input_fastq_dir',$abs_fastq_path);
 }
 
 sub _setup_stage_tables
@@ -111,7 +109,7 @@ sub _setup_stage_tables
 	$stage->{'all'} = [
 	                  'write-properties',
 			  'copy-input-reference',
-			  #'copy-input-fastq',
+			  'copy-input-fastq',
 	                  #'alignment',
 	                  #'pseudoalign',
 	                  #'report',
@@ -129,8 +127,9 @@ sub _setup_stage_tables
 	                    #'phylogeny-graphic',
 			];
 	
-	$stage->{'valid_job_dirs'} = ['reference_dir','job_dir','log_dir','core_dir','align_dir','pseudoalign_dir','stage_dir','phylogeny_dir', 'fasta_dir'];
-	$stage->{'valid_other_files'} = ['input_fastq_dir'];
+	$stage->{'valid_job_dirs'} = ['reference_dir','job_dir','log_dir','core_dir','align_dir','pseudoalign_dir','stage_dir','phylogeny_dir', 'fastq_dir'];
+	#$stage->{'valid_other_files'} = ['input_fastq_dir'];
+	$stage->{'valid_other_files'} = [];
 
 	my @valid_properties = join(@{$stage->{'valid_job_dirs'}},@{$stage->{'valid_other_files'}});
 	$stage->{'valid_properties'} = \@valid_properties;
@@ -152,7 +151,7 @@ sub _initialize
     my $stage_table = {
                         'write-properties' => new Stage::WriteProperties($job_properties, $logger),
 			'copy-input-reference' => new Stage::CopyInputReference($job_properties, $logger),
-			#'copy-input-fastq' => new Stage::CopyInputFastq($job_properties, $logger),
+			'copy-input-fastq' => new Stage::CopyInputFastq($job_properties, $logger),
                         #'prepare-orthomcl' => new Stage::PrepareOrthomcl($job_properties, $logger),
                         #'alignment' => new Stage::AlignOrthologs($job_properties, $logger),
                         #'pseudoalign' => new Stage::Pseudoalign($job_properties, $logger),

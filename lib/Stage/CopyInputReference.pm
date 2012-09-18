@@ -31,7 +31,7 @@ sub execute
 	my $stage = $self->get_stage_name;
 
 	my $job_properties = $self->{'_job_properties'};
-	my $input_file = $job_properties->get_file('input_reference');
+	my $input_file = $job_properties->get_abs_file('input_reference');
 	my $output_dir = $job_properties->get_dir('reference_dir');
 	
 	$logger->log("\nStage: $stage\n",0);
