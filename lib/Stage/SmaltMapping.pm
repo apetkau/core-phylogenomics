@@ -35,6 +35,7 @@ sub execute
 
 	my $input_fastq_dir = $job_properties->get_dir('fastq_dir');
 	my $sam_dir = $job_properties->get_dir('sam_dir');
+	my $bam_dir = $job_properties->get_dir('bam_dir');
 	my $reference_file = $job_properties->get_file_dir('reference_dir','reference');
 	my $output_dir = $job_properties->get_dir('mapping_dir');
 	my $threads = 24;
@@ -52,9 +53,11 @@ sub execute
 	$logger->log("\nStage: $stage\n",0);
 	$logger->log("Mapping with smalt ...\n",0);
 
-	my @smalt_params;
 	my $smalt_path = $job_properties->get_file('smalt');
 	$smalt_path = "smalt" if ((not defined $smalt_path) or (not -e $smalt_path));
+
+	my $samtools_path = $job_properties->get_file('samtools');
+	$samtools_path = "samtools" if ((not defined $samtools_path) or (not -e $samtools_path));
 
 	my $smalt_command = $smalt_launch;
 	my @smalt_params;
@@ -67,7 +70,7 @@ sub execute
 	{
 		my $fastq_file = "$input_fastq_dir/$file";
 		my $output_smalt_dir = "$output_dir/$file";
-		push(@smalt_params, ['--sam-dir', $sam_dir, '--smalt-path', $smalt_path, '-t', $reference_file, '-r', $fastq_file, '-d', $output_smalt_dir, '-i', '-k 13 -s 6', '--map', "-n $threads -f samsoft"]);
+		push(@smalt_params, ['--samtools-path', $samtools_path, '--bam-dir', $bam_dir, '--sam-dir', $sam_dir, '--smalt-path', $smalt_path, '-t', $reference_file, '-r', $fastq_file, '-d', $output_smalt_dir, '-i', '-k 13 -s 6', '--map', "-n $threads -f samsoft"]);
 	}
 
 	$logger->log("\tSubmitting smalt jobs for execution ...\n",1);

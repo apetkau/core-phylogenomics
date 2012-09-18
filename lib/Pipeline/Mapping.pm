@@ -47,6 +47,7 @@ sub new
     $job_properties->set_dir('phylogeny_dir', 'phylogeny');
     $job_properties->set_dir('fastq_dir', 'fastq');
     $job_properties->set_dir('sam_dir', 'sam');
+    $job_properties->set_dir('bam_dir', 'bam');
     $job_properties->set_dir('reference_dir', 'reference');
 
     return $self;
@@ -130,7 +131,7 @@ sub _setup_stage_tables
 	                    #'phylogeny-graphic',
 			];
 	
-	$stage->{'valid_job_dirs'} = ['sam_dir', 'mapping_dir', 'reference_dir','job_dir','log_dir','core_dir','align_dir','pseudoalign_dir','stage_dir','phylogeny_dir', 'fastq_dir'];
+	$stage->{'valid_job_dirs'} = ['bam_dir', 'sam_dir', 'mapping_dir', 'reference_dir','job_dir','log_dir','core_dir','align_dir','pseudoalign_dir','stage_dir','phylogeny_dir', 'fastq_dir'];
 	#$stage->{'valid_other_files'} = ['input_fastq_dir'];
 	$stage->{'valid_other_files'} = [];
 

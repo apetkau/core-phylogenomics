@@ -111,6 +111,7 @@ sub _set_defaults
 	my $figtree = $defaults->{'path'}->{'figtree'};
 	my $phyml = $defaults->{'path'}->{'phyml'};
 	my $smalt = $defaults->{'path'}->{'smalt'};
+	my $samtools = $defaults->{'path'}->{'samtools'};
 
 	$self->set_property('processors', $processors) if ((defined $processors) and ($processors =~ /^\d+$/));
 	$self->set_file('formatdb', $formatdb) if ((defined $formatdb) and (-e $formatdb));
@@ -119,6 +120,7 @@ sub _set_defaults
 	$self->set_file('clustalw2', $clustalw2) if ((defined $clustalw2) and (-e $clustalw2));
 	$self->set_file('blastall', $blastall) if ((defined $blastall) and (-e $blastall));
 	$self->set_file('smalt', $smalt) if ((defined $smalt) and (-e $smalt));
+	$self->set_file('samtools', $samtools) if ((defined $samtools) and (-e $samtools));
 }
 
 sub set_property

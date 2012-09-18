@@ -5,18 +5,22 @@ use Getopt::Long;
 use File::Basename;
 use Bio::SeqIO;
 use File::Path qw(rmtree);
-
+use File::Copy "move";
 
 my $SMALT = "smalt";
 print STDERR "PERL5LIB=".$ENV{'PERL5LIB'}."\n";
 
 
 my (@readfiles, $smalt_path, $sam_dir, $output_dir, $keep_tmp_files, $reference_file, $help,  $smalt_map_opts, $smalt_index_opts, $verbose);
+my $samtools_path;
+my $bam_dir;
 
 GetOptions (
     't|reference=s'=>\$reference_file,
     's|smalt-path=s' => \$smalt_path,
+    'samtools-path=s' => \$samtools_path,
     'sam-dir=s' => \$sam_dir,
+    'bam-dir=s' => \$bam_dir,
     'r|reads=s@'=>\@readfiles,
     'm|map_opts=s'=>\$smalt_map_opts,
     'i|index_opts=s'=>\$smalt_index_opts,
@@ -30,7 +34,9 @@ GetOptions (
 die usage() if $help;
 die usage("missing arguments") unless $reference_file  and scalar @readfiles>0;
 die usage("No smalt-path defined\n") if (not defined $smalt_path);
+die usage("No samtools-path defined\n") if (not defined $samtools_path);
 die usage("No sam-dir defined\n") if (not defined $sam_dir or (not -d $sam_dir));
+die usage("No bam-dir defined\n") if (not defined $bam_dir or (not -d $bam_dir));
 
 $SMALT=$smalt_path;
 
@@ -107,8 +113,27 @@ for (@filestore) {
     unlink "$output_dir/$tmp_dir/$basename.sam" || die "couldn't remove $output_dir/$tmp_dir/$basename.sam: $!\n";
 
     my $new_out_file = "$sam_dir/$basename.sam";
+    my $unsorted_bam_out = "$sam_dir/$basename.unsorted.bam";
+    my $sorted_bam_base = "$sam_dir/$basename";
+    my $sorted_bam_file = "$sorted_bam_base.bam";
+    my $final_bam_file = "$bam_dir/$basename.bam";
     symlink($out_sam_file,$new_out_file) or die "Could not link $out_sam_file to $new_out_file: $!";
+
+    my $samtools_command = "$samtools_path view -bt \"$reference_file\" \"$new_out_file\" -o \"$unsorted_bam_out\"";
+    print "running $samtools_command\n";
+    system($samtools_command) == 0 or die "Could not execute $samtools_command";
+
+    $samtools_command = "$samtools_path sort -m 4000000000 \"$unsorted_bam_out\" \"$sorted_bam_base\""; 
+    print "running $samtools_command\n";
+    system($samtools_command) == 0 or die "Could not execute $samtools_command";
+
+    move($sorted_bam_file,$final_bam_file) or die "Could not move $sorted_bam_file to $final_bam_file: $!";
+
+    $samtools_command = "$samtools_path index \"$final_bam_file\"";
+    print "running $samtools_command\n";
+    system($samtools_command) == 0 or die "Could not execute $samtools_command";
 }
+
 unless ($keep_tmp_files) {
     unlink "$output_dir/$tmp_dir/$ref_file_index" || die "Couldn't remove files in $output_dir/$tmp_dir/$ref_file_index: $!\n";
     unlink "$output_dir/$tmp_dir/temp.log" || die "Couldn't remove $output_dir/$tmp_dir/temp.log: $!\n";
