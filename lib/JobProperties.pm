@@ -22,7 +22,7 @@ sub new
 	$self->{'_properties'} = {};
 	$self->{'_properties'}->{'files'} = {};
 	$self->{'_properties'}->{'properties'} = {};
-	$self->{'_properties'}->{'abs_dirs'} = {};
+	$self->{'_properties'}->{'abs_files'} = {};
 
 	return $self;
 }
@@ -169,23 +169,23 @@ sub set_dir
 	$self->{'_dirs'}->{$key} = $dir_value;	
 }
 
-sub set_abs_dir
+sub set_abs_file
 {
 	my ($self, $key, $dir_value) = @_;
 
 	die "Undefined key" if (not defined $key);
 	die "Undefined value" if (not defined $dir_value);
 
-	$self->{'_properties'}->{'abs_dirs'}->{$key} = $dir_value;	
+	$self->{'_properties'}->{'abs_files'}->{$key} = $dir_value;	
 }
 
-sub get_abs_dir
+sub get_abs_file
 {
 	my ($self, $dir_key) = @_;
 
 	die "dir_key not defined" if (not defined $dir_key);
 
-	return $self->{'_properties'}->{'abs_dirs'}->{$dir_key};
+	return $self->{'_properties'}->{'abs_files'}->{$dir_key};
 }
 
 sub set_file

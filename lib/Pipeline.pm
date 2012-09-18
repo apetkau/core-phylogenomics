@@ -62,7 +62,7 @@ sub set_input_fasta
 
     if (-d $abs_input_fasta)
     {
-        $self->{'job_properties'}->set_abs_dir('input_fasta_dir', $abs_input_fasta);
+        $self->{'job_properties'}->set_abs_file('input_fasta_dir', $abs_input_fasta);
     }
     else
     {

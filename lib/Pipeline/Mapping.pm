@@ -99,7 +99,7 @@ sub set_input_fastq
 
 	my $abs_fastq_path = abs_path($fastq_dir);
 	die "Error: abs path for fastq_dir not defined" if (not defined $abs_fastq_path);
-	$self->{'job_properties'}->set_abs_dir('input_fastq',$abs_fastq_path);
+	$self->{'job_properties'}->set_abs_file('input_fastq',$abs_fastq_path);
 }
 
 sub _setup_stage_tables
