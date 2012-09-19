@@ -2,6 +2,7 @@
 
 package Stage::SmaltMapping;
 use Stage;
+use File::Basename;
 @ISA = qw(Stage);
 
 use strict;
@@ -66,15 +67,37 @@ sub execute
 	my @fastq_files = grep {/\.fastq$/i} readdir($fastq_h);
 	closedir($fastq_h);
 
+	my @bam_files = ();
+
 	for my $file (@fastq_files)
 	{
 		my $fastq_file = "$input_fastq_dir/$file";
+		my $bam_name = basename($file, '.fastq');
+		my $bam_file = "$bam_dir/$bam_name.bam";
 		my $output_smalt_dir = "$output_dir/$file";
+		push(@bam_files,$bam_file);
 		push(@smalt_params, ['--samtools-path', $samtools_path, '--bam-dir', $bam_dir, '--sam-dir', $sam_dir, '--smalt-path', $smalt_path, '-t', $reference_file, '-r', $fastq_file, '-d', $output_smalt_dir, '-i', '-k 13 -s 6', '--map', "-n $threads -f samsoft"]);
 	}
 
 	$logger->log("\tSubmitting smalt jobs for execution ...\n",1);
 	$self->_submit_jobs($smalt_command, 'smalt', \@smalt_params);
+
+	# check for existence of bam files
+	for my $file (@bam_files)
+	{
+		$logger->log("\tchecking for $file ...", 1);
+		if (-e $file)
+		{
+			$logger->log("OK\n",1);
+		}
+		else
+		{
+			my $message = "error: no bam file $file found\n";
+			$logger->log($message,1);
+			die $message;
+		}
+	}
+
 	$logger->log("done\n",1);
 	$logger->log("...done\n",0);
 }

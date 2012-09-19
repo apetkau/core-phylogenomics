@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 use strict;
-# use warnings;
+use warnings;
 use Getopt::Long;
 use File::Basename;
 use Bio::SeqIO;

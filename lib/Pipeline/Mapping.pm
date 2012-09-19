@@ -18,6 +18,7 @@ use Stage::SmaltMapping;
 use Stage::BuildPhylogeny;
 use Stage::BuildPhylogenyGraphic;
 use Stage::GenerateReportOrthoMCL;
+use Stage::Mpileup;
 
 use File::Basename qw(basename dirname);
 use File::Copy qw(copy move);
@@ -48,6 +49,7 @@ sub new
     $job_properties->set_dir('fastq_dir', 'fastq');
     $job_properties->set_dir('sam_dir', 'sam');
     $job_properties->set_dir('bam_dir', 'bam');
+    $job_properties->set_dir('mpileup_dir', 'mpileup');
     $job_properties->set_dir('reference_dir', 'reference');
 
     return $self;
@@ -113,6 +115,7 @@ sub _setup_stage_tables
 			  'copy-input-reference',
 			  'copy-input-fastq',
 			  'reference-mapping',
+			  'mpileup',
 	                  #'alignment',
 	                  #'pseudoalign',
 	                  #'report',
@@ -124,6 +127,7 @@ sub _setup_stage_tables
 	
 	$stage->{'user'} = [
 			    'reference-mapping',
+			    'mpileup',
 			    #'prepare-orthomcl',
 	                    #'alignment',
 	                    #'pseudoalign',
@@ -131,7 +135,7 @@ sub _setup_stage_tables
 	                    #'phylogeny-graphic',
 			];
 	
-	$stage->{'valid_job_dirs'} = ['bam_dir', 'sam_dir', 'mapping_dir', 'reference_dir','job_dir','log_dir','core_dir','align_dir','pseudoalign_dir','stage_dir','phylogeny_dir', 'fastq_dir'];
+	$stage->{'valid_job_dirs'} = ['mpileup_dir', 'bam_dir', 'sam_dir', 'mapping_dir', 'reference_dir','job_dir','log_dir','core_dir','align_dir','pseudoalign_dir','stage_dir','phylogeny_dir', 'fastq_dir'];
 	#$stage->{'valid_other_files'} = ['input_fastq_dir'];
 	$stage->{'valid_other_files'} = [];
 
@@ -157,6 +161,7 @@ sub _initialize
 			'copy-input-reference' => new Stage::CopyInputReference($job_properties, $logger),
 			'copy-input-fastq' => new Stage::CopyInputFastq($job_properties, $logger),
 			'reference-mapping' => new Stage::SmaltMapping($job_properties, $logger),
+			'mpileup' => new Stage::Mpileup($job_properties, $logger),
                         #'prepare-orthomcl' => new Stage::PrepareOrthomcl($job_properties, $logger),
                         #'alignment' => new Stage::AlignOrthologs($job_properties, $logger),
                         #'pseudoalign' => new Stage::Pseudoalign($job_properties, $logger),
