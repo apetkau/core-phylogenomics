@@ -113,6 +113,8 @@ sub _set_defaults
 	my $smalt = $defaults->{'path'}->{'smalt'};
 	my $samtools = $defaults->{'path'}->{'samtools'};
 	my $bcftools = $defaults->{'path'}->{'bcftools'};
+	my $bgzip = $defaults->{'path'}->{'bgzip'};
+	my $tabix = $defaults->{'path'}->{'tabix'};
 
 	$self->set_property('processors', $processors) if ((defined $processors) and ($processors =~ /^\d+$/));
 	$self->set_file('formatdb', $formatdb) if ((defined $formatdb) and (-e $formatdb));
@@ -123,6 +125,8 @@ sub _set_defaults
 	$self->set_file('smalt', $smalt) if ((defined $smalt) and (-e $smalt));
 	$self->set_file('samtools', $samtools) if ((defined $samtools) and (-e $samtools));
 	$self->set_file('bcftools', $bcftools) if ((defined $bcftools) and (-e $bcftools));
+	$self->set_file('bgzip', $bgzip) if ((defined $bgzip) and (-e $bgzip));
+	$self->set_file('tabix', $tabix) if ((defined $tabix) and (-e $tabix));
 }
 
 sub set_property
