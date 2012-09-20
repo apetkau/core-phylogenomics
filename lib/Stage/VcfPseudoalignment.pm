@@ -56,7 +56,7 @@ sub execute
 	die "Output directory $pseudoalign_dir does not exist" if (not -e $pseudoalign_dir);
 
 	$logger->log("\nStage: $stage\n",0);
-	$logger->log("Running freebayes ...\n",0);
+	$logger->log("Running vcf2pseudoalign ...\n",0);
 
 	my @pseudoalign_params = ['--vcf-dir', $vcf_split_dir, '--mpileup-dir', $mpileup_dir, '-o', $out_align,
 				  '-f', 'phylip', '-r', $reference_name, '-c', $min_cov, '-v'];

@@ -56,6 +56,7 @@ sub new
     $job_properties->set_dir('vcf_dir', 'vcf');
     $job_properties->set_dir('pseudoalign_dir', 'pseudoalign');
     $job_properties->set_dir('vcf_split_dir', 'vcf-split');
+    $job_properties->set_dir('vcf_split_dir', 'vcf-split');
 
     return $self;
 }
@@ -123,9 +124,8 @@ sub _setup_stage_tables
 			  'mpileup',
 			  'variant-calling',
 			  'pseudoalign',
-	                  #'report',
-	                  #'build-phylogeny',
-	                  #'phylogeny-graphic'
+	                  'build-phylogeny',
+	                  'phylogeny-graphic'
 	                 ];
 	my %all_hash = map { $_ => 1} @{$stage->{'all'}};
 	$stage->{'all_hash'} = \%all_hash;
@@ -135,14 +135,11 @@ sub _setup_stage_tables
 			    'mpileup',
 			    'variant-calling',
 			    'pseudoalign',
-			    #'prepare-orthomcl',
-	                    #'alignment',
-	                    #'pseudoalign',
-	                    #'build-phylogeny',
-	                    #'phylogeny-graphic',
+	                    'build-phylogeny',
+	                    'phylogeny-graphic',
 			];
 	
-	$stage->{'valid_job_dirs'} = ['pseudoalign_dir', 'vcf_dir', 'vcf_split_dir', 'mpileup_dir', 'bam_dir', 'sam_dir', 'mapping_dir', 'reference_dir','job_dir','log_dir','core_dir','align_dir','pseudoalign_dir','stage_dir','phylogeny_dir', 'fastq_dir'];
+	$stage->{'valid_job_dirs'} = ['pseudoalign_dir', 'vcf_dir', 'vcf_split_dir', 'mpileup_dir', 'bam_dir', 'sam_dir', 'mapping_dir', 'reference_dir','job_dir','log_dir','align_dir','stage_dir','phylogeny_dir', 'fastq_dir'];
 	#$stage->{'valid_other_files'} = ['input_fastq_dir'];
 	$stage->{'valid_other_files'} = [];
 
@@ -171,12 +168,8 @@ sub _initialize
 			'mpileup' => new Stage::Mpileup($job_properties, $logger),
 			'variant-calling' => new Stage::VariantCalling($job_properties, $logger),
 			'pseudoalign' => new Stage::VcfPseudoalignment($job_properties, $logger),
-                        #'prepare-orthomcl' => new Stage::PrepareOrthomcl($job_properties, $logger),
-                        #'alignment' => new Stage::AlignOrthologs($job_properties, $logger),
-                        #'pseudoalign' => new Stage::Pseudoalign($job_properties, $logger),
-                        #'report' => new Stage::GenerateReportOrthoMCL($job_properties, $logger),
-                        #'build-phylogeny' => new Stage::BuildPhylogeny($job_properties, $logger),
-                        #'phylogeny-graphic' => new Stage::BuildPhylogenyGraphic($job_properties, $logger)
+                        'build-phylogeny' => new Stage::BuildPhylogeny($job_properties, $logger),
+                        'phylogeny-graphic' => new Stage::BuildPhylogenyGraphic($job_properties, $logger)
         };
 
     $self->{'stage_table'} = $stage_table;

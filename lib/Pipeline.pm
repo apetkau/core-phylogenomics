@@ -266,7 +266,10 @@ sub _execute_stage
 
     if (defined $stage_obj)
     {
+	my $begin = time;
         $stage_obj->execute;
+	my $end = time;
+	printf "stage: %s took %0.2f minutes to complete\n",$stage_obj->get_stage_name,($end-$begin)/60;
         system("touch \"$stage_dir/$stage.done\"");
     }
     else
@@ -287,6 +290,7 @@ sub execute
     my ($self) = @_;
 
     my $verbose = $self->{'verbose'};
+    my $start = time;
 
     $self->_initialize;
 
@@ -350,6 +354,8 @@ sub execute
         }
         $seen_end = 1 if ($stage eq $end_stage);
     }
+
+    printf "pipeline took %0.2f minutes to complete\n",((time-$start)/60);
 }
 
 sub _is_stage_complete
