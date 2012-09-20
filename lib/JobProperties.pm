@@ -115,6 +115,7 @@ sub _set_defaults
 	my $bcftools = $defaults->{'path'}->{'bcftools'};
 	my $bgzip = $defaults->{'path'}->{'bgzip'};
 	my $tabix = $defaults->{'path'}->{'tabix'};
+	my $freebayes = $defaults->{'path'}->{'freebayes'};
 
 	$self->set_property('processors', $processors) if ((defined $processors) and ($processors =~ /^\d+$/));
 	$self->set_file('formatdb', $formatdb) if ((defined $formatdb) and (-e $formatdb));
@@ -127,6 +128,7 @@ sub _set_defaults
 	$self->set_file('bcftools', $bcftools) if ((defined $bcftools) and (-e $bcftools));
 	$self->set_file('bgzip', $bgzip) if ((defined $bgzip) and (-e $bgzip));
 	$self->set_file('tabix', $tabix) if ((defined $tabix) and (-e $tabix));
+	$self->set_file('freebayes', $freebayes) if ((defined $freebayes) and (-e $freebayes));
 }
 
 sub set_property
