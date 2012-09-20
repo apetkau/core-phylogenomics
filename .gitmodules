@@ -1,0 +1,3 @@
+[submodule "lib/vcf2pseudoalignment"]
+	path = lib/vcf2pseudoalignment
+	url = gitter.corefacility.ca:/var/git/vcf2pseudoalignment.git
