@@ -43,7 +43,6 @@ sub new
     my $job_properties = $self->{'job_properties'};
     $job_properties->set_property('mode', 'mapping');
 
-    $job_properties->set_dir('log_dir', "log");
     $job_properties->set_dir('mapping_dir', "mapping");
     $job_properties->set_dir('pseudoalign_dir', "pseudoalign");
     $job_properties->set_dir('stage_dir', "stages");
@@ -72,7 +71,6 @@ sub new_resubmit
 
     $self->_check_stages;
 
-    $job_properties->set_dir('log_dir', "log");
     $job_properties->set_dir('mapping_dir', "mapping");
     $job_properties->set_dir('pseudoalign_dir', "pseudoalign");
     $job_properties->set_dir('stage_dir', "stages");
@@ -85,7 +83,6 @@ sub new_resubmit
     $job_properties->set_dir('vcf_dir', 'vcf');
     $job_properties->set_dir('pseudoalign_dir', 'pseudoalign');
     $job_properties->set_dir('vcf_split_dir', 'vcf-split');
-    $job_properties->set_dir('log_dir', "log");
     $job_properties->set_dir('mapping_dir', "mapping");
     $job_properties->set_dir('pseudoalign_dir', "pseudoalign");
     $job_properties->set_dir('stage_dir', "stages");

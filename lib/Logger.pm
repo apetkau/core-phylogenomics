@@ -15,14 +15,22 @@ sub new
 	$self->{'_verbose'} = $verbose;
 	$self->{'_log_dir'} = $log_dir;
 
-	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
-	$mon +=1;
-	$year += 1900;
-	my $main_log = sprintf("$log_dir/pipeline.%02d.%02d.%02d-%02d.%02d.%02d.log",$year,$mon,$mday,$hour,$min,$sec);
+	my $time_string = GetLogDirTime(time);
+	my $main_log = "$log_dir/pipeline.log";
 	open(my $main_log_h, ">$main_log") or die "Could not open main log file $main_log: $!";
 	$self->{'_main_log_h'} = $main_log_h;
 
 	return $self;
+}
+
+sub GetLogDirTime
+{
+	my ($time) = @_;
+
+	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime($time);
+	$mon +=1;
+	$year += 1900;
+	return sprintf("%02d.%02d.%02d-%02d.%02d.%02d",$year,$mon,$mday,$hour,$min,$sec);
 }
 
 sub log($$)

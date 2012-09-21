@@ -7,6 +7,8 @@ use YAML::Tiny;
 use strict;
 use warnings;
 
+use File::Path;
+
 sub new
 {
 	my ($class, $script_dir) = @_;
@@ -303,7 +305,7 @@ sub build_job_dirs
 	for my $key (keys %{$self->{'_dirs'}})
 	{
 		my $dir = $self->get_dir($key);
-		mkdir $dir if (defined $dir and not -e $dir);
+		mkpath $dir if (defined $dir and not -e $dir);
 	}
 }
 

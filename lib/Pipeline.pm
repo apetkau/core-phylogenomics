@@ -35,6 +35,9 @@ sub new
     $self->{'keep_files'} = 1;
     $self->{'job_properties'} = $job_properties;
 
+    my $time_string = Logger::GetLogDirTime(time);
+    $job_properties->set_dir('log_dir', "log/$time_string");
+
     return $self;
 }
 
@@ -48,6 +51,9 @@ sub new_resubmit
     $self->{'verbose'} = 0;
     $self->{'keep_files'} = 1;
     $self->{'job_properties'} = $job_properties;
+
+    my $time_string = Logger::GetLogDirTime(time);
+    $job_properties->set_dir('log_dir', "log/$time_string");
 
     return $self;
 }
@@ -304,6 +310,11 @@ sub execute
 
     my $job_properties = $self->{'job_properties'};
     my $log_dir = $job_properties->get_dir('log_dir');
+    # link up current log directory
+    my $current_link_dest = basename($log_dir);
+    my $current_link_path = "$log_dir/../current";
+    unlink "$current_link_path" if (-e $current_link_path);
+    symlink $current_link_dest,$current_link_path;
 
     my $start_stage = $self->{'start_stage'};
     my $end_stage = $self->{'end_stage'};

@@ -50,7 +50,6 @@ sub new
     $job_properties->set_file('all_input_fasta', 'all.fasta');
     $job_properties->set_file('bioperl_index', 'all.fasta.idx');
     $job_properties->set_file('core_snp_base', 'snps');
-    $job_properties->set_dir('log_dir', "log");
     $job_properties->set_dir('fasta_dir', "fasta");
     $job_properties->set_dir('database_dir', "database");
     $job_properties->set_dir('split_dir', "split");
@@ -79,7 +78,6 @@ sub new_resubmit
     $job_properties->set_file('all_input_fasta', 'all.fasta');
     $job_properties->set_file('bioperl_index', 'all.fasta.idx');
     $job_properties->set_file('core_snp_base', 'snps');
-    $job_properties->set_dir('log_dir', "log");
     $job_properties->set_dir('fasta_dir', "fasta");
     $job_properties->set_dir('database_dir', "database");
     $job_properties->set_dir('split_dir', "split");
