@@ -106,6 +106,7 @@ sub _set_defaults
 
 	my $processors = $defaults->{'processors'};
 	my $min_coverage = $defaults->{'min_coverage'};
+	my $freebayes_params = $defaults->{'freebayes_params'};
 	my $formatdb = $defaults->{'path'}->{'formatdb'};
 	my $blastall = $defaults->{'path'}->{'blastall'};
 	my $clustalw2 = $defaults->{'path'}->{'clustalw2'};
@@ -120,6 +121,17 @@ sub _set_defaults
 	my $vcftools = $defaults->{'path'}->{'vcftools-lib'};
 
 	$self->set_property('processors', $processors) if ((defined $processors) and ($processors =~ /^\d+$/));
+	if (defined $freebayes_params)
+	{
+		if ($freebayes_params =~ /--min-coverage/ or $freebayes_params =~ /-!/)
+		{
+			die "do not set --min-coverage in config file for freebayes_params='$freebayes_params'";
+		}
+		else
+		{
+			$self->set_property('freebayes_params', $freebayes_params);
+		}
+	}
 	$self->set_property('min_coverage', $min_coverage) if ((defined $min_coverage) and ($min_coverage =~ /^\d+$/));
 
 	$self->set_file('formatdb', $formatdb) if ((defined $formatdb) and (-e $formatdb));

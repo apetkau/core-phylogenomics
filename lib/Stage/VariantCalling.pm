@@ -33,6 +33,19 @@ sub execute
 	my $freebayes_launch = "$script_dir/../lib/freebayes.pl";
 	die "No freebayes=$freebayes_launch exists" if (not -e $freebayes_launch);
 
+	my $other_freebayes_params = $job_properties->get_property('freebayes_params');
+	if (defined $other_freebayes_params)
+        {
+		if ($other_freebayes_params =~ /--min-coverage/ or $other_freebayes_params =~ /-!/)
+		{
+  			die "do not set --min-coverage in config file for freebayes_params='$other_freebayes_params'";
+		}
+	}
+	else
+	{
+		$logger->log("warning: no extra freebayes_params set, will use defaults",1);
+	}
+
 	my $bam_dir = $job_properties->get_dir('bam_dir');
 	my $vcf_dir = $job_properties->get_dir('vcf_dir');
 	my $vcf_split_dir = $job_properties->get_dir('vcf_split_dir');
@@ -75,7 +88,7 @@ sub execute
 		push(@vcf_files,$out_vcf_split);
 		push(@freebayes_params, ['--freebayes-path', $freebayes_path, '--reference', $reference_file,
 				      '--bam', $bam_file, '--out-vcf', $out_vcf,
-				      '--bgzip-path', $bgzip_path, '--tabix-path', $tabix_path, '--out-vcf-split', $out_vcf_split, '--min-coverage', $min_coverage]);
+				      '--bgzip-path', $bgzip_path, '--tabix-path', $tabix_path, '--out-vcf-split', $out_vcf_split, '--min-coverage', $min_coverage, '--freebayes-params', $other_freebayes_params]);
 	}
 
 	$logger->log("\tSubmitting freebayes jobs for execution ...\n",1);
