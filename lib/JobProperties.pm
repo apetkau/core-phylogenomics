@@ -105,6 +105,7 @@ sub _set_defaults
 	warn "Defaults undefined" if (not defined $defaults);
 
 	my $processors = $defaults->{'processors'};
+	my $min_coverage = $defaults->{'min_coverage'};
 	my $formatdb = $defaults->{'path'}->{'formatdb'};
 	my $blastall = $defaults->{'path'}->{'blastall'};
 	my $clustalw2 = $defaults->{'path'}->{'clustalw2'};
@@ -119,6 +120,8 @@ sub _set_defaults
 	my $vcftools = $defaults->{'path'}->{'vcftools-lib'};
 
 	$self->set_property('processors', $processors) if ((defined $processors) and ($processors =~ /^\d+$/));
+	$self->set_property('min_coverage', $min_coverage) if ((defined $min_coverage) and ($min_coverage =~ /^\d+$/));
+
 	$self->set_file('formatdb', $formatdb) if ((defined $formatdb) and (-e $formatdb));
 	$self->set_file('figtree', $figtree) if ((defined $figtree) and (-e $figtree));
 	$self->set_file('phyml', $phyml) if ((defined $phyml) and (-e $phyml));

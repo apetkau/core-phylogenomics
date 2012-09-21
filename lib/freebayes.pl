@@ -11,12 +11,13 @@ my $filter_path = "$script_dir/filterVcf.pl";
 
 die "Error: no $filter_path exists" if (not -e $filter_path);
 
-my ($freebayes,$reference,$bam,$vcf,$bgzip,$tabix,$vcf_split);
+my ($freebayes,$reference,$bam,$vcf,$bgzip,$tabix,$vcf_split,$min_coverage);
 GetOptions('f|freebayes-path=s' => \$freebayes,
 	   'r|reference=s' => \$reference,
 	   'bam=s' => \$bam,
 	   'out-vcf=s' => \$vcf,
 	   'out-vcf-split=s' => \$vcf_split,
+	   'min-coverage=i' => \$min_coverage,
 	   'bgzip-path=s' => \$bgzip,
 	   'tabix-path=s' => \$tabix);
 
@@ -29,6 +30,8 @@ die "Error: bam not defined" if (not defined $bam);
 die "Error: bam does not exist" if (not -e $bam);
 die "Error: no out-vcf defined" if (not defined $vcf);
 die "Error: no out-vcf-split defined" if (not defined $vcf_split);
+die "Error: min-coverage not defined" if (not defined $min_coverage);
+die "Error: min-coverage=$min_coverage not valid" if ($min_coverage !~ /^\d+$/);
 
 my $command =
 "$freebayes ".
@@ -53,7 +56,7 @@ my $command =
                 "--min-base-quality 30 ". # Exclude alleles from analysis if their supporting base quality is less than Q.  default: 20
                 "--indel-exclusion-window 5 ".# Ignore portions of alignments this many bases from a putative insertion or deletion allele.  default: 0
                 "--min-alternate-fraction 0.75 ".# Require at least this fraction of observations supporting an alternate allele within a single individual in the in order to evaluate the position.  default: 0.0
-                "--min-coverage 12 "; # Require at least this coverage to process a site.  default: 0
+                "--min-coverage $min_coverage "; # Require at least this coverage to process a site.  default: 0
 
 print "Running $command\n";
 system($command) == 0 or die "Could not run $command";

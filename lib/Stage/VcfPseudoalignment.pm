@@ -53,7 +53,12 @@ sub execute
 	my $out_base = "$pseudoalign_dir/pseudoalign";
 	my $out_align = "$out_base.phy";
 	my $out_align_fasta = "$out_base.fasta";
-	my $min_cov = 10;
+	my $min_cov = $job_properties->get_property('min_coverage');
+	if (not defined $min_cov)
+	{
+		$min_cov=5;
+		$logger->log("warning: minimum coverage not defined, defaulting to $min_cov",0);
+	}
 
 	die "Output directory $pseudoalign_dir does not exist" if (not -e $pseudoalign_dir);
 

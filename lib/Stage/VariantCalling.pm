@@ -38,6 +38,12 @@ sub execute
 	my $vcf_split_dir = $job_properties->get_dir('vcf_split_dir');
 	my $reference_file = $job_properties->get_file_dir('reference_dir','reference');
 	my $log_dir = $job_properties->get_dir('log_dir');
+	my $min_coverage = $job_properties->get_property('min_coverage');
+	if (not defined $min_coverage)
+        {
+                $min_coverage=5;
+                $logger->log("warning: minimum coverage not defined, defaulting to $min_coverage",0);
+        }
 
 	die "Reference file $reference_file does not exist" if (not -e $reference_file);
 	die "Output directory $vcf_dir does not exist" if (not -e $vcf_dir);
@@ -69,7 +75,7 @@ sub execute
 		push(@vcf_files,$out_vcf_split);
 		push(@freebayes_params, ['--freebayes-path', $freebayes_path, '--reference', $reference_file,
 				      '--bam', $bam_file, '--out-vcf', $out_vcf,
-				      '--bgzip-path', $bgzip_path, '--tabix-path', $tabix_path, '--out-vcf-split', $out_vcf_split]);
+				      '--bgzip-path', $bgzip_path, '--tabix-path', $tabix_path, '--out-vcf-split', $out_vcf_split, '--min-coverage', $min_coverage]);
 	}
 
 	$logger->log("\tSubmitting freebayes jobs for execution ...\n",1);
