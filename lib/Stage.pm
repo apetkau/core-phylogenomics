@@ -69,17 +69,20 @@ sub _submit_jobs
 	my $perl_libs = $self->{'_perl_libs'};
 
 	my $number_tasks = scalar(@$job_params);
-	my @job_ids;
+	my %job_ids;
 
 	$| = 1;
 	$self->start_scheduler();
 
-	my ($drmerr, $jt, $drmdiag, $jobid, $drmps);
+	my ($drmerr, $jt, $drmdiag, $jobid, $drmps,$job_id_out,$stat,$rusage);
 
 	for (my $task = 0; $task < $number_tasks; $task++)
 	{
 		my $params = $job_params->[$task];
-		$logger->log("Submit \"$bin ".join(' ', @$params)."\"\n", 1);
+		my $job_string = "\"$bin ".join(' ', @$params)."\"";
+		my $job_out = "$log_path.out";
+		my $job_err = "$log_path.err";
+		$logger->log("Submit $job_string\n", 1);
 		
                 ($drmerr,$jt,$drmdiag) = drmaa_allocate_job_template();
                 die drmaa_strerror($drmerr)."\n".$drmdiag if $drmerr;
@@ -93,10 +96,10 @@ sub _submit_jobs
                 ($drmerr,$drmdiag) = drmaa_set_attribute($jt,$DRMAA_REMOTE_COMMAND,$bin); #sets the command for the job to be run
                 die drmaa_strerror($drmerr)."\n".$drmdiag if $drmerr;
 
-                ($drmerr,$drmdiag) = drmaa_set_attribute($jt,$DRMAA_OUTPUT_PATH,":$log_path.out"); #sets the output directory for stdout
+                ($drmerr,$drmdiag) = drmaa_set_attribute($jt,$DRMAA_OUTPUT_PATH,":$job_out"); #sets the output directory for stdout
                 die drmaa_strerror($drmerr)."\n".$drmdiag if $drmerr;
 
-                ($drmerr,$drmdiag) = drmaa_set_attribute($jt,$DRMAA_ERROR_PATH,":$log_path.err"); #sets the output directory for stdout
+                ($drmerr,$drmdiag) = drmaa_set_attribute($jt,$DRMAA_ERROR_PATH,":$job_err"); #sets the output directory for stdout
                 die drmaa_strerror($drmerr)."\n".$drmdiag if $drmerr;
 
                 ($drmerr,$drmdiag) = drmaa_set_vector_attribute($jt,$DRMAA_V_ARGV,$params); #sets the list of arguments to be applied to this job
@@ -108,23 +111,64 @@ sub _submit_jobs
                 ($drmerr,$drmdiag) = drmaa_delete_job_template($jt); #clears up the template for this job
                 die drmaa_strerror($drmerr)."\n".$drmdiag if $drmerr;
 
-                push(@job_ids,$jobid);
+		$job_ids{$jobid} = {'command' => $job_string, 'out' => $job_out, 'err' => $job_err};
 	}
 
 	# wait for jobs
+	print "\njobs remaining ".scalar(keys %job_ids).".";
         do
         {
-                ($drmerr, $drmdiag) = drmaa_synchronize(\@job_ids, 10, 0);
+                ($drmerr, $job_id_out, $stat, $rusage, $drmdiag) = drmaa_wait($DRMAA_JOB_IDS_SESSION_ANY, 10);
 
-                die drmaa_strerror( $drmerr ) . "\n" . $drmdiag
-                                if $drmerr and $drmerr != $DRMAA_ERRNO_EXIT_TIMEOUT;
-
-                print ".";
-        } while ($drmerr == $DRMAA_ERRNO_EXIT_TIMEOUT);
+		if ($drmerr != $DRMAA_ERRNO_EXIT_TIMEOUT)
+		{
+			my ($err,$exit_status,$exited,$diag);
+			($err,$exited,$diag) = drmaa_wifexited($stat);
+			if ($exited)
+			{
+				($err,$exit_status,$diag) = drmaa_wexitstatus($stat);
+			
+				if ($exit_status != 0)
+				{
+					$self->kill_all_jobs(\%job_ids);
+					my $message = "\tcommand: ".$job_ids{$job_id_out}->{'command'}."\n".
+							"\t\tout: ".$job_ids{$job_id_out}->{'out'}."\n".
+							"\t\terr: ".$job_ids{$job_id_out}->{'err'}."\n";
+					die "error: job with id $job_id_out described by \n$message died with code $exit_status";
+				}
+				delete $job_ids{$job_id_out};
+			}
+			else
+			{
+				$self->kill_all_jobs(\%job_ids);
+				my $message = "\tcommand: ".$job_ids{$job_id_out}->{'command'}."\n".
+						"\t\tout: ".$job_ids{$job_id_out}->{'out'}."\n".
+						"\t\terr: ".$job_ids{$job_id_out}->{'err'}."\n";
+				die "error: job with id $job_id_out described by \n$message exited abnormally";
+			}
+			print ".".scalar(keys %job_ids).".";
+		}
+		else
+		{
+                	print ".";
+		}
+        } while (scalar(keys %job_ids) > 0);
 
 	$|=0;
 
 	$self->stop_scheduler();
+}
+
+sub kill_all_jobs
+{
+	my ($self,$jobs) = @_;
+
+	my ($error,$diag);
+
+	for my $id (keys %$jobs)
+	{
+		($error,$diag) = drmaa_control($id,$DRMAA_CONTROL_TERMINATE);
+	}
 }
 
 sub execute
