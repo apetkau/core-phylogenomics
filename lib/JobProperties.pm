@@ -109,6 +109,8 @@ sub _set_defaults
 	my $processors = $defaults->{'processors'};
 	my $min_coverage = $defaults->{'min_coverage'};
 	my $freebayes_params = $defaults->{'freebayes_params'};
+	my $smalt_map_params = $defaults->{'smalt_map'};
+	my $smalt_index_params = $defaults->{'smalt_index'};
 	my $formatdb = $defaults->{'path'}->{'formatdb'};
 	my $blastall = $defaults->{'path'}->{'blastall'};
 	my $clustalw2 = $defaults->{'path'}->{'clustalw2'};
@@ -122,6 +124,8 @@ sub _set_defaults
 	my $freebayes = $defaults->{'path'}->{'freebayes'};
 	my $vcftools = $defaults->{'path'}->{'vcftools-lib'};
 
+	$self->set_property('smalt_index', $smalt_index_params) if (defined $smalt_index_params);
+	$self->set_property('smalt_map', $smalt_map_params) if (defined $smalt_map_params);
 	$self->set_property('processors', $processors) if ((defined $processors) and ($processors =~ /^\d+$/));
 	if (defined $freebayes_params)
 	{

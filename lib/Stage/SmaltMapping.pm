@@ -39,14 +39,12 @@ sub execute
 	my $bam_dir = $job_properties->get_dir('bam_dir');
 	my $reference_file = $job_properties->get_file_dir('reference_dir','reference');
 	my $output_dir = $job_properties->get_dir('mapping_dir');
-	my $threads = 24;
-	if (not defined $threads)
-	{
-		warn "Warning: threads not defined, defaulting to 1 ...\n";
-		$threads = 1;
-	}
+	my $smalt_map = $job_properties->get_property('smalt_map');
+	my $smalt_index = $job_properties->get_property('smalt_index');
 	my $log_dir = $job_properties->get_dir('log_dir');
 
+	die "No smalt_map params defined" if (not defined $smalt_map);
+	die "No smalt_index params defined" if (not defined $smalt_index);
 	die "Reference file $reference_file does not exist" if (not -e $reference_file);
 	die "Fastq directory $input_fastq_dir does not exist" if (not -e $input_fastq_dir);
 	die "Output directory $output_dir does not exist" if (not -e $output_dir);
@@ -76,7 +74,7 @@ sub execute
 		my $bam_file = "$bam_dir/$bam_name.bam";
 		my $output_smalt_dir = "$output_dir/$file";
 		push(@bam_files,$bam_file);
-		push(@smalt_params, ['--samtools-path', $samtools_path, '--bam-dir', $bam_dir, '--sam-dir', $sam_dir, '--smalt-path', $smalt_path, '-t', $reference_file, '-r', $fastq_file, '-d', $output_smalt_dir, '-i', '-k 13 -s 6', '--map', "-n $threads -f samsoft"]);
+		push(@smalt_params, ['--samtools-path', $samtools_path, '--bam-dir', $bam_dir, '--sam-dir', $sam_dir, '--smalt-path', $smalt_path, '-t', $reference_file, '-r', $fastq_file, '-d', $output_smalt_dir, '-i', $smalt_index, '--map', $smalt_map]);
 	}
 
 	$logger->log("\tSubmitting smalt jobs for execution ...\n",1);

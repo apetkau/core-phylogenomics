@@ -117,6 +117,7 @@ for (@filestore) {
     my $sorted_bam_base = "$sam_dir/$basename";
     my $sorted_bam_file = "$sorted_bam_base.bam";
     my $final_bam_file = "$bam_dir/$basename.bam";
+    unlink($new_out_file) if (-e $new_out_file);
     symlink($out_sam_file,$new_out_file) or die "Could not link $out_sam_file to $new_out_file: $!";
 
     my $samtools_command = "$samtools_path view -bt \"$reference_file\" \"$new_out_file\" -o \"$unsorted_bam_out\"";
