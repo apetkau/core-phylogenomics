@@ -15,7 +15,7 @@ use Cwd qw(abs_path);
 
 sub new
 {
-    my ($class,$script_dir) = @_;
+    my ($class,$script_dir,$custom_config_file) = @_;
 
     my $self = {};
     bless($self,$class);
@@ -29,6 +29,18 @@ sub new
     else
     {
         $job_properties->read_config($config_file);
+    }
+
+    if (defined $custom_config_file)
+    {
+        if (not -e $custom_config_file)
+        {
+            die "Error: custom config file $custom_config_file does not exist";
+        }
+        else
+        {
+            $job_properties->read_config($custom_config_file);
+        }
     }
 
     $self->{'verbose'} = 0;

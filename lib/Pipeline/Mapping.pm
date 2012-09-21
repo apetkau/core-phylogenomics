@@ -30,10 +30,10 @@ use Cwd qw(abs_path);
 
 sub new
 {
-    my ($proto,$script_dir) = @_;
+    my ($proto,$script_dir,$custom_config) = @_;
 
     my $class = ref($proto) || $proto;
-    my $self = $class->SUPER::new($script_dir);
+    my $self = $class->SUPER::new($script_dir,$custom_config);
     bless($self,$class);
 
     $self->_setup_stage_tables;
