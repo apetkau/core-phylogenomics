@@ -197,6 +197,10 @@ sub ResubmitFrom
     {
         $pipeline = Pipeline::Orthomcl->new_resubmit($script_dir, $job_properties);
     }
+    elsif ($mode eq 'mapping')
+    {
+        $pipeline = Pipeline::Mapping->new_resubmit($script_dir, $job_properties);
+    }
     else
     {
         die "Error: unknown pipeline mode '$mode' found in properties file '$properties_path'";

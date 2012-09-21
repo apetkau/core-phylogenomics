@@ -56,34 +56,50 @@ sub new
     $job_properties->set_dir('vcf_dir', 'vcf');
     $job_properties->set_dir('pseudoalign_dir', 'pseudoalign');
     $job_properties->set_dir('vcf_split_dir', 'vcf-split');
-    $job_properties->set_dir('vcf_split_dir', 'vcf-split');
 
     return $self;
 }
 
 sub new_resubmit
 {
-#    my ($proto,$script_dir, $job_properties) = @_;
-#
-#    my $class = ref($proto) || $proto;
-#    my $self = $class->SUPER::new_resubmit($script_dir, $job_properties);
-#    bless($self,$class);
-#
-#    $self->_setup_stage_tables;
-#
-#    $self->_check_stages;
-#
-#    $job_properties->set_file('core_snp_base', 'snps');
-#    $job_properties->set_file('group_stats', 'group_stats');
-#    $job_properties->set_dir('log_dir', "log");
-#    $job_properties->set_dir('core_dir', "core");
-#    $job_properties->set_dir('align_dir', "align");
-#    $job_properties->set_dir('pseudoalign_dir', "pseudoalign");
-#    $job_properties->set_dir('stage_dir', "stages");
-#    $job_properties->set_dir('phylogeny_dir', 'phylogeny');
-#    $job_properties->set_dir('fasta_dir', 'fasta');
-#
-#    return $self;
+    my ($proto,$script_dir, $job_properties) = @_;
+
+    my $class = ref($proto) || $proto;
+    my $self = $class->SUPER::new_resubmit($script_dir, $job_properties);
+    bless($self,$class);
+
+    $self->_setup_stage_tables;
+
+    $self->_check_stages;
+
+    $job_properties->set_dir('log_dir', "log");
+    $job_properties->set_dir('mapping_dir', "mapping");
+    $job_properties->set_dir('pseudoalign_dir', "pseudoalign");
+    $job_properties->set_dir('stage_dir', "stages");
+    $job_properties->set_dir('phylogeny_dir', 'phylogeny');
+    $job_properties->set_dir('fastq_dir', 'fastq');
+    $job_properties->set_dir('sam_dir', 'sam');
+    $job_properties->set_dir('bam_dir', 'bam');
+    $job_properties->set_dir('mpileup_dir', 'mpileup');
+    $job_properties->set_dir('reference_dir', 'reference');
+    $job_properties->set_dir('vcf_dir', 'vcf');
+    $job_properties->set_dir('pseudoalign_dir', 'pseudoalign');
+    $job_properties->set_dir('vcf_split_dir', 'vcf-split');
+    $job_properties->set_dir('log_dir', "log");
+    $job_properties->set_dir('mapping_dir', "mapping");
+    $job_properties->set_dir('pseudoalign_dir', "pseudoalign");
+    $job_properties->set_dir('stage_dir', "stages");
+    $job_properties->set_dir('phylogeny_dir', 'phylogeny');
+    $job_properties->set_dir('fastq_dir', 'fastq');
+    $job_properties->set_dir('sam_dir', 'sam');
+    $job_properties->set_dir('bam_dir', 'bam');
+    $job_properties->set_dir('mpileup_dir', 'mpileup');
+    $job_properties->set_dir('reference_dir', 'reference');
+    $job_properties->set_dir('vcf_dir', 'vcf');
+    $job_properties->set_dir('pseudoalign_dir', 'pseudoalign');
+    $job_properties->set_dir('vcf_split_dir', 'vcf-split');
+
+    return $self;
 }
 
 sub set_reference
@@ -96,6 +112,10 @@ sub set_reference
 	my $abs_reference_path = abs_path($reference);
 	die "Error: abs path for reference not defined" if (not defined $abs_reference_path);
 	$self->{'job_properties'}->set_abs_file('input_reference',$abs_reference_path);
+
+	my $reference_name = basename($abs_reference_path);
+	die "Undefined reference name" if (not defined $reference_name);
+	$self->{'job_properties'}->set_file('reference',$reference_name);
 }
 
 sub set_input_fastq
