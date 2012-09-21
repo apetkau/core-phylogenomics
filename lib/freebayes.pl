@@ -71,7 +71,7 @@ my $vcf_bgzip = "$vcf_split.gz";
 $command = "$bgzip \"$vcf_split\"";
 print "Running $command\n";
 system($command) == 0 or die "Could not run $command";
-$command = "$tabix -p vcf \"$vcf_bgzip.gz\"";
+$command = "$tabix -p vcf \"$vcf_bgzip\"";
 print "Running $command\n";
 system($command) == 0 or die "Could not run $command";
 

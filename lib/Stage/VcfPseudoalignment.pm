@@ -50,7 +50,9 @@ sub execute
 	my $reference_name = basename($reference_file, '.fasta');
 	my $pseudoalign_dir = $job_properties->get_dir('pseudoalign_dir');
 	my $log_dir = $job_properties->get_dir('log_dir');
-	my $out_align = "$pseudoalign_dir/pseudoalign.phy";
+	my $out_base = "$pseudoalign_dir/pseudoalign";
+	my $out_align = "$out_base.phy";
+	my $out_align_fasta = "$out_base.fasta";
 	my $min_cov = 10;
 
 	die "Output directory $pseudoalign_dir does not exist" if (not -e $pseudoalign_dir);
@@ -58,20 +60,20 @@ sub execute
 	$logger->log("\nStage: $stage\n",0);
 	$logger->log("Running vcf2pseudoalign ...\n",0);
 
-	my @pseudoalign_params = ['--vcf-dir', $vcf_split_dir, '--mpileup-dir', $mpileup_dir, '-o', $out_align,
-				  '-f', 'phylip', '-r', $reference_name, '-c', $min_cov, '-v'];
+	my @pseudoalign_params = ['--vcf-dir', $vcf_split_dir, '--mpileup-dir', $mpileup_dir, '-o', $out_base,
+				  '-f', 'phylip', '-f', 'fasta', '-r', $reference_name, '-c', $min_cov, '-v'];
 
 	$logger->log("\tSubmitting pseudoalignment job for execution ...\n",1);
 	$self->_submit_jobs($pseudoalign_launch, 'pseudoalignment', \@pseudoalign_params);
 
 	# check to make sure everything ran properly
-	if (-e $out_align)
+	if (-e $out_align and -e $out_align_fasta)
 	{
-		$logger->log("\tpseudoalignment found in $out_align file exists\n",0);
+		$logger->log("\tpseudoalignments found in $out_align and $out_align_fasta file exists\n",0);
 	}
 	else
 	{
-		my $message = "error: pseudoalignment file $out_align does not exist\n";
+		my $message = "error: pseudoalignment files $out_align and $out_align_fasta do not exist\n";
 		$logger->log("\t$message",0);
 		die;
 	}
