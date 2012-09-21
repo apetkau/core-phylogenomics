@@ -66,10 +66,10 @@ die "Error: no split vcf file=$vcf_split produced" if (not -e $vcf_split);
 
 my $vcf_bgzip = "$vcf_split.gz";
 
-$command = "$bgzip \"$vcf_split\"";
+$command = "$bgzip -f \"$vcf_split\"";
 print "Running $command\n";
 system($command) == 0 or die "Could not run $command";
-$command = "$tabix -p vcf \"$vcf_bgzip\"";
+$command = "$tabix -f -p vcf \"$vcf_bgzip\"";
 print "Running $command\n";
 system($command) == 0 or die "Could not run $command";
 

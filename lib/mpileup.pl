@@ -29,10 +29,10 @@ print "Running $command\n";
 system($command) == 0 or die "Could not run $command";
 
 die "Error: no output vcf file=$vcf produced" if (not -e $vcf);
-$command = "$bgzip \"$vcf\"";
+$command = "$bgzip -f \"$vcf\"";
 print "Running $command\n";
 system($command) == 0 or die "Could not run $command";
-$command = "$tabix -p vcf \"$vcf.gz\"";
+$command = "$tabix -f -p vcf \"$vcf.gz\"";
 print "Running $command\n";
 system($command) == 0 or die "Could not run $command";
 
