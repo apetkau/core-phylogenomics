@@ -115,7 +115,8 @@ sub _submit_jobs
 	}
 
 	# wait for jobs
-	print "\njobs remaining ".scalar(keys %job_ids).".";
+	print "\njobs for ".$self->get_stage_name." ".scalar(keys %job_ids).".";
+	$logger->log("\tjob ids for submitted jobs = ".join(',',keys %job_ids)."\n",1);
         do
         {
                 ($drmerr, $job_id_out, $stat, $rusage, $drmdiag) = drmaa_wait($DRMAA_JOB_IDS_SESSION_ANY, 10);
@@ -131,20 +132,25 @@ sub _submit_jobs
 				if ($exit_status != 0)
 				{
 					$self->kill_all_jobs(\%job_ids);
-					my $message = "\tcommand: ".$job_ids{$job_id_out}->{'command'}."\n".
+					my $message = "error: job with id $job_id_out described by \n".
+							"\tcommand: ".$job_ids{$job_id_out}->{'command'}."\n".
 							"\t\tout: ".$job_ids{$job_id_out}->{'out'}."\n".
-							"\t\terr: ".$job_ids{$job_id_out}->{'err'}."\n";
-					die "error: job with id $job_id_out described by \n$message died with code $exit_status";
+							"\t\terr: ".$job_ids{$job_id_out}->{'err'}."\n".
+							" died with exit code $exit_status";
+					$logger->log($message,1);
+					die "$message";
 				}
 				delete $job_ids{$job_id_out};
 			}
 			else
 			{
 				$self->kill_all_jobs(\%job_ids);
-				my $message = "\tcommand: ".$job_ids{$job_id_out}->{'command'}."\n".
-						"\t\tout: ".$job_ids{$job_id_out}->{'out'}."\n".
-						"\t\terr: ".$job_ids{$job_id_out}->{'err'}."\n";
-				die "error: job with id $job_id_out described by \n$message exited abnormally";
+				my $message = "error: job with id $job_id_out described by \n".
+							"\tcommand: ".$job_ids{$job_id_out}->{'command'}."\n".
+							"\t\tout: ".$job_ids{$job_id_out}->{'out'}."\n".
+							"\t\terr: ".$job_ids{$job_id_out}->{'err'}."\n".
+							" died with exit code $exit_status";
+				die "$message";
 			}
 			print ".".scalar(keys %job_ids).".";
 		}
