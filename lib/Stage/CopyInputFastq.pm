@@ -42,13 +42,24 @@ sub execute
 	my @files = grep {/\.fastq$/i} readdir($input_dir);
 	closedir($input_dir);
 
-	foreach my $file (@files)
+	# sub copy as series of cluster jobs
+	if ($do_copy)
 	{
-		if ($do_copy)
+		my @copy_params = ();
+		foreach my $file (@files)
 		{
-			copy("$input_fastq_dir/$file", "$output_fastq_dir/$file") or die "Could not copy \"$input_fastq_dir/$file\" to \"$output_fastq_dir\": $!";
+			push(@copy_params,["$input_fastq_dir/$file", "$output_fastq_dir/$file"]);
 		}
-		else
+
+		$self->_submit_jobs('cp','copy-input',\@copy_params);
+		foreach my $file (@files)
+		{
+			die "error: file $file did not successfully copy to $output_fastq_dir" if (not -e "$output_fastq_dir/$file");
+		}
+	}
+	else
+	{
+		foreach my $file (@files)
 		{
 			symlink("$input_fastq_dir/$file", "$output_fastq_dir/$file") or die "Could not copy \"$input_fastq_dir/$file\" to \"$output_fastq_dir\": $!";
 		}
