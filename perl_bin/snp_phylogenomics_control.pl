@@ -362,6 +362,7 @@ if (!GetOptions(\%options,
 	'v|verbose+',
 	'config=s',
 	'h|help',
+	'copy-input',
 	'force-output-dir',
 	'orthomcl-groups=s',
 	'c|strain-count=i'))
@@ -394,6 +395,7 @@ elsif (not defined $options{'m'})
 	warn "Warning: no mode defined, defaulting to BLAST pipeline mode.\n";
 	$pipeline = new Pipeline::Blast($script_dir,$options{'config'});
 	$pipeline->set_verbose($options{'v'}) if (defined $options{'v'}); 
+	$pipeline->set_input_copy(1) if (defined $options{'copy-input'});
 	parse_blast_opts(\%options, $pipeline);
 	$pipeline->execute;
 }
@@ -401,6 +403,7 @@ elsif ($options{'m'} eq 'blast')
 {
 	$pipeline = new Pipeline::Blast($script_dir,$options{'config'});
 	$pipeline->set_verbose($options{'v'}) if (defined $options{'v'}); 
+	$pipeline->set_input_copy(1) if (defined $options{'copy-input'});
 	parse_blast_opts(\%options, $pipeline);
 	$pipeline->execute;
 }
@@ -408,6 +411,7 @@ elsif ($options{'m'} eq 'orthomcl')
 {
 	$pipeline = new Pipeline::Orthomcl($script_dir,$options{'config'});
 	$pipeline->set_verbose($options{'v'}) if (defined $options{'v'}); 
+	$pipeline->set_input_copy(1) if (defined $options{'copy-input'});
 	parse_ortho_opts(\%options, $pipeline);
 	$pipeline->execute;
 }
@@ -415,6 +419,7 @@ elsif ($options{'m'} eq 'mapping')
 {
 	$pipeline = new Pipeline::Mapping($script_dir,$options{'config'});
 	$pipeline->set_verbose($options{'v'}) if (defined $options{'v'}); 
+	$pipeline->set_input_copy(1) if (defined $options{'copy-input'});
 	parse_mapping_opts(\%options,$pipeline);
 	$pipeline->execute;
 }
@@ -510,6 +515,8 @@ Use B<--output [OUT_NAME]> to define an output directory.  The output directory 
 =item B<-v|--verbose>:  Print more information.
 
 =item B<-h|--help>:  Display documentation.
+
+=item B<--copy-input>:  Copy input files instead of just using a symlink, useful for dealing with I/O when running many instances of the pipeline.
 
 =back
 

@@ -53,6 +53,16 @@ sub new
     return $self;
 }
 
+sub set_input_copy
+{
+	my ($self,$copy) = @_;
+
+	if (defined $copy and $copy)
+	{
+		$self->{'job_properties'}->set_property('input_copy',1);
+	}
+}
+
 sub new_resubmit
 {
     my ($class,$script_dir, $job_properties) = @_;

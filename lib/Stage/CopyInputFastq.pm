@@ -32,6 +32,8 @@ sub execute
 	my $job_properties = $self->{'_job_properties'};
 	my $input_fastq_dir = $job_properties->get_abs_file('input_fastq_dir');
 	my $output_fastq_dir = $job_properties->get_dir('fastq_dir');
+
+	my $do_copy = $job_properties->get_property('input_copy');
 	
 	$logger->log("\nStage: $stage\n",0);
 
@@ -42,7 +44,14 @@ sub execute
 
 	foreach my $file (@files)
 	{
-		symlink("$input_fastq_dir/$file", "$output_fastq_dir/$file") or die "Could not copy \"$input_fastq_dir/$file\" to \"$output_fastq_dir\": $!";
+		if ($do_copy)
+		{
+			copy("$input_fastq_dir/$file", "$output_fastq_dir/$file") or die "Could not copy \"$input_fastq_dir/$file\" to \"$output_fastq_dir\": $!";
+		}
+		else
+		{
+			symlink("$input_fastq_dir/$file", "$output_fastq_dir/$file") or die "Could not copy \"$input_fastq_dir/$file\" to \"$output_fastq_dir\": $!";
+		}
 	}
 
 	$logger->log("...done\n",0);
