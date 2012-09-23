@@ -37,7 +37,8 @@ sub execute
 	my $input_fastq_dir = $job_properties->get_dir('fastq_dir');
 	my $sam_dir = $job_properties->get_dir('sam_dir');
 	my $bam_dir = $job_properties->get_dir('bam_dir');
-	my $reference_file = $job_properties->get_file_dir('reference_dir','reference');
+	my $reference_dir = $job_properties->get_dir('reference_dir');
+	my $reference_name = $job_properties->get_file('reference');
 	my $output_dir = $job_properties->get_dir('mapping_dir');
 	my $smalt_map = $job_properties->get_property('smalt_map');
 	my $smalt_index = $job_properties->get_property('smalt_index');
@@ -45,7 +46,6 @@ sub execute
 
 	die "No smalt_map params defined" if (not defined $smalt_map);
 	die "No smalt_index params defined" if (not defined $smalt_index);
-	die "Reference file $reference_file does not exist" if (not -e $reference_file);
 	die "Fastq directory $input_fastq_dir does not exist" if (not -e $input_fastq_dir);
 	die "Output directory $output_dir does not exist" if (not -e $output_dir);
 
@@ -69,6 +69,9 @@ sub execute
 
 	for my $file (@fastq_files)
 	{
+		my $file_base = basename($file, '.fastq');
+		my $reference_file = "$reference_dir/$file_base.$reference_name";
+		die "Could not find reference $reference_file" if (not -e $reference_file);
 		my $fastq_file = "$input_fastq_dir/$file";
 		my $bam_name = basename($file, '.fastq');
 		my $bam_file = "$bam_dir/$bam_name.bam";

@@ -35,10 +35,10 @@ sub execute
 
 	my $bam_dir = $job_properties->get_dir('bam_dir');
 	my $mpileup_dir = $job_properties->get_dir('mpileup_dir');
-	my $reference_file = $job_properties->get_file_dir('reference_dir','reference');
+	my $reference_dir = $job_properties->get_dir('reference_dir');
+	my $reference_name = $job_properties->get_file('reference');
 	my $log_dir = $job_properties->get_dir('log_dir');
 
-	die "Reference file $reference_file does not exist" if (not -e $reference_file);
 	die "Output directory $mpileup_dir does not exist" if (not -e $mpileup_dir);
 
 	$logger->log("\nStage: $stage\n",0);
@@ -62,6 +62,9 @@ sub execute
 
 	for my $file (@bam_files)
 	{
+		my $file_base = basename($file, '.bam');
+		my $reference_file = "$reference_dir/$file_base.$reference_name";
+		die "Could not find reference $reference_file" if (not -e $reference_file);
 		my $bam_file = "$bam_dir/$file";
 		my $vcf_name = basename($file, '.bam');
 		my $out_vcf = "$mpileup_dir/$vcf_name.vcf";

@@ -5,6 +5,7 @@ use Stage;
 @ISA = qw(Stage);
 
 use File::Copy;
+use File::Basename;
 
 use strict;
 use warnings;
@@ -32,6 +33,8 @@ sub execute
 	my $job_properties = $self->{'_job_properties'};
 	my $input_fastq_dir = $job_properties->get_abs_file('input_fastq_dir');
 	my $output_fastq_dir = $job_properties->get_dir('fastq_dir');
+	my $reference_dir = $job_properties->get_dir('reference_dir');
+	my $reference = $job_properties->get_file('reference');
 
 	my $do_copy = $job_properties->get_property('input_copy');
 	
@@ -62,6 +65,17 @@ sub execute
 		foreach my $file (@files)
 		{
 			symlink("$input_fastq_dir/$file", "$output_fastq_dir/$file") or die "Could not copy \"$input_fastq_dir/$file\" to \"$output_fastq_dir\": $!";
+		}
+	}
+
+	# make new references
+	foreach my $file(@files)
+	{
+		my $file_base = basename($file, '.fastq');
+		my $new_reference = "$reference_dir/$file_base.$reference";
+		if (not -e $new_reference)
+		{
+			symlink($reference,$new_reference) or die "Could not link $reference to $new_reference";
 		}
 	}
 

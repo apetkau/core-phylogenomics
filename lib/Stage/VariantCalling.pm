@@ -49,7 +49,8 @@ sub execute
 	my $bam_dir = $job_properties->get_dir('bam_dir');
 	my $vcf_dir = $job_properties->get_dir('vcf_dir');
 	my $vcf_split_dir = $job_properties->get_dir('vcf_split_dir');
-	my $reference_file = $job_properties->get_file_dir('reference_dir','reference');
+	my $reference_dir = $job_properties->get_dir('reference_dir');
+	my $reference_name = $job_properties->get_file('reference');
 	my $log_dir = $job_properties->get_dir('log_dir');
 	my $min_coverage = $job_properties->get_property('min_coverage');
 	if (not defined $min_coverage)
@@ -58,7 +59,6 @@ sub execute
                 $logger->log("warning: minimum coverage not defined, defaulting to $min_coverage",0);
         }
 
-	die "Reference file $reference_file does not exist" if (not -e $reference_file);
 	die "Output directory $vcf_dir does not exist" if (not -e $vcf_dir);
 	die "Output directory $vcf_split_dir does not exist" if (not -e $vcf_split_dir);
 
@@ -81,6 +81,9 @@ sub execute
 
 	for my $file (@bam_files)
 	{
+		my $file_base = basename($file, '.bam');
+		my $reference_file = "$reference_dir/$file_base.$reference_name";
+		die "Reference $reference_file does not exist" if (not -e $reference_file);
 		my $bam_file = "$bam_dir/$file";
 		my $vcf_name = basename($file, '.bam');
 		my $out_vcf = "$vcf_dir/$vcf_name.vcf";
