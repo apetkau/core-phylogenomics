@@ -1,0 +1,1 @@
+alignments will be trimmed with 5 bp off of each end, so don't test for any SNPs in these locations

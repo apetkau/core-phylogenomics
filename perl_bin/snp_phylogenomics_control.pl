@@ -429,6 +429,7 @@ else
 	pod2usage(-verbose => 99, -sections => $pod_sections, -exitval => 1);
 }
 
+exit 0;
 
 =pod
 
