@@ -52,7 +52,7 @@ sub run
     my $leftover_records = $total % $split;
     
     if ($split > $total) {
-       warn "Total records in file ($total) less than splitnum ($split); adjusting toatal\n";
+       warn "Total records in file ($total) less than splitnum ($split); adjusting total\n";
        $records_per_file = 1;
     }
     
