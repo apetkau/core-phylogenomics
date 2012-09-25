@@ -4,13 +4,40 @@ use warnings;
 use strict;
 
 use TAP::Harness;
+use Getopt::Long;
+use FindBin;
 
-my $harness = TAP::Harness->new;
+my $script_dir = $FindBin::Bin;
 
-my $aggregator = $harness->runtests(['pseudoalign.t'],
-				    ['snp_matrix.t'],
-				    ['pipeline_blast.t'],
-				    ['pipeline_ortho.t'],
+sub usage
+{
+        return "Usage: $0 --tmp-dir [tmp_directory]\n";
+}
+
+### MAIN ###
+
+my $tmp_dir;
+
+if (not GetOptions('t|tmp-dir=s' => \$tmp_dir))
+{
+        die usage;
+}
+
+die "no tmp-dir defined\n".usage if (not defined $tmp_dir);
+die "tmp-dir does not exist\n".usage if (not (-e $tmp_dir));
+
+# alias => args
+my %args = ('pipeline_blast' => ['--tmp-dir', $tmp_dir],
+	    'pipeline_ortho' => ['--tmp-dir', $tmp_dir],
+	    'pseudoalign' => [],
+	    'snp_matrix' => []);
+
+my $harness = TAP::Harness->new({'test_args' => \%args});
+
+my $aggregator = $harness->runtests(["$script_dir/pseudoalign.t", 'pseudoalign'],
+				    ["$script_dir/snp_matrix.t", 'snp_matrix'],
+				    ["$script_dir/pipeline_blast.t", 'pipeline_blast'],
+				    ["$script_dir/pipeline_ortho.t", 'pipeline_ortho'],
 		   );
 
 $harness->summary($aggregator);

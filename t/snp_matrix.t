@@ -7,6 +7,9 @@ use FindBin;
 use Test::More;
 
 my $script_dir = $FindBin::Bin;
+
+$ENV{'PERL5LIB'} = "$script_dir/../lib:$script_dir/../cpanlib/lib/perl5:".$ENV{'PERL5LIB'};
+
 my $matrix_bin = "$script_dir/../perl_bin/snp_matrix.pl";
 
 my $matrix_dir = "$script_dir/data/matrix";

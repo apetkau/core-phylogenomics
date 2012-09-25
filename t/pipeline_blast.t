@@ -6,14 +6,31 @@ use strict;
 use FindBin;
 use Test::More;
 use File::Temp 'tempdir';
+use Getopt::Long;
 
 my $script_dir = $FindBin::Bin;
 my $pipeline_bin = "$script_dir/../perl_bin/snp_phylogenomics_control.pl";
 
-$ENV{'PERL5LIB'} = "$script_dir/../lib:$script_dir/../cpanlib/perl5:".$ENV{'PERL5LIB'};
+$ENV{'PERL5LIB'} = "$script_dir/../lib:$script_dir/../cpanlib/lib/perl5:".$ENV{'PERL5LIB'};
+
+sub usage
+{
+	return "Usage: $0 --tmp-dir [tmp_directory]\n";
+}
+
+### MAIN ###
+
+my $tmp_dir;
+
+if (not GetOptions('t|tmp-dir=s' => \$tmp_dir))
+{
+	die usage;
+}
+
+die "no tmp-dir defined\n".usage if (not defined $tmp_dir);
+die "tmp-dir does not exist\n".usage if (not (-e $tmp_dir));
 
 my $blast_dir = "$script_dir/data/pipeline/blast";
-my $tmp_dir = "$script_dir/tmp";
 
 opendir(my $blast_h,$blast_dir) or die "Could not open $blast_dir: $!";
 my @job_dirs = sort grep {$_ !~ /^\./} readdir($blast_h);

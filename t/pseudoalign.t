@@ -9,7 +9,10 @@ use File::Temp 'tempdir';
 use File::Spec;
 
 my $script_dir = $FindBin::Bin;
-require "$script_dir/../lib/pseudoaligner.pl";
+
+$ENV{'PERL5LIB'} = "$script_dir/../lib:$script_dir/../cpanlib/lib/perl5:".$ENV{'PERL5LIB'};
+
+my $pseudoaligner = "$script_dir/../lib/pseudoaligner.pl";
 
 my $input_dir = "$script_dir/data/pseudoalign";
 my $output_dir = tempdir('pseudoalign_testXXXXXXXX', CLEANUP => 1, DIR => File::Spec->tmpdir) or die "Could not create temp dir";
@@ -34,7 +37,9 @@ for my $file (@in_files)
 
 	mkdir "$test_out_dir" or die "Could not mkdir $test_out_dir";
 
-	Pseudoaligner::run($test_dir, $test_out_dir,"/dev/null", undef);
+	#Pseudoaligner::run($test_dir, $test_out_dir,"/dev/null", undef);
+	my $command = "$pseudoaligner -i $test_dir -o $test_out_dir -l /dev/null";
+	system($command) == 0 or die "Could not execute $command\n";
 	
 	my $test_command = "diff $expected_align_file $actual_align_file";
 	my $results = `$test_command`;
