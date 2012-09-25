@@ -30,14 +30,15 @@ die "tmp-dir does not exist\n".usage if (not (-e $tmp_dir));
 my %args = ('pipeline_blast' => ['--tmp-dir', $tmp_dir],
 	    'pipeline_ortho' => ['--tmp-dir', $tmp_dir],
 	    'pseudoalign' => [],
-	    'snp_matrix' => []);
+	    'snp_matrix' => [],
+	    'variant_calls' => []);
 
 my $harness = TAP::Harness->new({'test_args' => \%args});
 
 my $aggregator = $harness->runtests(["$script_dir/pseudoalign.t", 'pseudoalign'],
 				    ["$script_dir/snp_matrix.t", 'snp_matrix'],
+				    ["$script_dir/../lib/vcf2pseudoalignment/t/variant_calls.t", 'variant_calls'],
 				    ["$script_dir/pipeline_blast.t", 'pipeline_blast'],
-				    ["$script_dir/pipeline_ortho.t", 'pipeline_ortho'],
+				    ["$script_dir/pipeline_ortho.t", 'pipeline_ortho']
 		   );
 
-$harness->summary($aggregator);
