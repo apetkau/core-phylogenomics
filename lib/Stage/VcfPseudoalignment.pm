@@ -31,6 +31,7 @@ sub execute
 	my $job_properties = $self->{'_job_properties'};
 	my $script_dir = $job_properties->get_script_dir;
 	my $pseudoalign_launch = "$script_dir/../lib/vcf2pseudoalignment/vcf2pseudoalignment.pl";
+	my $matrix_launch = "$script_dir/snp_matrix.pl";
 	die "No pseudoalign_launch=$pseudoalign_launch exists" if (not -e $pseudoalign_launch);
 
 	my $vcftools_lib = $job_properties->get_file('vcftools-lib');
@@ -52,6 +53,7 @@ sub execute
 	my $log_dir = $job_properties->get_dir('log_dir');
 	my $out_base = "$pseudoalign_dir/pseudoalign";
 	my $out_align = "$out_base.phy";
+	my $out_matrix = "$pseudoalign_dir/matrix.csv";
 	my $out_align_fasta = "$out_base.fasta";
 	my $min_cov = $job_properties->get_property('min_coverage');
 	if (not defined $min_cov)
@@ -78,8 +80,17 @@ sub execute
 	}
 	else
 	{
-		my $message = "error: pseudoalignment files $out_align and $out_align_fasta do not exist\n";
+		my $message = "\terror: pseudoalignment files $out_align and $out_align_fasta do not exist\n";
 		$logger->log("\t$message",0);
+		die;
+	}
+
+	$logger->log("\tBuilding SNP Matrix\n",0);
+	$self->_submit_jobs($matrix_launch,'snp_matrix',[[$out_align,'-o',$out_matrix,'-v']]);
+
+	if (not -e $out_matrix)
+	{
+		$logger->log("\terror: could not generate snp_matrix from $out_align\n",0);
 		die;
 	}
 

@@ -14,11 +14,13 @@ sub usage
 	"Usage: ".basename($script_name)." [pseudoalign.phy]\n".
 	"Constructs a snp matrix from the pseudoalignment file of the pipeline\n".
 	"Options:\n".
-	"\t-v:  Print more information (to stderr)\n";
+	"\t-v:  Print more information (to stderr)\n".
+	"\t-o:  Prints matrix to passed file\n";
 }
 
 my $verbose = 0;
-if (not GetOptions('v' => \$verbose))
+my $output = undef;
+if (not GetOptions('v' => \$verbose, 'o|output=s' => \$output))
 {
 	die "Invalid options\n".usage;
 }
@@ -30,7 +32,17 @@ die "File $input_file does not exist\n".usage if (not -e $input_file);
 die "File $input_file is not readable\n".usage if (not -r $input_file);
 die "Invalid file $input_file\n".usage if (-d $input_file);
 
-my $outputreport = "snp.matrix.txt";
+my $out_h;
+
+if (defined $output)
+{
+	open($out_h,">$output") or die "Could not open $output for writing\n".usage;
+}
+else
+{
+	$out_h = *STDOUT;
+}
+
 my $in =  new Bio::AlignIO(-file=>$input_file, -format=>"phylip");
 die "Could not open $input_file as phylip formatted file\n" if (not defined $in);
 
@@ -124,12 +136,12 @@ for my $val (sort {$b <=> $a } keys %accsorter) {
 	}
 }
 # print Dumper \%accsorter; exit;
-print join "\t","strain",@sortedaccs, "\n";
+print $out_h join "\t","strain",@sortedaccs, "\n";
 for my $acc1 (@sortedaccs)  {
     push my @row, $acc1?$acc1:"0";
     for my $acc2 (@sortedaccs) {
 	push @row, $matrix{$acc1}{$acc2}?$matrix{$acc1}{$acc2}:"0";
     }
-    print join "\t", @row, "\n";
+    print $out_h join "\t", @row, "\n";
 }
 

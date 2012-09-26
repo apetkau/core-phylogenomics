@@ -72,6 +72,7 @@ for my $job (@job_dirs)
 	ok(-e "$job_out_dir/phylogeny/pseudoalign.phy_phyml_tree.txt.pdf", "phyml tree pdf exists");
 	ok(-e "$job_out_dir/log/current", "log/current exists");
 	ok(-e "$job_out_dir/run.properties", "run.properties exists");
+	ok(-e "$job_out_dir/pseudoalign/matrix.csv", "matrix.csv exists");
 	ok(-e $actual_pseudoalign_file, "pseudoalign.phy file exists");
 
 	my $test_command = "diff $expected_pseudoalign_file $actual_pseudoalign_file";
