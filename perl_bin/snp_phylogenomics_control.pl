@@ -149,6 +149,7 @@ sub parse_mapping_opts
 
 		handle_output_opt($pipeline, $options->{'o'});
 		handle_input_fastq($pipeline, $options->{'d'});
+		parse_stage_opts($options,$pipeline);
 	}
 	else
 	{
@@ -168,10 +169,42 @@ sub parse_ortho_opts
 
 		handle_input_fasta($pipeline, $options->{'d'}, $options->{'c'});
 		handle_output_opt($pipeline, $options->{'o'});
+		parse_stage_opts($options,$pipeline);
 	}
 	else
 	{
 		die "Error: orthomcl-groups option not defined\n";
+	}
+}
+
+sub parse_stage_opts
+{
+	my ($options, $pipeline) = @_;
+
+	if (defined $options->{'end-stage'})
+	{
+		my $end_stage_opt = $options->{'end-stage'};
+		if (not $pipeline->is_valid_stage($end_stage_opt))
+		{
+			die "Cannot resubmit to invalid stage $end_stage_opt";
+		}
+		else
+		{
+			$pipeline->set_end_stage($end_stage_opt);
+		}
+	}
+	
+	if (defined $options->{'start-stage'})
+	{
+		my $start_stage_opt = $options->{'start-stage'};
+		if (not $pipeline->is_valid_stage($start_stage_opt))
+		{
+			die "Cannot resubmit to invalid stage $start_stage_opt";
+		}
+		else
+		{
+			$pipeline->set_start_stage($start_stage_opt);
+		}
 	}
 }
 
@@ -308,31 +341,7 @@ sub parse_blast_opts
 		$pipeline->set_hsp_length($hsp_length_default);
 	}
 	
-	if (defined $options->{'end-stage'})
-	{
-		my $end_stage_opt = $options->{'end-stage'};
-		if (not $pipeline->is_valid_stage($end_stage_opt))
-		{
-			die "Cannot resubmit to invalid stage $end_stage_opt";
-		}
-		else
-		{
-			$pipeline->set_end_stage($end_stage_opt);
-		}
-	}
-	
-	if (defined $options->{'start-stage'})
-	{
-		my $start_stage_opt = $options->{'start-stage'};
-		if (not $pipeline->is_valid_stage($start_stage_opt))
-		{
-			die "Cannot resubmit to invalid stage $start_stage_opt";
-		}
-		else
-		{
-			$pipeline->set_start_stage($start_stage_opt);
-		}
-	}
+	parse_stage_opts($options,$pipeline);
 
 	return $pipeline;
 }
@@ -582,6 +591,24 @@ Use B<--output [OUT_NAME]> to define an output directory.  The output directory 
 =item B<alignment>:  Performs multiple alignment on each ortholog.
 
 =item B<pseudoalign>:  Creates a pseudoalignment.
+
+=item B<build-phylogeny>:  Builds the phylogeny based on the pseudoalignment.
+
+=item B<phylogeny-graphic>:  Builds a graphic image of the phylogeny.
+
+=back
+
+=head2 MAPPING
+
+=over
+
+=item B<reference-mapping>:  Performs reference mapping (using smalt).
+
+=item B<mpileup>:  Runs mpileup (for error checking/validating SNPs).
+
+=item B<variant-calling>:  Variant calling using freebayes.
+
+=item B<pseudoalign>:  Generates pseudoalignment file.
 
 =item B<build-phylogeny>:  Builds the phylogeny based on the pseudoalignment.
 
