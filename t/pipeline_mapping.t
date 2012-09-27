@@ -15,20 +15,22 @@ $ENV{'PERL5LIB'} = "$script_dir/../lib:$script_dir/../cpanlib/lib/perl5:".$ENV{'
 
 sub usage
 {
-        return "Usage: $0 --tmp-dir [tmp_directory]\n";
+        return "Usage: $0 --tmp-dir [tmp_directory] [--keep-tmp]\n";
 }
 
 ### MAIN ###
 
 my $tmp_dir;
-
-if (not GetOptions('t|tmp-dir=s' => \$tmp_dir))
+my $keep_tmp;
+if (not GetOptions('t|tmp-dir=s' => \$tmp_dir,'k|keep-tmp' => \$keep_tmp))
 {
         die usage;
 }
 
 die "no tmp-dir defined\n".usage if (not defined $tmp_dir);
 die "tmp-dir does not exist\n".usage if (not (-e $tmp_dir));
+
+$keep_tmp = 0 if (not defined $keep_tmp);
 
 my $mapping_dir = "$script_dir/data/pipeline/mapping";
 
@@ -41,7 +43,7 @@ for my $job (@job_dirs)
 {
 	print "\n### Testing $job ###\n";
 
-	my $job_out = tempdir('snp_mapping_pipelineXXXXXX', CLEANUP => 1, DIR => $tmp_dir) or die "Could not create temp directory";
+	my $job_out = tempdir('snp_mapping_pipelineXXXXXX', CLEANUP => (not $keep_tmp), DIR => $tmp_dir) or die "Could not create temp directory";
 	my $job_out_dir = "$job_out/out";
 
 	my $input_dir = "$mapping_dir/$job/input";
@@ -73,6 +75,8 @@ for my $job (@job_dirs)
 	ok(-e "$job_out_dir/log/current", "log/current exists");
 	ok(-e "$job_out_dir/run.properties", "run.properties exists");
 	ok(-e "$job_out_dir/pseudoalign/matrix.csv", "matrix.csv exists");
+	ok(-e "$job_out_dir/log/current/fastqc.out", 'fastqc ran');
+	ok(-e "$job_out_dir/fastqc/fastqc_stats.csv", 'fastqc stats exist');
 	ok(-e $actual_pseudoalign_file, "pseudoalign.phy file exists");
 
 	my $test_command = "diff $expected_pseudoalign_file $actual_pseudoalign_file";

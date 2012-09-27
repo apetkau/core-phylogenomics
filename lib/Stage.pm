@@ -115,7 +115,7 @@ sub _submit_jobs
 	}
 
 	# wait for jobs
-	print "\njobs for ".$self->get_stage_name." ".scalar(keys %job_ids).".";
+	print "\njobs for ".$self->get_stage_name.":$name ".scalar(keys %job_ids).".";
 	$logger->log("\tjob ids for submitted jobs = ".join(',',keys %job_ids)."\n",1);
         do
         {

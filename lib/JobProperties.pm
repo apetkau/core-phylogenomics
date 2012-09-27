@@ -123,6 +123,8 @@ sub _set_defaults
 	my $tabix = $defaults->{'path'}->{'tabix'};
 	my $freebayes = $defaults->{'path'}->{'freebayes'};
 	my $vcftools = $defaults->{'path'}->{'vcftools-lib'};
+	my $fastqc = $defaults->{'path'}->{'fastqc'};
+	my $java = $defaults->{'path'}->{'java'};
 
 	$self->set_property('smalt_index', $smalt_index_params) if (defined $smalt_index_params);
 	$self->set_property('smalt_map', $smalt_map_params) if (defined $smalt_map_params);
@@ -152,6 +154,8 @@ sub _set_defaults
 	$self->set_file('tabix', $tabix) if ((defined $tabix) and (-e $tabix));
 	$self->set_file('freebayes', $freebayes) if ((defined $freebayes) and (-e $freebayes));
 	$self->set_file('vcftools-lib', $vcftools) if ((defined $vcftools) and (-e $vcftools));
+	$self->set_file('fastqc', $fastqc) if ((defined $fastqc) and (-e $fastqc));
+	$self->set_file('java', $java) if ((defined $java) and (-e $java));
 }
 
 sub set_property
