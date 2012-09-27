@@ -71,7 +71,7 @@ sub execute
 		my $temp_stats_file = "$output_fastqc_dir/fastqc_stats_tmp_$file";
 
 		push(@fastqc_params,['-o', $output_fastqc_dir, $fastq_file, '-j', $java]);
-		push(@summary_params,[$reference_name,$fastq_file,$fastqc_dir,$ref_length,$temp_stats_file]);
+		push(@summary_params,[$name,$fastq_file,$fastqc_dir,$ref_length,$temp_stats_file]);
 		push(@temp_fastqc_stats,$temp_stats_file);
 	}
 
