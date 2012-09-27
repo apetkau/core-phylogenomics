@@ -22,6 +22,7 @@ use Stage::Mpileup;
 use Stage::VariantCalling;
 use Stage::VcfPseudoalignment;
 use Stage::FastQC;
+use Stage::MappingFinal;
 
 use File::Basename qw(basename dirname);
 use File::Copy qw(copy move);
@@ -146,7 +147,8 @@ sub _setup_stage_tables
 			  'variant-calling',
 			  'pseudoalign',
 	                  'build-phylogeny',
-	                  'phylogeny-graphic'
+	                  'phylogeny-graphic',
+			  'mapping-final'
 	                 ];
 	my %all_hash = map { $_ => 1} @{$stage->{'all'}};
 	$stage->{'all_hash'} = \%all_hash;
@@ -192,7 +194,8 @@ sub _initialize
 			'variant-calling' => new Stage::VariantCalling($job_properties, $logger),
 			'pseudoalign' => new Stage::VcfPseudoalignment($job_properties, $logger),
                         'build-phylogeny' => new Stage::BuildPhylogeny($job_properties, $logger),
-                        'phylogeny-graphic' => new Stage::BuildPhylogenyGraphic($job_properties, $logger)
+                        'phylogeny-graphic' => new Stage::BuildPhylogenyGraphic($job_properties, $logger),
+                        'mapping-final' => new Stage::MappingFinal($job_properties, $logger)
         };
 
     $self->{'stage_table'} = $stage_table;
