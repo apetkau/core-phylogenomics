@@ -68,10 +68,9 @@ for my $job (@job_dirs)
 	}
 	print "done\n";
 
-	my $actual_pseudoalign_file = "$job_out_dir/pseudoalign/pseudoalign.phy";
-
 	ok(-e "$job_out_dir/log/current", "log/current exists");
 	ok(-e "$job_out_dir/run.properties", "run.properties exists");
+	ok(-e "$job_out_dir/downsampled_fastq", 'downsampled directory exists');
 	ok(-e "$job_out_dir/log/current/fastqc.out", 'fastqc ran');
 	ok(-e "$job_out_dir/fastqc/fastqc_stats.csv", 'fastqc stats exist');
 }

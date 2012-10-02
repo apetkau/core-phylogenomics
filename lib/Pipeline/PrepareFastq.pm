@@ -12,10 +12,10 @@ use JobProperties;
 
 use Stage;
 use Stage::CopyInputReference;
-use Stage::CopyInputFastq;
 use Stage::FastQC;
 use Stage::WriteProperties;
 use Stage::TrimClean;
+use Stage::DownSample;
 
 use File::Basename qw(basename dirname);
 use File::Copy qw(copy move);
@@ -39,7 +39,7 @@ sub new
 
     $job_properties->set_dir('fastqc_dir', 'fastqc');
     $job_properties->set_dir('stage_dir', "stages");
-    $job_properties->set_dir('fastq_dir', 'fastq');
+    $job_properties->set_dir('fastq_dir', 'downsampled_fastq');
     $job_properties->set_dir('cleaned_fastq', 'cleaned_fastq');
     $job_properties->set_dir('reference_dir', 'reference');
 
@@ -60,7 +60,7 @@ sub new_resubmit
 
     $job_properties->set_dir('fastqc_dir', 'fastqc');
     $job_properties->set_dir('stage_dir', "stages");
-    $job_properties->set_dir('fastq_dir', 'fastq');
+    $job_properties->set_dir('fastq_dir', 'downsampled_fastq');
     $job_properties->set_dir('cleaned_fastq', 'cleaned_fastq');
     $job_properties->set_dir('reference_dir', 'reference');
 
@@ -104,8 +104,8 @@ sub _setup_stage_tables
 	$stage->{'all'} = [
 	                  'write-properties',
 			  'copy-input-reference',
-			  'copy-input-fastq',
 			  'trim-clean',
+			  'downsample',
 			  'fastqc',
 	                 ];
 	my %all_hash = map { $_ => 1} @{$stage->{'all'}};
@@ -138,8 +138,8 @@ sub _initialize
     my $stage_table = {
                         'write-properties' => new Stage::WriteProperties($job_properties, $logger),
 			'copy-input-reference' => new Stage::CopyInputReference($job_properties, $logger),
-			'copy-input-fastq' => new Stage::CopyInputFastq($job_properties, $logger),
 			'trim-clean' => new Stage::TrimClean($job_properties, $logger),
+			'downsample' => new Stage::DownSample($job_properties, $logger),
 			'fastqc' => new Stage::FastQC($job_properties, $logger),
         };
 
