@@ -108,6 +108,7 @@ sub _set_defaults
 
 	my $processors = $defaults->{'processors'};
 	my $min_coverage = $defaults->{'min_coverage'};
+	my $max_coverage = $defaults->{'max_coverage'};
 	my $freebayes_params = $defaults->{'freebayes_params'};
 	my $trim_clean_params = $defaults->{'trim_clean_params'};
 	my $smalt_map_params = $defaults->{'smalt_map'};
@@ -155,6 +156,7 @@ sub _set_defaults
 		}
 	}
 	$self->set_property('min_coverage', $min_coverage) if ((defined $min_coverage) and ($min_coverage =~ /^\d+$/));
+	$self->set_property('max_coverage', $max_coverage) if ((defined $max_coverage) and ($max_coverage =~ /^\d+$/));
 
 	$self->set_file('formatdb', $formatdb) if ((defined $formatdb) and (-e $formatdb));
 	$self->set_file('figtree', $figtree) if ((defined $figtree) and (-e $figtree));

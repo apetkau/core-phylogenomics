@@ -53,7 +53,7 @@ else
 {
 	# merges fastq entries to a single line, shuffles, and pulls out a certain number
 	# obtained from http://biostar.stackexchange.com/post/show/6544/selecting-random-pairs-from-fastq/#6562
-	my $command = "awk '{ printf(\"\%s\",\$0); n++; if(n\%4==0) { printf(\"\\n\");} else { printf(\"\\t\\t\");} }' < $input_fastq | shuf | head -n $reads_to_keep | sed 's/\\t\\t/\\n/g' > $output_file";
+	my $command = "awk '{ printf(\"\%s\",\$0); n++; if(n\%4==0) { printf(\"\\n\");} else { printf(\"\\t\\t\");} }' < $input_fastq | $shuf_path | head -n $reads_to_keep | sed 's/\\t\\t/\\n/g' > $output_file";
 	#my $command = "seqtk sample $input_fastq $reads_to_keep > $output_file";
 	print STDERR "Running $command\n";
 	system($command) == 0 or die "Could not run $command";
