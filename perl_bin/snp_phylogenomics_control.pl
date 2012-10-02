@@ -520,6 +520,42 @@ Use B<--input-dir [name]> to define the fasta/fastq input directory.  The input 
 
 Use B<--output [OUT_NAME]> to define an output directory.  The output directory must be accessible by the cluster nodes.  Files for each stage will be written under the output directory.  In addition, a log/ directory will be written with log files for each stage.  The final results will be available under OUT_NAME/pseudoalign.
 
+=head1 CONFIG
+
+Special config files can be passed (used only in mapping/prepare-fastq stages) to define complex parameters.  An example of these files are:
+
+=head2 PREPARE FASTQ
+
+=over
+
+=item %YAML 1.1
+
+=item ---
+
+=item max_coverage: 50
+
+=item trim_clean_params: '--min_quality 30 --bases_to_trim 10 --min_avg_quality 35 --min_length 60 -p 1'
+
+=back
+
+=head2 MAPPING
+
+=over
+
+=item %YAML 1.1
+
+=item ---
+
+=item min_coverage: 15
+
+=item freebayes_params: '--pvar 0 --ploidy 1 --no-mnps --left-align-indels --min-mapping-quality 30 --min-base-quality 30 --indel-exclusion-window 5 --min-alternate-fraction 0.75'
+
+=item smalt_index: '-k 13 -s 1'
+
+=item smalt_map: '-n 1 -f samsoft'
+
+=back
+
 =head1 OPTIONS
 
 =head2 REQUIRED
