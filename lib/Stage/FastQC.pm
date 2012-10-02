@@ -33,7 +33,7 @@ sub execute
 	my $job_properties = $self->{'_job_properties'};
 	my $script_dir = $job_properties->get_script_dir;
 	my $fastqc_bin = $job_properties->get_file('fastqc');
-	my $input_fastq_dir = $job_properties->get_dir('fastq_dir');
+	my $input_fastq_dir = $job_properties->get_dir('downsampled_fastq_dir');
 	my $output_fastqc_dir = $job_properties->get_dir('fastqc_dir');
 	my $java = $job_properties->get_file('java');
 	my $ref_length = $job_properties->get_property('reference_length');

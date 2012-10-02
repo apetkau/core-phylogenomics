@@ -77,8 +77,6 @@ for my $job (@job_dirs)
 	ok(-e "$job_out_dir/log/current", "log/current exists");
 	ok(-e "$job_out_dir/run.properties", "run.properties exists");
 	ok(-e "$job_out_dir/pseudoalign/matrix.csv", "matrix.csv exists");
-	ok(-e "$job_out_dir/log/current/fastqc.out", 'fastqc ran');
-	ok(-e "$job_out_dir/fastqc/fastqc_stats.csv", 'fastqc stats exist');
 	ok(-e $actual_pseudoalign_file, "pseudoalign.phy file exists");
 
 	my $test_command = "diff $expected_pseudoalign_file $actual_pseudoalign_file";

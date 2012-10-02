@@ -46,7 +46,6 @@ sub new
     $job_properties->set_property('mode', 'mapping');
 
     $job_properties->set_dir('mapping_dir', "mapping");
-    $job_properties->set_dir('fastqc_dir', 'fastqc');
     $job_properties->set_dir('pseudoalign_dir', "pseudoalign");
     $job_properties->set_dir('stage_dir', "stages");
     $job_properties->set_dir('phylogeny_dir', 'phylogeny');
@@ -75,7 +74,6 @@ sub new_resubmit
     $self->_check_stages;
 
     $job_properties->set_dir('mapping_dir', "mapping");
-    $job_properties->set_dir('fastqc_dir', 'fastqc');
     $job_properties->set_dir('pseudoalign_dir', "pseudoalign");
     $job_properties->set_dir('stage_dir', "stages");
     $job_properties->set_dir('phylogeny_dir', 'phylogeny');
@@ -141,7 +139,6 @@ sub _setup_stage_tables
 	                  'write-properties',
 			  'copy-input-reference',
 			  'copy-input-fastq',
-			  'fastqc',
 			  'reference-mapping',
 			  'mpileup',
 			  'variant-calling',
@@ -155,7 +152,6 @@ sub _setup_stage_tables
 	
 	$stage->{'user'} = [
 			    'reference-mapping',
-			    'fastqc',
 			    'mpileup',
 			    'variant-calling',
 			    'pseudoalign',
@@ -163,7 +159,7 @@ sub _setup_stage_tables
 	                    'phylogeny-graphic',
 			];
 	
-	$stage->{'valid_job_dirs'} = ['fastqc_dir', 'pseudoalign_dir', 'vcf_dir', 'vcf_split_dir', 'mpileup_dir', 'bam_dir', 'sam_dir', 'mapping_dir', 'reference_dir','job_dir','log_dir','align_dir','stage_dir','phylogeny_dir', 'fastq_dir'];
+	$stage->{'valid_job_dirs'} = ['pseudoalign_dir', 'vcf_dir', 'vcf_split_dir', 'mpileup_dir', 'bam_dir', 'sam_dir', 'mapping_dir', 'reference_dir','job_dir','log_dir','align_dir','stage_dir','phylogeny_dir', 'fastq_dir'];
 	#$stage->{'valid_other_files'} = ['input_fastq_dir'];
 	$stage->{'valid_other_files'} = [];
 
@@ -188,7 +184,6 @@ sub _initialize
                         'write-properties' => new Stage::WriteProperties($job_properties, $logger),
 			'copy-input-reference' => new Stage::CopyInputReference($job_properties, $logger),
 			'copy-input-fastq' => new Stage::CopyInputFastq($job_properties, $logger),
-			'fastqc' => new Stage::FastQC($job_properties, $logger),
 			'reference-mapping' => new Stage::SmaltMapping($job_properties, $logger),
 			'mpileup' => new Stage::Mpileup($job_properties, $logger),
 			'variant-calling' => new Stage::VariantCalling($job_properties, $logger),

@@ -31,7 +31,7 @@ sub execute
 	my $stage = $self->get_stage_name;
 
 	my $job_properties = $self->{'_job_properties'};
-	my $fastq_dir = $job_properties->get_abs_file('input_fastq_dir');
+	my $fastq_dir = $job_properties->get_dir('fastq_dir');
 	my $output_fastq_dir = $job_properties->get_dir('cleaned_fastq');
 	my $trim_clean_params = $job_properties->get_property('trim_clean_params');
 

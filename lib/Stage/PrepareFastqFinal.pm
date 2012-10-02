@@ -31,7 +31,7 @@ sub execute
 
 	my $job_properties = $self->{'_job_properties'};
 	my $fastqc_dir = $job_properties->get_dir('fastqc_dir');
-	my $downsample_dir = $job_properties->get_dir('fastq_dir');
+	my $downsample_dir = $job_properties->get_dir('downsampled_fastq_dir');
 
 	$logger->log("\n================\n",0);
 	$logger->log(  "= Output Files =",0);

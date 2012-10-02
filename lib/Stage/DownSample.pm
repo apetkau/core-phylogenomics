@@ -32,7 +32,7 @@ sub execute
 
 	my $job_properties = $self->{'_job_properties'};
 	my $fastq_dir = $job_properties->get_dir('cleaned_fastq');
-	my $output_fastq_dir = $job_properties->get_dir('fastq_dir');
+	my $output_fastq_dir = $job_properties->get_dir('downsampled_fastq_dir');
 	my $shuf_path = $job_properties->get_file('shuf');
 	my $max_coverage = $job_properties->get_property('max_coverage');
 	my $ref_length = $job_properties->get_property('reference_length');

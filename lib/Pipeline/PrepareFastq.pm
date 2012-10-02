@@ -11,6 +11,7 @@ use Logger;
 use JobProperties;
 
 use Stage;
+use Stage::CopyInputFastq;
 use Stage::CopyInputReference;
 use Stage::FastQC;
 use Stage::WriteProperties;
@@ -40,7 +41,8 @@ sub new
 
     $job_properties->set_dir('fastqc_dir', 'fastqc');
     $job_properties->set_dir('stage_dir', "stages");
-    $job_properties->set_dir('fastq_dir', 'downsampled_fastq');
+    $job_properties->set_dir('fastq_dir', 'initial_fastq_dir');
+    $job_properties->set_dir('downsampled_fastq_dir', 'downsampled_fastq');
     $job_properties->set_dir('cleaned_fastq', 'cleaned_fastq');
     $job_properties->set_dir('reference_dir', 'reference');
 
@@ -61,7 +63,8 @@ sub new_resubmit
 
     $job_properties->set_dir('fastqc_dir', 'fastqc');
     $job_properties->set_dir('stage_dir', "stages");
-    $job_properties->set_dir('fastq_dir', 'downsampled_fastq');
+    $job_properties->set_dir('fastq_dir', 'initial_fastq_dir');
+    $job_properties->set_dir('downsampled_fastq_dir', 'downsampled_fastq');
     $job_properties->set_dir('cleaned_fastq', 'cleaned_fastq');
     $job_properties->set_dir('reference_dir', 'reference');
 
@@ -105,6 +108,7 @@ sub _setup_stage_tables
 	$stage->{'all'} = [
 	                  'write-properties',
 			  'copy-input-reference',
+			  'copy-input-fastq',
 			  'trim-clean',
 			  'downsample',
 			  'fastqc',
@@ -114,10 +118,12 @@ sub _setup_stage_tables
 	$stage->{'all_hash'} = \%all_hash;
 	
 	$stage->{'user'} = [
+			    'trim-clean',
+			    'downsample',
 			    'fastqc',
 			];
 	
-	$stage->{'valid_job_dirs'} = ['cleaned_fastq', 'fastqc_dir', 'reference_dir','log_dir','stage_dir', 'fastq_dir'];
+	$stage->{'valid_job_dirs'} = ['cleaned_fastq', 'fastqc_dir','downsampled_fastq_dir', 'reference_dir','log_dir','stage_dir', 'fastq_dir'];
 	$stage->{'valid_other_files'} = [];
 
 	my @valid_properties = join(@{$stage->{'valid_job_dirs'}},@{$stage->{'valid_other_files'}});
@@ -140,6 +146,7 @@ sub _initialize
     my $stage_table = {
                         'write-properties' => new Stage::WriteProperties($job_properties, $logger),
 			'copy-input-reference' => new Stage::CopyInputReference($job_properties, $logger),
+			'copy-input-fastq' => new Stage::CopyInputFastq($job_properties, $logger),
 			'trim-clean' => new Stage::TrimClean($job_properties, $logger),
 			'downsample' => new Stage::DownSample($job_properties, $logger),
 			'fastqc' => new Stage::FastQC($job_properties, $logger),
