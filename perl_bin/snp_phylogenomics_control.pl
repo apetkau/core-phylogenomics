@@ -16,6 +16,7 @@ use Pipeline;
 use Pipeline::Blast;
 use Pipeline::Orthomcl;
 use Pipeline::Mapping;
+use Pipeline::PrepareFastq;
 
 my $pod_sections = "SYNOPSIS";
 my $pod_sections_long = "NAME|SYNOPSIS|OPTIONS|STAGES";
@@ -139,6 +140,25 @@ sub handle_output_opt
 }
 
 sub parse_mapping_opts
+{
+	my ($options, $pipeline) = @_;
+
+	if (defined $options->{'reference'})
+	{
+		die "Reference file ".$options->{'reference'}." does not exist" if (not -e $options->{'reference'});
+		$pipeline->set_reference($options->{'reference'});
+
+		handle_output_opt($pipeline, $options->{'o'});
+		handle_input_fastq($pipeline, $options->{'d'});
+		parse_stage_opts($options,$pipeline);
+	}
+	else
+	{
+		die "Error: reference not defined";
+	}
+}
+
+sub parse_prepare_fastq_opts
 {
 	my ($options, $pipeline) = @_;
 
@@ -432,6 +452,13 @@ elsif ($options{'m'} eq 'mapping')
 	parse_mapping_opts(\%options,$pipeline);
 	$pipeline->execute;
 }
+elsif ($options{'m'} eq 'prepare-fastq')
+{
+	$pipeline = new Pipeline::PrepareFastq($script_dir,$options{'config'});
+	$pipeline->set_verbose($options{'v'}) if (defined $options{'v'}); 
+	parse_prepare_fastq_opts(\%options,$pipeline);
+	$pipeline->execute;
+}
 else
 {
 	print STDERR "Error: invalid mode (".$options{'m'}.") defined\n";
@@ -470,13 +497,15 @@ snp_phylogenomics_control.pl:  Script to automate running of core SNP analysis.
 
 =over
 
-=item snp_phylogenomics_control.pl --mode mapping --input-dir sample_fastq/ --output out --reference ref.fasta
+=item snp_phylogenomics_control.pl --mode prepare-fastq --input-dir sample_fastq/ --output out --reference ref.fasta [--config options.conf]
+
+=item snp_phylogenomics_control.pl --mode mapping --input-dir sample_fastq/ --output out --reference ref.fasta [--config options.conf]
 
 =back
 
 =head1 DESCRIPTION
 
-Runs the core SNP phylogenomic analysis stages.  The input is either a directory containing the FASTA files to analyize, the multi-fasta file to analyze, or the raw reads to analyze.  The output is the pseudoalign.phy alignment file and the snpreport.txt. The intermediate files are kept under a directory (named using --output), and can be used to resubmit the analysis at different stages later.
+Runs the core SNP phylogenomic analysis stages.  The input is either a directory containing the FASTQ files to analyize, the multi-fasta file to analyze, or the raw reads to analyze.  The output is the pseudoalign.phy alignment file and the snpreport.txt. The intermediate files are kept under a directory (named using --output), and can be used to resubmit the analysis at different stages later.
 
 =head1 INPUT
 
