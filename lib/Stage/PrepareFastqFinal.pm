@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-package Stage::MappingFinal;
+package Stage::PrepareFastqFinal;
 use Stage;
 @ISA = qw(Stage);
 
@@ -18,7 +18,7 @@ sub new
 
         bless($self,$class);
 
-	$self->{'_stage_name'} = 'mapping-final';
+	$self->{'_stage_name'} = 'prepare-fastq-final';
 
         return $self;
 }
@@ -31,15 +31,12 @@ sub execute
 
 	my $job_properties = $self->{'_job_properties'};
 	my $fastqc_dir = $job_properties->get_dir('fastqc_dir');
-	my $pseudoalign_dir = $job_properties->get_dir('pseudoalign_dir');
-	my $phylogeny_dir = $job_properties->get_dir('phylogeny_dir');
+	my $downsample_dir = $job_properties->get_dir('fastq_dir');
 
 	$logger->log("\n================\n",0);
 	$logger->log(  "= Output Files =",0);
 	$logger->log("\n================\n",0);
-	$logger->log("tree: $phylogeny_dir/pseudoalign.phy_phyml_tree.txt\n",0);
-	$logger->log("matrix: $pseudoalign_dir/matrix.csv\n",0);
-	$logger->log("pseudoalignment: $pseudoalign_dir/pseudoalign.phy\n",0);
+	$logger->log("downsampled_files: $downsample_dir\n",0);
 	$logger->log("fastqc: $fastqc_dir/fastqc_stats.csv\n",0);
 }
 

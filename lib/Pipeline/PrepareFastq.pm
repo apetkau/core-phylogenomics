@@ -16,6 +16,7 @@ use Stage::FastQC;
 use Stage::WriteProperties;
 use Stage::TrimClean;
 use Stage::DownSample;
+use Stage::PrepareFastqFinal;
 
 use File::Basename qw(basename dirname);
 use File::Copy qw(copy move);
@@ -107,6 +108,7 @@ sub _setup_stage_tables
 			  'trim-clean',
 			  'downsample',
 			  'fastqc',
+			  'prepare-fastq-final'
 	                 ];
 	my %all_hash = map { $_ => 1} @{$stage->{'all'}};
 	$stage->{'all_hash'} = \%all_hash;
@@ -141,6 +143,7 @@ sub _initialize
 			'trim-clean' => new Stage::TrimClean($job_properties, $logger),
 			'downsample' => new Stage::DownSample($job_properties, $logger),
 			'fastqc' => new Stage::FastQC($job_properties, $logger),
+			'prepare-fastq-final' => new Stage::PrepareFastqFinal($job_properties, $logger),
         };
 
     $self->{'stage_table'} = $stage_table;

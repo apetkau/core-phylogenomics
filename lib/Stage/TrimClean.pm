@@ -33,7 +33,13 @@ sub execute
 	my $job_properties = $self->{'_job_properties'};
 	my $fastq_dir = $job_properties->get_abs_file('input_fastq_dir');
 	my $output_fastq_dir = $job_properties->get_dir('cleaned_fastq');
-	my $trim_clean_params = "--min_quality 30 --bases_to_trim 10 --min_avg_quality 35 --min_length 21 -p 1";
+	my $trim_clean_params = $job_properties->get_property('trim_clean_params');
+
+	if (not defined $trim_clean_params)
+	{
+		$trim_clean_params = "--min_quality 30 --bases_to_trim 10 --min_avg_quality 35 --min_length 36 -p 1";
+		$logger->log("warning: trim_clean_params not defined, setting to trim_clean_params='$trim_clean_params'\n",0);
+	}
 	my $script_dir = $job_properties->get_script_dir;
 
 	my $clean_launch = "$script_dir/../lib/run_assembly_trimClean.pl";

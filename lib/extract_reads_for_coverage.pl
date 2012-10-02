@@ -34,7 +34,9 @@ chomp $total_bp;
 chomp $total_reads;
 
 die "Error: total_bp=$total_bp is not a number" if ($total_bp !~ /^\d+/);
+die "Error: total_bp=$total_bp must be positive" if ($total_bp <= 0);
 die "Error: total_reads=$total_reads is not a number" if ($total_reads !~ /^\d+$/);
+die "Error: total_reads=$total_reads must be positive" if ($total_reads <= 0);
 
 my $avg_bp_reads = $total_bp/$total_reads;
 my $bp_to_keep = $ref_length * $cov;

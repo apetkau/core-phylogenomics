@@ -109,6 +109,7 @@ sub _set_defaults
 	my $processors = $defaults->{'processors'};
 	my $min_coverage = $defaults->{'min_coverage'};
 	my $freebayes_params = $defaults->{'freebayes_params'};
+	my $trim_clean_params = $defaults->{'trim_clean_params'};
 	my $smalt_map_params = $defaults->{'smalt_map'};
 	my $smalt_index_params = $defaults->{'smalt_index'};
 	my $formatdb = $defaults->{'path'}->{'formatdb'};
@@ -139,6 +140,18 @@ sub _set_defaults
 		else
 		{
 			$self->set_property('freebayes_params', $freebayes_params);
+		}
+	}
+
+	if (defined $trim_clean_params)
+	{
+		if ($trim_clean_params =~ /-i\s/ or $trim_clean_params =~ /-o\s/)
+		{
+			die "do not set -i or -o in config file for trim_clean_params='$trim_clean_params'";
+		}
+		else
+		{
+			$self->set_property('trim_clean_params', $trim_clean_params);
 		}
 	}
 	$self->set_property('min_coverage', $min_coverage) if ((defined $min_coverage) and ($min_coverage =~ /^\d+$/));

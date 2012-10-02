@@ -499,7 +499,8 @@ snp_phylogenomics_control.pl:  Script to automate running of core SNP analysis.
 
 =item snp_phylogenomics_control.pl --mode prepare-fastq --input-dir sample_fastq/ --output out --reference ref.fasta [--config options.conf]
 
-=item snp_phylogenomics_control.pl --mode mapping --input-dir sample_fastq/ --output out --reference ref.fasta [--config options.conf]
+
+=item snp_phylogenomics_control.pl --mode mapping --input-dir out/downsampled_fastq/ --output out --reference ref.fasta [--config options.conf]
 
 =back
 
@@ -580,6 +581,12 @@ Use B<--output [OUT_NAME]> to define an output directory.  The output directory 
 =head3 MAPPING
 
 =over
+
+Runs reference mapping version of pipeline.  Data must be prepared with 'prepare-fastq' mode first.  This can be run as below:
+
+=item snp_phylogenomics_control.pl --mode prepare-fastq --input-dir sample_fastq/ --output out --reference ref.fasta [--config options.conf]
+
+Once data is prepared, the out/downsampled_fastq directory will contain prepared/cleaned data to be used for rest of pipeline.
 
 =item B<--reference>:  The reference file (multi-fasta, one entry per chromosome) to map to.
 
