@@ -2,6 +2,7 @@
 
 # run_assembly_trimClean: trim and clean a set of raw reads
 # Author: Lee Katz <lkatz@cdc.gov>
+# Modified by Aaron Petkau <aaron.petkau@phac-aspc.gc.ca> on October 3, 2012
 # TODO read .gz files
 # TODO output .gz files
 
@@ -55,7 +56,7 @@ sub main() {
     min_length=>62,# twice kmer length sounds good
   };
   
-  GetOptions($settings,qw(poly=i infile=s@ outfile=s min_quality=i bases_to_trim=i min_avg_quality=i  min_length=i quieter notrim debug));
+  GetOptions($settings,qw(numcpus=i poly=i infile=s@ outfile=s min_quality=i bases_to_trim=i min_avg_quality=i  min_length=i quieter notrim debug));
   
   my $infile=$$settings{infile} or die "Error: need an infile\n".usage($settings);
   my $outfile=$$settings{outfile} or die "Error: need an outfile\n".usage($settings);
@@ -397,6 +398,7 @@ sub usage{
     1 for SE, 2 for paired end (PE). 0 for automatic detection (default)
   -q for somewhat quiet mode (use 1>/dev/null for totally quiet)
   --notrim to skip trimming of the reads. Useful for assemblers that require equal read lengths.
+  --numcpus [number]: sets maximum number of cpus/threads to use for trim/cleaning. Defaults to number of cores on machine.
 
   Use phred scores (e.g. 20 or 30) or length in base pairs if it says P or L, respectively
   --min_quality P             # trimming

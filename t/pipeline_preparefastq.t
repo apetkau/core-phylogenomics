@@ -68,11 +68,37 @@ for my $job (@job_dirs)
 	}
 	print "done\n";
 
+	my $actual_cleaned_fastq_dir = "$job_out_dir/cleaned_fastq";
+
 	ok(-e "$job_out_dir/log/current", "log/current exists");
 	ok(-e "$job_out_dir/run.properties", "run.properties exists");
+	ok(-e "$actual_cleaned_fastq_dir", "cleaned fastq dir exists");
 	ok(-e "$job_out_dir/downsampled_fastq", 'downsampled directory exists');
 	ok(-e "$job_out_dir/log/current/fastqc.out", 'fastqc ran');
 	ok(-e "$job_out_dir/fastqc/fastqc_stats.csv", 'fastqc stats exist');
+
+	opendir(my $dh,$actual_cleaned_fastq_dir);
+	my @actual_out_fastq = grep {/\.fastq$/} readdir($dh);
+	closedir($dh);
+
+	for my $fastq (@actual_out_fastq)
+	{
+		my $actual_fastq_file = "$actual_cleaned_fastq_dir/$fastq";
+		my $expected_fastq_file = "$output_dir/$fastq";
+		my $test_command = "diff $actual_fastq_file $expected_fastq_file";
+		my $results = `$test_command`;
+		my $return_value = $?;
+
+	        if ($return_value != 0 or (defined $results and $results ne ''))
+        	{
+                	fail("expected file $expected_fastq_file differs from actual file $actual_fastq_file : diff\n");
+	                print STDERR $results;
+	        }
+	        else
+	        {
+	                pass("expected file $expected_fastq_file eq actual file $actual_fastq_file");
+	        }
+	}
 }
 
 done_testing();
