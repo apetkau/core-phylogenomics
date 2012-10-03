@@ -7,5 +7,15 @@ path:
 	clustalw2: /path/to/clustalw2
 	phyml: /path/to/phyml
 	figtree: /path/to/figtree
+	smalt: /path/to/smalt
+	samtools: /path/to/samtools
+	bcftools: /path/to/bcftools
+	bgzip: /path/to/bgzip
+	tabix: /path/to/tabix
+	freebayes: /path/to/freebayes
+	vcftools-lib: /path/to/vcftools-perl-lib
+	fastqc: /path/to/fastqc
+	java: /path/to/java
+	shuf: /path/to/shuf
 
 processors: 480
