@@ -95,6 +95,7 @@ my $total_seq;
 my $failed_on = '';
 my $duplicate_percentage = '-1';
 my $seq_length;
+my $encoding;
 for my $key (keys %modules_table)
 {
 	my @properties = @{$modules_table{$key}};
@@ -119,6 +120,10 @@ for my $key (keys %modules_table)
 			if ($line =~ /^Total\s+Sequences\s+(\d+)/)
 			{
 				$total_seq = $1;
+			}
+			elsif ($line =~ /^Encoding\s+(.*)$/)
+			{
+				$encoding = $1;
 			}
 			elsif ($line =~ /^Sequence length\s+(\S+)/)
 			{
@@ -160,7 +165,7 @@ die "invalid count of total_bp" if ($total_bp !~ /^\d+$/);
 die "total_bp = 0" if ($total_bp == 0);
 my $cov = $total_bp/$genome_length;
 
-print $out_h "$strain_name\t".($pass ? 'PASS': 'FAIL')."\t$total_seq\t$total_bp\t$seq_length\t";
+print $out_h "$strain_name\t".($pass ? 'PASS': 'FAIL')."\t$encoding\t$total_seq\t$total_bp\t$seq_length\t";
 printf $out_h "%0.f\t%0.2f\t%s\n",$cov,$duplicate_percentage,$failed_on;
 
 close($out_h);
