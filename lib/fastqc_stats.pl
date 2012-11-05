@@ -121,7 +121,7 @@ for my $key (keys %modules_table)
 			{
 				$total_seq = $1;
 			}
-			elsif ($line =~ /^Encoding\s+(.*)$/)
+			elsif ($line =~ /^Encoding\s+(.*?)\s*$/)
 			{
 				$encoding = $1;
 			}
