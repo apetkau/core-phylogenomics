@@ -152,7 +152,8 @@ for my $key (keys %modules_table)
 #	$total_bp += $length*$count;
 #}
 # use grep as this is fastest (much faster than bioperl)
-my $command="grep -A 1 '^\@' $fastq_file | grep -v '^[\@-]' | tr -d '[:space:]'|wc -c";
+#my $command="grep -A 1 '^\@' $fastq_file | grep -v '^[\@-]' | tr -d '[:space:]'|wc -c";
+my $command="awk '((NR % 4) == 2)' $fastq_file | tr -d '[:space:]'|wc -c";
 my $total_bp=`$command`;
 chomp $total_bp;
 die "invalid count of total_bp" if ($total_bp !~ /^\d+$/);
