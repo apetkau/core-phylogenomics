@@ -85,7 +85,7 @@ sub execute
 
 	open(my $file_h,">$fastqc_stats_out") or die "Could not open $fastqc_stats_out: $!";
 	print $file_h "# Coverage calculated by reference length $ref_length\n";
-	print $file_h "Name\tFastQC\tEncoding\tReads\tTotalBP\tSeqLen\tCov\tDuplicate_%\tFailed_On\n";
+	print $file_h "Name\tFastQC\tEncoding\tReads\tTotalBP\tSeqLen\tCov\tDuplicate_%\tIssues_With\n";
 	close($file_h);
 	my $command = "cat ";
 	foreach my $file (@temp_fastqc_stats)
