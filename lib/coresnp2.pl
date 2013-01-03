@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 use lib ("/opt/rocks/lib/perl5/site_perl/5.10.1");
 
 use Getopt::Long;
