@@ -27,8 +27,11 @@ die "input_fastq=$input_fastq does not exist\n$usage" if (not -e $input_fastq);
 
 die "output_file is not defined\n$usage" if (not defined $output_file);
 
-my $total_bp = `grep -A 1 '^\@' $input_fastq | grep -v '^[\@-]' | tr -d '[:space:]'|wc -c`;
-my $total_reads = `grep -c '^\@' $input_fastq`;
+my $total_bp = `awk '{if(n\%4==1){ print \$0} n++;}' < $input_fastq | tr -d '[:space:]' | wc -c`;
+
+my ($total_records) = (`wc -l $input_fastq` =~ /(^\d+)/);
+die "error: total_records=$total_records for $input_fastq is invalid" if ($total_records !~ /\d/);
+my $total_reads = $total_records/4;
 
 chomp $total_bp;
 chomp $total_reads;
