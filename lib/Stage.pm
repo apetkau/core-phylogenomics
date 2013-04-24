@@ -48,7 +48,7 @@ sub stop_scheduler
 # Output: None
 sub _submit_jobs
 {
-	my ($self, $bin, $name, $job_params) = @_;
+	my ($self, $bin, $name, $job_params, $drmaa_params) = @_;
 
 	die "Error: bin undefined" if (not defined $bin);
 	die "Error: name undefined" if (not defined $name);
@@ -58,12 +58,17 @@ sub _submit_jobs
 	die "Error: job_params not an array of parameters" if (not (ref $job_params eq 'ARRAY'));
 
 	my $job_properties = $self->{'_job_properties'};
+	my $drmaa_params_obj = $job_properties->get_property('drmaa_params');
+	my $general_params = $drmaa_params_obj->{'general'};
+	$general_params = '' if (not defined $general_params);
 	my $logger = $self->{'_logger'};
 	my $log_dir = $job_properties->get_dir('log_dir');
 	my $log_path = "$log_dir/$name";
 
 	my $number_tasks = scalar(@$job_params);
 	my %job_ids;
+
+	$general_params .= ' '.$drmaa_params if (defined $drmaa_params);
 
 	$| = 1;
 	$self->start_scheduler();
@@ -81,7 +86,7 @@ sub _submit_jobs
                 ($drmerr,$jt,$drmdiag) = drmaa_allocate_job_template();
                 die drmaa_strerror($drmerr)."\n".$drmdiag if $drmerr;
 
-               	($drmerr,$drmdiag) = drmaa_set_attribute($jt,$DRMAA_NATIVE_SPECIFICATION, "-V"); # keep all env vars (so perlbrew works)
+               	($drmerr,$drmdiag) = drmaa_set_attribute($jt,$DRMAA_NATIVE_SPECIFICATION, $general_params); # keep all env vars (so perlbrew works)
 		die drmaa_strerror($drmerr)."\n".$drmdiag if $drmerr;
 
                 ($drmerr,$drmdiag) = drmaa_set_attribute($jt,$DRMAA_REMOTE_COMMAND,$bin); #sets the command for the job to be run

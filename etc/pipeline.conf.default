@@ -19,3 +19,6 @@ path:
 	shuf: /path/to/shuf
 
 processors: 480
+drmaa_params:
+	general: "-V"
+	vcf2pseudoalign: "-pe smp.pe 48"

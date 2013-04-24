@@ -29,6 +29,7 @@ sub execute
 	my $stage = $self->get_stage_name;
 
 	my $job_properties = $self->{'_job_properties'};
+	my $drmaa_params = $job_properties->get_property('drmaa_params');
 	my $script_dir = $job_properties->get_script_dir;
 	my $pseudoalign_launch = "$script_dir/../lib/vcf2pseudoalignment/vcf2pseudoalignment.pl";
 	my $matrix_launch = "$script_dir/snp_matrix.pl";
@@ -56,6 +57,8 @@ sub execute
 	my $out_matrix = "$pseudoalign_dir/matrix.csv";
 	my $out_align_fasta = "$out_base.fasta";
 	my $min_cov = $job_properties->get_property('min_coverage');
+	my $drmaa_params_string = $drmaa_params->{'vcf2pseudoalign'};
+	$drmaa_params_string = '' if (not defined $drmaa_params_string);
 	if (not defined $min_cov)
 	{
 		$min_cov=5;
@@ -71,7 +74,7 @@ sub execute
 				  '-f', 'phylip', '-f', 'fasta', '-r', $reference_name, '-c', $min_cov, '-v'];
 
 	$logger->log("\tSubmitting pseudoalignment job for execution ...\n",1);
-	$self->_submit_jobs($pseudoalign_launch, 'pseudoalignment', \@pseudoalign_params);
+	$self->_submit_jobs($pseudoalign_launch, 'pseudoalignment', \@pseudoalign_params, $drmaa_params_string);
 
 	# check to make sure everything ran properly
 	if (-e $out_align and -e $out_align_fasta)

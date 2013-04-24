@@ -107,6 +107,7 @@ sub _set_defaults
 	warn "Defaults undefined" if (not defined $defaults);
 
 	my $processors = $defaults->{'processors'};
+	my $drmaa_params = $defaults->{'drmaa_params'};
 	my $min_coverage = $defaults->{'min_coverage'};
 	my $max_coverage = $defaults->{'max_coverage'};
 	my $freebayes_params = $defaults->{'freebayes_params'};
@@ -132,6 +133,7 @@ sub _set_defaults
 	$self->set_property('smalt_index', $smalt_index_params) if (defined $smalt_index_params);
 	$self->set_property('smalt_map', $smalt_map_params) if (defined $smalt_map_params);
 	$self->set_property('processors', $processors) if ((defined $processors) and ($processors =~ /^\d+$/));
+	$self->set_property('drmaa_params',$drmaa_params) if (defined $drmaa_params);
 	if (defined $freebayes_params)
 	{
 		if ($freebayes_params =~ /--min-coverage/ or $freebayes_params =~ /-!/)
