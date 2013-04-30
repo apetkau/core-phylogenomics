@@ -57,21 +57,26 @@ sub execute
 	my $out_matrix = "$pseudoalign_dir/matrix.csv";
 	my $out_align_fasta = "$out_base.fasta";
 	my $min_cov = $job_properties->get_property('min_coverage');
+        my $num_cpus = $job_properties->get_property('vcf2pseudo_numcpus');
 	my $drmaa_params_string = $drmaa_params->{'vcf2pseudoalign'};
 	$drmaa_params_string = '' if (not defined $drmaa_params_string);
+        
 	if (not defined $min_cov)
 	{
 		$min_cov=5;
 		$logger->log("warning: minimum coverage not defined, defaulting to $min_cov",0);
 	}
 
+        if ( not defined $num_cpus) {
+            $num_cpus= 1;
+        }
 	die "Output directory $pseudoalign_dir does not exist" if (not -e $pseudoalign_dir);
 
 	$logger->log("\nStage: $stage\n",0);
 	$logger->log("Running vcf2pseudoalign ...\n",0);
 
 	my @pseudoalign_params = ['--vcf-dir', $vcf_split_dir, '--mpileup-dir', $mpileup_dir, '-o', $out_base,
-				  '-f', 'phylip', '-f', 'fasta', '-r', $reference_name, '-c', $min_cov, '-v'];
+				  '-f', 'phylip', '-f', 'fasta', '-r', $reference_name, '-c', $min_cov, '-v','--numcpus',$num_cpus];
 
 	$logger->log("\tSubmitting pseudoalignment job for execution ...\n",1);
 	$self->_submit_jobs($pseudoalign_launch, 'pseudoalignment', \@pseudoalign_params, $drmaa_params_string);
