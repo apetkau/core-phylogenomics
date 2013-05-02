@@ -129,11 +129,13 @@ sub _set_defaults
 	my $fastqc = $defaults->{'path'}->{'fastqc'};
 	my $java = $defaults->{'path'}->{'java'};
 	my $shuf = $defaults->{'path'}->{'shuf'};
+        my $vcf2pseudo_numcpus = $defaults->{'vcf2pseudo_numcpus'};
 
 	$self->set_property('smalt_index', $smalt_index_params) if (defined $smalt_index_params);
 	$self->set_property('smalt_map', $smalt_map_params) if (defined $smalt_map_params);
 	$self->set_property('processors', $processors) if ((defined $processors) and ($processors =~ /^\d+$/));
 	$self->set_property('drmaa_params',$drmaa_params) if (defined $drmaa_params);
+        $self->set_property('vcf2pseudo_numcpus',$vcf2pseudo_numcpus) if (defined $vcf2pseudo_numcpus);
 	if (defined $freebayes_params)
 	{
 		if ($freebayes_params =~ /--min-coverage/ or $freebayes_params =~ /-!/)
