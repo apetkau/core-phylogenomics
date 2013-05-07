@@ -31,13 +31,17 @@ sub execute
 	my $stage = $self->get_stage_name;
 
 	my $job_properties = $self->{'_job_properties'};
+        my $drmaa_params = $job_properties->get_property('drmaa_params');
 	my $fastq_dir = $job_properties->get_dir('fastq_dir');
 	my $output_fastq_dir = $job_properties->get_dir('cleaned_fastq');
 	my $trim_clean_params = $job_properties->get_property('trim_clean_params');
+	my $drmaa_params_string = $drmaa_params->{'trimClean'};
+	$drmaa_params_string = '' if (not defined $drmaa_params_string);
 
+        
 	if (not defined $trim_clean_params)
 	{
-		$trim_clean_params = "--min_quality 30 --bases_to_trim 10 --min_avg_quality 35 --min_length 36 -p 1";
+		$trim_clean_params = "--numcpus 1 --min_quality 30 --bases_to_trim 10 --min_avg_quality 35 --min_length 36 -p 1";
 		$logger->log("warning: trim_clean_params not defined, setting to trim_clean_params='$trim_clean_params'\n",0);
 	}
 	my $script_dir = $job_properties->get_script_dir;
@@ -64,7 +68,7 @@ sub execute
 		push(@clean_params,['-i', "$fastq_dir/$file", '-o', "$output_fastq_dir/$file",@clean_params_split]);
 	}
 
-	$self->_submit_jobs($clean_launch,'trim-clean',\@clean_params);
+	$self->_submit_jobs($clean_launch,'trim-clean',\@clean_params,$drmaa_params_string);
 
 	opendir(my $output_dir, $output_fastq_dir) or die "Could not open directory $output_fastq_dir";
 	my @output_files = grep {/\.fastq$/i} readdir($output_dir);
