@@ -129,13 +129,19 @@ sub _set_defaults
 	my $fastqc = $defaults->{'path'}->{'fastqc'};
 	my $java = $defaults->{'path'}->{'java'};
 	my $shuf = $defaults->{'path'}->{'shuf'};
+	my $gview = $defaults->{'path'}->{'gview'};
         my $vcf2pseudo_numcpus = $defaults->{'vcf2pseudo_numcpus'};
+        my $vcf2core_numcpus = $defaults->{'vcf2core_numcpus'};
+	my $gview_style = $defaults->{'gview_style'};
 
 	$self->set_property('smalt_index', $smalt_index_params) if (defined $smalt_index_params);
 	$self->set_property('smalt_map', $smalt_map_params) if (defined $smalt_map_params);
 	$self->set_property('processors', $processors) if ((defined $processors) and ($processors =~ /^\d+$/));
 	$self->set_property('drmaa_params',$drmaa_params) if (defined $drmaa_params);
         $self->set_property('vcf2pseudo_numcpus',$vcf2pseudo_numcpus) if (defined $vcf2pseudo_numcpus);
+        $self->set_property('vcf2core_numcpus',$vcf2core_numcpus) if (defined $vcf2core_numcpus);
+        $self->set_property('gview_style',$gview_style) if (defined $gview_style);
+
 	if (defined $freebayes_params)
 	{
 		if ($freebayes_params =~ /--min-coverage/ or $freebayes_params =~ /-!/)
@@ -177,6 +183,7 @@ sub _set_defaults
 	$self->set_file('fastqc', $fastqc) if ((defined $fastqc) and (-e $fastqc));
 	$self->set_file('java', $java) if ((defined $java) and (-e $java));
 	$self->set_file('shuf', $shuf) if ((defined $shuf) and (-e $shuf));
+	$self->set_file('gview', $gview) if ((defined $gview) and (-e $gview));
 }
 
 sub set_property

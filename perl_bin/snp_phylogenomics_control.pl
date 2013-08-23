@@ -682,6 +682,8 @@ Once data is prepared, the out/downsampled_fastq directory will contain prepared
 
 =item B<pseudoalign>:  Generates pseudoalignment file.
 
+=item B<vcf2core>:  Generates gview file(s)
+
 =item B<build-phylogeny>:  Builds the phylogeny based on the pseudoalignment.
 
 =item B<phylogeny-graphic>:  Builds a graphic image of the phylogeny.
