@@ -156,6 +156,17 @@ sub parse_mapping_opts
 	{
 		die "Error: reference not defined";
 	}
+	if (defined $options->{'contig-dir'})
+	{
+	    #determine number of contig in directory, will only includes files with extension '.fasta'
+	    opendir my ($dh), $options->{'contig-dir'};
+	    my @dirs = readdir $dh;
+	    closedir $dh;
+	    
+	    #removing both '.' and '..' files and putting back the full path to a list
+	    my $count= scalar  grep { /\.fasta$/ }  grep { !/^\.\.?/} @dirs;
+	    handle_input_fasta($pipeline,$options->{'contig-dir'},$count);
+	}
 }
 
 sub parse_prepare_fastq_opts
@@ -392,6 +403,7 @@ if (!GetOptions(\%options,
 	'config=s',
 	'h|help',
 	'copy-input',
+	'contig-dir=s',
 	'force-output-dir',
 	'orthomcl-groups=s',
 	'c|strain-count=i'))
@@ -626,7 +638,12 @@ Once data is prepared, the out/downsampled_fastq directory will contain prepared
 
 =item B<--reference>:  The reference file (multi-fasta, one entry per chromosome) to map to.
 
+
+=item B<--contig-dir [directory]>:  The input directory containing the fasta files to process. 
+
+
 =back
+
 
 =head1 STAGES
 
@@ -679,6 +696,10 @@ Once data is prepared, the out/downsampled_fastq directory will contain prepared
 =item B<mpileup>:  Runs mpileup (for error checking/validating SNPs).
 
 =item B<variant-calling>:  Variant calling using freebayes.
+
+=item B<mummer-variant-calling>:  Variant calling using mummer (show-snps) for contig based input.
+
+=item B<mummer-mpileup-like-calling>:  Validating non-snps calls using mummer (show-aligns) for contig based input.
 
 =item B<pseudoalign>:  Generates pseudoalignment file.
 
