@@ -45,10 +45,15 @@ my $pileup_align = 'pileup_aligns.txt';
 #will have to be iterate over every fasta record ... on both sides!
 #at the moment, just works on 1 to 1 fasta
 
+my $bp={};
+
 
 my $ref_length = fasta_length($reference);
 my $contig_length = fasta_length($contig);
 
+#foreach with different combination
+{
+    
 
 if ( scalar keys %$ref_length !=1 and scalar keys %$contig_length !=1) {
     die "Script can only handle one fasta for both reference and query contig... FOR NOW!\n";
@@ -64,9 +69,12 @@ system($command) == 0 or die "Could not run $command";
 
 die "Error: no output from show-snps was produced" if (not -e $pileup_align);
 
-my $bp = parse_alignment($pileup_align);
+$bp = parse_alignments($bp,$ref_id,$pileup_align);
 
-write_vcf($vcf,$bp);
+
+}
+
+write_vcf($vcf,$bp,$ref_length);
 
 #compressing and indexing for future use
 die "Error: no output vcf file=$vcf produced" if (not -e $vcf);
@@ -102,36 +110,43 @@ sub fasta_length{
 
 sub write_vcf {
     my ($name,$bp,$ref_contigs) = @_;
-    
+
     open my $out,'>',$name;
     print $out "##fileformat=VCFv4.1\n";
     print $out "##INFO=<ID=DP,Number=1,Type=Integer,Description=\"Total read depth at the locus\">\n";
     print $out join("\t","#CHROM","POS","ID","REF","ALT","QUAL","FILTER","INFO") . "\n";
+
     
-    my $length=3659644;
-    my $ref = "NC_010723";
+    foreach my $ref( keys %$ref_length) {
+    
+    my $length=$ref_length->{$ref};
     
     for my $pos(1..$length) {
         my @line;
-        if ( exists $bp->{$pos}) {
-            @line = ($bp->{$pos}{'ref'},$pos,'.',$bp->{$pos}{'ref_bp'},$bp->{$pos}{'q_bp'},'999','.',"DP=10000");
+        if ( exists $bp->{$ref}{$pos}) {
+            @line = ($ref,$pos,'.',$bp->{$ref}{$pos}{'ref_bp'},$bp->{$ref}{$pos}{'q_bp'},'999','.',"DP=10000");
         }
         else {
             @line = ($ref,$pos,'.','.','.','.','.',"DP=0");
         }
         
-        
         print $out join("\t",@line) . "\n";
     }
+        
+    }
 
+    close $out;
+
+    return;
 }
 
 
 sub parse_alignment {
     #grabbing arguments either from command line or from another module/script
-    my ( $align_file ) = @_;
+    my ( $bp, $ref,$align_file ) = @_;
 
-    my %bp;
+    
+    my %bp = %{$bp};
     
     open my $in , '<', $align_file;
 
@@ -175,14 +190,14 @@ sub parse_alignment {
                 next;
             }
             else {
-                if ( exists $bp{$pos} && $bp{$pos}{'q_bp'} ne $query_bp) {
-                    die "Seen already '$pos' with " . $bp{$pos}{'q_bp'} ." against $query_bp\n";
+                if ( exists $bp{$ref}{$pos} && $bp{$ref}{$pos}{'q_bp'} ne $query_bp) {
+                    die "Seen already '$pos' with " . $bp{$ref}{$pos}{'q_bp'} ." against $query_bp\n";
                 }
-                elsif (exists $bp{$pos} && $bp{$pos}{'q_bp'} eq $query_bp ) {
+                elsif (exists $bp{$ref}{$pos} && $bp{$ref}{$pos}{'q_bp'} eq $query_bp ) {
                     print "Same base pair for $pos\n" if $verbose;
                 }
                 
-                $bp{$pos}={'q_bp'=>$query_bp,'ref'=>$ref_id,'ref_bp'=> $ref_bp};
+                $bp{$ref}{$pos}={'q_bp'=>$query_bp,'ref_bp'=> $ref_bp};
                 #increment/decrement to next pos
                 $pos +=$next;
                 
@@ -191,7 +206,9 @@ sub parse_alignment {
         }
             
     }
-
+    
+    close $in;
+    
     return \%bp;
 }
 
