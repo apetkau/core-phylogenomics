@@ -54,21 +54,16 @@ my $contig_length = fasta_length($contig);
 #foreach with different combination
 foreach my $query_id( keys %$contig_length){
     foreach my $ref_id(keys %$ref_length ) {
-        # if ( scalar keys %$ref_length !=1 and scalar keys %$contig_length !=1) {
-        #     die "Script can only handle one fasta for both reference and query contig... FOR NOW!\n";
-        # }
-
-        #will change when we have multiple contigs for either, reference and/or query contigs
-        #my ($ref_id)=keys %$ref_length;
-        #my ($query_id)= keys %$contig_length
-
-
+        
         $command = "$show_aligns -q $filter_out \"$ref_id\" \"$query_id\" 2>&1  > $pileup_align";
+        
         my $stderr = `$command`;
 
-        #we should ignoring show_align failures where the query contig was simply just filtered out 
+        #we should ignoring show_align failures where the query contig was simply just filtered out or never match in the first place
         if ($stderr) {
             if ( $stderr =~ /ERROR: Could not find any alignments for /  ) {
+                print "INFO: Could not find match for query contig '$query_id' against reference contig '$ref_id'\n";
+                
                 unlink $pileup_align if ( -e $pileup_align);
                 next;
             }
