@@ -132,7 +132,12 @@ sub write_vcf {
     for my $pos(1..$length) {
         my @line;
         if ( exists $bp->{$ref}{$pos}) {
-            @line = ($ref,$pos,'.',$bp->{$ref}{$pos}{'ref_bp'},$bp->{$ref}{$pos}{'q_bp'},'999','.',"DP=10000");
+	    if ($bp->{$ref}{$pos}{'ref_bp'} eq $bp->{$ref}{$pos}{'q_bp'} ){
+		@line = ($ref,$pos,'.',$bp->{$ref}{$pos}{'ref_bp'},'.','999','.',"DP=10000");
+	    }
+	    else {
+		@line = ($ref,$pos,'.',$bp->{$ref}{$pos}{'ref_bp'},$bp->{$ref}{$pos}{'q_bp'},'999','.',"DP=10000");
+	    }
         }
         else {
             @line = ($ref,$pos,'.','.','.','.','.',"DP=0");
