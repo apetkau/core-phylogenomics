@@ -1,9 +1,8 @@
 #!/usr/bin/env perl
-
 use warnings;
 use strict;
-
 use Getopt::Long;
+use File::Basename qw/basename/;
 
 my ($nucmer,$delta_filter,$reference,$contig,$vcf,$show_snps,$mummer2vcf,$bgzip,$tabix);
 GetOptions('s|nucmer-path=s' => \$nucmer,
@@ -28,12 +27,16 @@ die "Error: contig not defined" if (not defined $contig);
 die "Error: contig does not exist" if (not -e $contig);
 die "Error: no out-vcf defined" if (not defined $vcf);
 
-my $command = "$nucmer --prefix=snps \"$reference\" \"$contig\"";
+
+my $basename =$contig;
+
+my $command = "$nucmer --prefix=$basename \"$reference\" \"$contig\"";
 print "Running $command\n";
 system($command) == 0 or die "Could not run $command";
 
-my $delta_out= 'snps.delta';
-my $filter_out = 'snps.filter';
+
+my $delta_out= "$basename" . '.delta';
+my $filter_out = "$basename" . '.filter';
 
 die "Error: no output from nucmer was produced" if (not -e $delta_out);
 
@@ -43,7 +46,7 @@ system($command) == 0 or die "Could not run $command";
 
 die "Error: no output from delta-filter was produced" if (not -e $filter_out);
 
-my $snp_coords = 'snps_coords.tsv';
+my $snp_coords = "$basename" . '_coords.tsv';
 $command = "$show_snps -ClrT $filter_out > $snp_coords";
 print "Running $command\n";
 system($command) == 0 or die "Could not run $command";

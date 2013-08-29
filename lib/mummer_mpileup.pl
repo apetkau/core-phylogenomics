@@ -3,6 +3,7 @@ use warnings;
 use strict;
 use Getopt::Long;
 use Bio::SeqIO;
+use File::Basename qw/basename/;
 
 my ($nucmer,$delta_filter,$reference,$contig,$vcf,$show_aligns,$bgzip,$tabix,$verbose);
 GetOptions('s|nucmer-path=s' => \$nucmer,
@@ -26,12 +27,14 @@ die "Error: contig not defined" if (not defined $contig);
 die "Error: contig does not exist" if (not -e $contig);
 die "Error: no out-vcf defined" if (not defined $vcf);
 
-my $command = "$nucmer --prefix=pileup \"$reference\" \"$contig\"";
+my $basename =$contig;
+
+my $command = "$nucmer --prefix=$basename \"$reference\" \"$contig\"";
 print "Running $command\n";
 system($command) == 0 or die "Could not run $command";
 
-my $delta_out= 'pileup.delta';
-my $filter_out = 'pileup.filter';
+my $delta_out= "$basename" . '.delta';
+my $filter_out = "$basename" . '.filter';
 
 die "Error: no output from nucmer was produced" if (not -e $delta_out);
 
@@ -41,7 +44,7 @@ system($command) == 0 or die "Could not run $command";
 
 die "Error: no output from delta-filter was produced" if (not -e $filter_out);
 
-my $pileup_align = 'pileup_aligns.txt';
+my $pileup_align = "$basename" . '_aligns.txt';
 #will have to be iterate over every fasta record ... on both sides!
 #at the moment, just works on 1 to 1 fasta
 
