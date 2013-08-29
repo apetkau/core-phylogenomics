@@ -52,25 +52,37 @@ my $ref_length = fasta_length($reference);
 my $contig_length = fasta_length($contig);
 
 #foreach with different combination
-{
+foreach my $query_id( keys %$contig_length){
+    foreach my $ref_id(keys %$ref_length ) {
+        # if ( scalar keys %$ref_length !=1 and scalar keys %$contig_length !=1) {
+        #     die "Script can only handle one fasta for both reference and query contig... FOR NOW!\n";
+        # }
+
+        #will change when we have multiple contigs for either, reference and/or query contigs
+        #my ($ref_id)=keys %$ref_length;
+        #my ($query_id)= keys %$contig_length
+
+
+        $command = "$show_aligns -q $filter_out \"$ref_id\" \"$query_id\" 2>&1  > $pileup_align";
+        my $stderr = `$command`;
+
+        #we should ignoring show_align failures where the query contig was simply just filtered out 
+        if ($stderr) {
+            if ( $stderr =~ /ERROR: Could not find any alignments for /  ) {
+                unlink $pileup_align if ( -e $pileup_align);
+                next;
+            }
+            else {
+                die "Could not run $command";
+            }
+        }
+        
+        die "Error: no output from show-snps was produced" if (not -e $pileup_align);
+        
+        $bp = parse_alignments($bp,$ref_id,$pileup_align);
+        unlink $pileup_align;
+    }
     
-
-if ( scalar keys %$ref_length !=1 and scalar keys %$contig_length !=1) {
-    die "Script can only handle one fasta for both reference and query contig... FOR NOW!\n";
-}
-
-#will change when we have multiple contigs for either, reference and/or query contigs
-my ($ref_id)=keys %$ref_length;
-my ($query_id)= keys %$contig_length;
-
-$command = "$show_aligns -q $filter_out \"$ref_id\" \"$query_id\" > $pileup_align";
-print "Running $command\n";
-system($command) == 0 or die "Could not run $command";
-
-die "Error: no output from show-snps was produced" if (not -e $pileup_align);
-
-$bp = parse_alignments($bp,$ref_id,$pileup_align);
-
 
 }
 
