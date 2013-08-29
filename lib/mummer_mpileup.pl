@@ -45,8 +45,6 @@ system($command) == 0 or die "Could not run $command";
 die "Error: no output from delta-filter was produced" if (not -e $filter_out);
 
 my $pileup_align = "$basename" . '_aligns.txt';
-#will have to be iterate over every fasta record ... on both sides!
-#at the moment, just works on 1 to 1 fasta
 
 my $bp={};
 
