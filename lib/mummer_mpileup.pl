@@ -63,7 +63,7 @@ if ( scalar keys %$ref_length !=1 and scalar keys %$contig_length !=1) {
 my ($ref_id)=keys %$ref_length;
 my ($query_id)= keys %$contig_length;
 
-$command = "$show_aligns -q $filter_out $ref_id $query_id > $pileup_align";
+$command = "$show_aligns -q $filter_out \"$ref_id\" \"$query_id\" > $pileup_align";
 print "Running $command\n";
 system($command) == 0 or die "Could not run $command";
 
@@ -141,7 +141,7 @@ sub write_vcf {
 }
 
 
-sub parse_alignment {
+sub parse_alignments {
     #grabbing arguments either from command line or from another module/script
     my ( $bp, $ref,$align_file ) = @_;
 

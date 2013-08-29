@@ -24,7 +24,8 @@ use Stage::VcfPseudoalignment;
 use Stage::FastQC;
 use Stage::MappingFinal;
 use Stage::VcfCore;
-
+use Stage::MummerSNPS;
+use Stage::MummerMpileup;
 use File::Basename qw(basename dirname);
 use File::Copy qw(copy move);
 use File::Path qw(rmtree);
@@ -59,6 +60,7 @@ sub new
     $job_properties->set_dir('pseudoalign_dir', 'pseudoalign');
     $job_properties->set_dir('vcf2core_dir', 'vcf2core');
     $job_properties->set_dir('vcf_split_dir', 'vcf-split');
+    $job_properties->set_dir('fasta_dir', 'contig_dir');
 
     return $self;
 }
@@ -100,6 +102,7 @@ sub new_resubmit
     $job_properties->set_dir('pseudoalign_dir', 'pseudoalign');
     $job_properties->set_dir('vcf2core_dir', 'vcf2core');
     $job_properties->set_dir('vcf_split_dir', 'vcf-split');
+    $job_properties->set_dir('fasta_dir', 'contig_dir');
 
     return $self;
 }
@@ -142,6 +145,9 @@ sub _setup_stage_tables
 	                  'write-properties',
 			  'copy-input-reference',
 			  'copy-input-fastq',
+			  'copy-input-fasta',
+	                  'mummer-variant-calling',
+	                  'mummer-align-calling',
 			  'reference-mapping',
 			  'mpileup',
 			  'variant-calling',
@@ -155,6 +161,8 @@ sub _setup_stage_tables
 	$stage->{'all_hash'} = \%all_hash;
 	
 	$stage->{'user'} = [
+                            'mummer-variant-calling',
+	                    'mummer-align-calling',
 			    'reference-mapping',
 			    'mpileup',
 			    'variant-calling',
@@ -164,7 +172,7 @@ sub _setup_stage_tables
 	                    'phylogeny-graphic',
 			];
 	
-	$stage->{'valid_job_dirs'} = ['pseudoalign_dir', 'vcf2core_dir', 'vcf_dir', 'vcf_split_dir', 'mpileup_dir', 'bam_dir', 'sam_dir', 'mapping_dir', 'reference_dir','job_dir','log_dir','align_dir','stage_dir','phylogeny_dir', 'fastq_dir'];
+	$stage->{'valid_job_dirs'} = ['pseudoalign_dir', 'vcf2core_dir', 'vcf_dir', 'vcf_split_dir', 'mpileup_dir', 'bam_dir', 'sam_dir', 'mapping_dir', 'reference_dir','job_dir','log_dir','align_dir','stage_dir','phylogeny_dir', 'fastq_dir','fasta_dir'];
 	#$stage->{'valid_other_files'} = ['input_fastq_dir'];
 	$stage->{'valid_other_files'} = [];
 
@@ -189,9 +197,12 @@ sub _initialize
                         'write-properties' => new Stage::WriteProperties($job_properties, $logger),
 			'copy-input-reference' => new Stage::CopyInputReference($job_properties, $logger),
 			'copy-input-fastq' => new Stage::CopyInputFastq($job_properties, $logger),
+			'copy-input-fasta' => new Stage::CopyInputFasta($job_properties, $logger),
 			'reference-mapping' => new Stage::SmaltMapping($job_properties, $logger),
 			'mpileup' => new Stage::Mpileup($job_properties, $logger),
 			'variant-calling' => new Stage::VariantCalling($job_properties, $logger),
+			'mummer-variant-calling' => new Stage::MummerSNPS($job_properties, $logger),
+			'mummer-align-calling' => new Stage::MummerMpileup($job_properties, $logger),
 			'pseudoalign' => new Stage::VcfPseudoalignment($job_properties, $logger),
 			'vcf2core' => new Stage::VcfCore($job_properties, $logger),
                         'build-phylogeny' => new Stage::BuildPhylogeny($job_properties, $logger),
