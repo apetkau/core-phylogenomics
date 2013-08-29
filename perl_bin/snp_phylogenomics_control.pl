@@ -699,7 +699,7 @@ Once data is prepared, the out/downsampled_fastq directory will contain prepared
 
 =item B<mummer-variant-calling>:  Variant calling using mummer (show-snps) for contig based input.
 
-=item B<mummer-mpileup-like-calling>:  Validating non-snps calls using mummer (show-aligns) for contig based input.
+=item B<mummer-align-calling>:  Validating non-snps calls using mummer (show-aligns) for contig based input.
 
 =item B<pseudoalign>:  Generates pseudoalignment file.
 
