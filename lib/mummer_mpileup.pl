@@ -38,7 +38,9 @@ my $filter_out = "$basename" . '.filter';
 
 die "Error: no output from nucmer was produced" if (not -e $delta_out);
 
-$command = "$delta_filter -o 0 -1 -q $delta_out > $filter_out";
+#at the moment not using the delta filter
+#it seems to fix out way too much datasets 
+$command = "$delta_filter  -1 -o 0  $delta_out > $filter_out";
 print "Running $command\n";
 system($command) == 0 or die "Could not run $command";
 
@@ -55,16 +57,15 @@ my $contig_length = fasta_length($contig);
 #foreach with different combination
 foreach my $query_id( keys %$contig_length){
     foreach my $ref_id(keys %$ref_length ) {
-        
-        $command = "$show_aligns -q $filter_out \"$ref_id\" \"$query_id\" 2>&1  > $pileup_align";
+        #using the un-filtered delta file instead of the filtered one for now.
+        $command = "$show_aligns -q $delta_out \"$ref_id\" \"$query_id\" 2>&1  > $pileup_align";
         
         my $stderr = `$command`;
 
         #we should ignoring show_align failures where the query contig was simply just filtered out or never match in the first place
         if ($stderr) {
             if ( $stderr =~ /ERROR: Could not find any alignments for /  ) {
-                print "INFO: Could not find match for query contig '$query_id' against reference contig '$ref_id'\n";
-                
+                print "INFO: Could not find match for query contig '$query_id' against reference contig '$ref_id'\n" if $verbose;
                 unlink $pileup_align if ( -e $pileup_align);
                 next;
             }
@@ -160,6 +161,7 @@ sub parse_alignments {
 
     
     my %bp = %{$bp};
+    my %bad;
     
     open my $in , '<', $align_file;
 
@@ -204,10 +206,18 @@ sub parse_alignments {
             }
             else {
                 if ( exists $bp{$ref}{$pos} && $bp{$ref}{$pos}{'q_bp'} ne $query_bp) {
-                    die "Seen already '$pos' with " . $bp{$ref}{$pos}{'q_bp'} ." against $query_bp\n";
+                    print "Seen already '$pos' with " . $bp{$ref}{$pos}{'q_bp'} ." against $query_bp. Removing both entries\n" if $verbose;
+                    delete $bp{$ref}{$pos}; # get rid of position already in the good pile
+                    $bad{$ref}{$pos}++; # ensure that if we see that position again that we ignore it
+                    $pos +=$next;
+                    next;
                 }
                 elsif (exists $bp{$ref}{$pos} && $bp{$ref}{$pos}{'q_bp'} eq $query_bp ) {
                     print "Same base pair for $pos\n" if $verbose;
+                }
+                elsif ( exists $bad{$ref}{$pos}) {
+                    $pos +=$next;
+                    next;
                 }
                 
                 $bp{$ref}{$pos}={'q_bp'=>$query_bp,'ref_bp'=> $ref_bp};
