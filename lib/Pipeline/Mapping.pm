@@ -26,6 +26,7 @@ use Stage::MappingFinal;
 use Stage::VcfCore;
 use Stage::MummerSNPS;
 use Stage::MummerMpileup;
+use Stage::CopyInputInvalid;
 use File::Basename qw(basename dirname);
 use File::Copy qw(copy move);
 use File::Path qw(rmtree);
@@ -61,6 +62,7 @@ sub new
     $job_properties->set_dir('vcf2core_dir', 'vcf2core');
     $job_properties->set_dir('vcf_split_dir', 'vcf-split');
     $job_properties->set_dir('fasta_dir', 'contig_dir');
+    $job_properties->set_dir('invalid_pos_dir', 'invalid');
 
     return $self;
 }
@@ -103,6 +105,7 @@ sub new_resubmit
     $job_properties->set_dir('vcf2core_dir', 'vcf2core');
     $job_properties->set_dir('vcf_split_dir', 'vcf-split');
     $job_properties->set_dir('fasta_dir', 'contig_dir');
+    $job_properties->set_dir('invalid_pos_dir', 'invalid');
 
     return $self;
 }
@@ -121,6 +124,22 @@ sub set_reference
 	my $reference_name = basename($abs_reference_path);
 	die "Undefined reference name" if (not defined $reference_name);
 	$self->{'job_properties'}->set_file('reference',$reference_name);
+}
+
+sub set_input_invalid_positions
+{
+	my ($self,$invalid) = @_;
+
+	die "Error: invalid undefined" if (not defined $invalid);
+	die "Error: invalid does not exist" if (not -e $invalid);
+
+	my $abs_invalid_path = abs_path($invalid);
+	die "Error: abs path for invalid not defined" if (not defined $abs_invalid_path);
+	$self->{'job_properties'}->set_abs_file('input_invalid',$abs_invalid_path);
+
+	my $invalid_name = basename($abs_invalid_path);
+	die "Undefined invalid name" if (not defined $invalid_name);
+	$self->{'job_properties'}->set_file('invalid',$invalid_name);
 }
 
 sub set_input_fastq
@@ -144,6 +163,7 @@ sub _setup_stage_tables
 	$stage->{'all'} = [
 	                  'write-properties',
 			  'copy-input-reference',
+			  'copy-input-invalid-positions',
 			  'copy-input-fastq',
 			  'copy-input-fasta',
 	                  'mummer-variant-calling',
@@ -196,6 +216,7 @@ sub _initialize
     my $stage_table = {
                         'write-properties' => new Stage::WriteProperties($job_properties, $logger),
 			'copy-input-reference' => new Stage::CopyInputReference($job_properties, $logger),
+			'copy-input-invalid-positions' => new Stage::CopyInputInvalid($job_properties, $logger),
 			'copy-input-fastq' => new Stage::CopyInputFastq($job_properties, $logger),
 			'copy-input-fasta' => new Stage::CopyInputFasta($job_properties, $logger),
 			'reference-mapping' => new Stage::SmaltMapping($job_properties, $logger),

@@ -167,6 +167,10 @@ sub parse_mapping_opts
 	    my $count= scalar  grep { /\.fasta$/ }  grep { !/^\.\.?/} @dirs;
 	    handle_input_fasta($pipeline,$options->{'contig-dir'},$count);
 	}
+	if (defined $options->{'invalid-pos'})
+	{
+	    $pipeline->set_input_invalid_positions($options->{'invalid-pos'});
+	}
 }
 
 sub parse_prepare_fastq_opts
@@ -406,6 +410,7 @@ if (!GetOptions(\%options,
 	'contig-dir=s',
 	'force-output-dir',
 	'orthomcl-groups=s',
+	'invalid-pos=s',
 	'c|strain-count=i'))
 {
 	pod2usage(-verbose => 99, -sections => $pod_sections);
@@ -641,6 +646,8 @@ Once data is prepared, the out/downsampled_fastq directory will contain prepared
 
 =item B<--contig-dir [directory]>:  The input directory containing the fasta files to process. 
 
+=item B<--invalid-pos [file]>:  A TSV file contain a list of range(s) (one per line) of positions to ignore reference(s). 
+
 
 =back
 
@@ -697,9 +704,9 @@ Once data is prepared, the out/downsampled_fastq directory will contain prepared
 
 =item B<variant-calling>:  Variant calling using freebayes.
 
-=item B<mummer-variant-calling>:  Variant calling using mummer (show-snps) for contig based input.
+=item B<mummer-variant-calling>:  Mummer (show-snps) for contig based input.
 
-=item B<mummer-align-calling>:  Validating non-snps calls using mummer (show-aligns) for contig based input.
+=item B<mummer-align-calling>:  Mummer (show-aligns) for contig based input.
 
 =item B<pseudoalign>:  Generates pseudoalignment file.
 
@@ -729,7 +736,9 @@ This example will resubmit a previously run job (under directory data/), startin
 
 Aaron Petkau <aaron.petkau@phac-aspc.gc.ca>
 
-Gary Van Domselaar <gary_van_domselaar@phac-aspc.gc.ca>
+Gary Van Domselaar <gary.van.domselaar@phac-aspc.gc.ca>
+
+Philip Mabon <philip.mabon@phac-aspc.gc.ca>
 
 =cut
 
