@@ -5,7 +5,7 @@ use Getopt::Long;
 use Bio::SeqIO;
 use File::Basename qw/basename/;
 
-my ($nucmer,$delta_filter,$reference,$contig,$vcf,$show_aligns,$bgzip,$tabix,$verbose);
+my ($nucmer,$delta_filter,$reference,$contig,$vcf,$show_aligns,$bgzip,$tabix,$verbose,$invalid);
 GetOptions('s|nucmer-path=s' => \$nucmer,
 	   'b|delta-filter-path=s' => \$delta_filter,
 	   'r|reference=s' => \$reference,
@@ -14,6 +14,7 @@ GetOptions('s|nucmer-path=s' => \$nucmer,
 	   'show-align-path=s' => \$show_aligns,
 	   'bgzip-path=s' => \$bgzip,
 	   'tabix-path=s' => \$tabix,
+           'invalid=s' => \$invalid,
            'verbose' => \$verbose );
 
 die "Error: no nucmer path not defined" if (not defined $nucmer);
@@ -26,6 +27,9 @@ die "Error: no reference exists" if (not -e $reference);
 die "Error: contig not defined" if (not defined $contig);
 die "Error: contig does not exist" if (not -e $contig);
 die "Error: no out-vcf defined" if (not defined $vcf);
+
+die "Error: no invalid file defined" if (not defined $invalid);
+die "Error: invalid does not exist" if (not -e $invalid);
 
 my $basename =$contig;
 
@@ -54,6 +58,11 @@ my $bp={};
 my $ref_length = fasta_length($reference);
 my $contig_length = fasta_length($contig);
 
+my $invalid_pos;
+
+$invalid_pos = parse_invalid($invalid);
+
+
 #foreach with different combination
 foreach my $query_id( keys %$contig_length){
     foreach my $ref_id(keys %$ref_length ) {
@@ -76,7 +85,7 @@ foreach my $query_id( keys %$contig_length){
         
         die "Error: no output from show-snps was produced" if (not -e $pileup_align);
         
-        $bp = parse_alignments($bp,$ref_id,$pileup_align);
+        $bp = parse_alignments($bp,$ref_id,$pileup_align,$invalid_pos);
         unlink $pileup_align;
     }
     
@@ -157,7 +166,7 @@ sub write_vcf {
 
 sub parse_alignments {
     #grabbing arguments either from command line or from another module/script
-    my ( $bp, $ref,$align_file ) = @_;
+    my ( $bp, $ref,$align_file,$invalid ) = @_;
 
     
     my %bp = %{$bp};
@@ -202,6 +211,12 @@ sub parse_alignments {
             #we do not care about indels at the moment.
             if ( $query_bp eq '.' or $ref_bp eq '.') {
                 print "Found indel @ '$pos'. Skipping\n" if $verbose;
+                $pos +=$next;
+                next;
+            }
+            elsif ( exists $invalid->{"${ref}_${pos}"}) {
+                print "Found position '$pos' in $ref invalid list. Skipping\n" if $verbose;
+                $pos +=$next;
                 next;
             }
             else {
@@ -308,4 +323,33 @@ sub next_alignment {
         
         return \%details;
     }
+}
+
+
+sub parse_invalid {
+    my ($file) =  @_;
+    my %invalid;
+
+    open(my $fh, "<" , "$file") or die "Could not open $file: $!";
+
+    while(my $line = readline($fh)){
+        chomp $line;
+        my ($sub_line) = ($line =~ /^([^#]*)/);
+        my ($chrom,$start,$end) = split(/\t/,$sub_line);
+        next if (not defined $chrom or $chrom eq '');
+        next if ($start !~ /^\d+$/);
+        next if ($end !~ /^\d+$/);
+
+        # swap in case start/end are reversed                                                                                                                                                                                          
+        my $real_start = ($start < $end) ? $start : $end;
+        my $real_end = ($start < $end) ? $end : $start;
+
+
+        foreach my $i ( $real_start..$real_end ) {
+            $invalid{"${chrom}_${i}"} = 1;
+        }
+    }
+
+    close($fh);
+    return  \%invalid
 }
