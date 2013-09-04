@@ -67,8 +67,6 @@ sub execute
 	$tabix_path = "tabix" if ((not defined $tabix_path) or (not -e $tabix_path));
 	my $nucmer_path = $job_properties->get_file('nucmer');
 	$nucmer_path = "nucmer" if ((not defined $nucmer_path) or (not -e $nucmer_path));
-	my $delta_filter_path = $job_properties->get_file('delta-filter');
-	$delta_filter_path = "delta-filter" if ((not defined $delta_filter_path) or (not -e $delta_filter_path));
 	my $showaligns_path = $job_properties->get_file('show-aligns');
 	$showaligns_path = "show-aligns" if ((not defined $showaligns_path) or (not -e $showaligns_path));
 
@@ -80,8 +78,7 @@ sub execute
 		my $vcf_name = basename($file, '.fasta');
 		my $out_mpileup = "$mpileup_dir/$vcf_name.vcf";
 		push(@vcf_files,$out_mpileup);
-		push(@mummer_pileup_params, [ '--reference', $ref_path,'--contig' ,$file,
-					   '-b',$delta_filter_path,'-s',$nucmer_path,
+		push(@mummer_pileup_params, [ '--reference', $ref_path,'--contig' ,$file,,'-s',$nucmer_path,
 					   '--show-align-path', $showaligns_path, '--contig' , $file , '--invalid' , $invalid_file,
 				      '--bgzip-path', $bgzip_path, '--tabix-path', $tabix_path, '--out-vcf', $out_mpileup]);
 	}
