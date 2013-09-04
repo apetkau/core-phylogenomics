@@ -5,9 +5,8 @@ use Getopt::Long;
 use Bio::SeqIO;
 use File::Basename qw/basename/;
 
-my ($nucmer,$delta_filter,$reference,$contig,$vcf,$show_aligns,$bgzip,$tabix,$verbose,$invalid);
+my ($nucmer,$reference,$contig,$vcf,$show_aligns,$bgzip,$tabix,$verbose,$invalid);
 GetOptions('s|nucmer-path=s' => \$nucmer,
-	   'b|delta-filter-path=s' => \$delta_filter,
 	   'r|reference=s' => \$reference,
 	   'contig=s' => \$contig,
 	   'out-vcf=s' => \$vcf,
@@ -18,7 +17,6 @@ GetOptions('s|nucmer-path=s' => \$nucmer,
            'verbose' => \$verbose );
 
 die "Error: no nucmer path not defined" if (not defined $nucmer);
-die "Error: no delta_filter path defined" if (not defined $delta_filter);
 die "Error: no show_aligns path defined" if (not defined $show_aligns);
 die "Error: no bgzip path defined" if (not defined $bgzip);
 die "Error: no tabix path defined" if (not defined $tabix);
@@ -42,14 +40,6 @@ my $filter_out = "$basename" . '.filter';
 
 die "Error: no output from nucmer was produced" if (not -e $delta_out);
 
-#at the moment not using the delta filter
-#it seems to fix out way too much datasets 
-$command = "$delta_filter  -1 -o 0  $delta_out > $filter_out";
-print "Running $command\n";
-system($command) == 0 or die "Could not run $command";
-
-die "Error: no output from delta-filter was produced" if (not -e $filter_out);
-
 my $pileup_align = "$basename" . '_aligns.txt';
 
 my $bp={};
@@ -66,7 +56,8 @@ $invalid_pos = parse_invalid($invalid);
 #foreach with different combination
 foreach my $query_id( keys %$contig_length){
     foreach my $ref_id(keys %$ref_length ) {
-        #using the un-filtered delta file instead of the filtered one for now.
+        #using the un-filtered delta file instead of the filtered one
+        #when using any filtered delta, we are missing LARGE chucks
         $command = "$show_aligns -q $delta_out \"$ref_id\" \"$query_id\" 2>&1  > $pileup_align";
         
         my $stderr = `$command`;
