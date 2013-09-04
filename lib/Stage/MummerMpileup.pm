@@ -51,8 +51,9 @@ sub execute
 	my $reference_dir = $job_properties->get_dir('reference_dir');
 	my $reference_file = $job_properties->get_file('reference');
 	my $ref_path = "$reference_dir/$reference_file";
-
+	my $invalid_file = $job_properties->get_file_dir('invalid_pos_dir','invalid');
 	die "Output directory $mpileup_dir does not exist" if (not -e $mpileup_dir);
+	die "Invalid position file '$invalid_file' does not exist" if (not -e $invalid_file);
 
 	$logger->log("\nStage: $stage\n",0);
 	$logger->log("Running mummer_pileup ...\n",0);
@@ -81,7 +82,7 @@ sub execute
 		push(@vcf_files,$out_mpileup);
 		push(@mummer_pileup_params, [ '--reference', $ref_path,'--contig' ,$file,
 					   '-b',$delta_filter_path,'-s',$nucmer_path,
-					   '--show-align-path', $showaligns_path, '--contig' , $file ,
+					   '--show-align-path', $showaligns_path, '--contig' , $file , '--invalid' , $invalid_file,
 				      '--bgzip-path', $bgzip_path, '--tabix-path', $tabix_path, '--out-vcf', $out_mpileup]);
 	}
 

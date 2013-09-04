@@ -46,6 +46,8 @@ sub execute
 		$self->{'_perl_libs'} = "$vcftools_lib";
 	}
 
+	my $invalid_file = $job_properties->get_file_dir('invalid_pos_dir','invalid');
+
 	my $mpileup_dir = $job_properties->get_dir('mpileup_dir');
 	my $vcf_split_dir = $job_properties->get_dir('vcf_split_dir');
 	my $reference_file = $job_properties->get_file_dir('reference_dir','reference');
@@ -77,7 +79,14 @@ sub execute
 
 	my @pseudoalign_params = ['--vcf-dir', $vcf_split_dir, '--mpileup-dir', $mpileup_dir, '-o', $out_base,
 				  '-f', 'phylip', '-f', 'fasta', '-r', $reference_name, '-c', $min_cov, '-v','--numcpus',$num_cpus];
-
+	
+	#check to see if we have an invalid position file
+	if ($invalid_file)
+	{
+	    push @{$pseudoalign_params[0]},'--invalid-pos';
+	    push @{$pseudoalign_params[0]},$invalid_file;
+	}
+	
 	$logger->log("\tSubmitting pseudoalignment job for execution ...\n",1);
 	$self->_submit_jobs($pseudoalign_launch, 'pseudoalignment', \@pseudoalign_params, $drmaa_params_string);
 
