@@ -128,6 +128,7 @@ if ($o_snpEffect) {
     print STDOUT join("\t", "Reference", "Position", "ReferenceAllele", "SNPAllele", "Type"), "\n";
 } else {
     # print VCF header
+    print STDOUT "##fileformat=VCFv4.1\n";
     print STDOUT "##INFO=<ID=TYPE,Number=A,Type=String,Description=\"The type of allele, either snp, mnp, ins, del, or complex.\">\n";
     print STDOUT join("\t","#CHROM","POS","ID","REF","ALT","QUAL","FILTER","INFO") . "\n";
 }
