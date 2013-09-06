@@ -34,8 +34,12 @@ sub execute
 	my $output_fasta_dir = $job_properties->get_dir('fasta_dir');
 	
 	$logger->log("\nStage: $stage\n",0);
+	if (not defined $input_fasta_dir)
+	{	
+		$logger->log("input_fasta_dir is undefined. Skipping step\n",0);
+		return;
+	}
 
-	die "input_fasta_dir is undefined" if (not defined $input_fasta_dir);
 	opendir(my $input_dir, $input_fasta_dir) or die "Could not open directory $input_fasta_dir";
 	my @files = grep {/\.fasta$/} readdir($input_dir);
 	closedir($input_dir);
