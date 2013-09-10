@@ -38,9 +38,16 @@ sub execute
 	
 	$logger->log("\nStage: $stage\n",0);
 
-	die "input reference file is undefined" if (not defined $input_file);
-	die "input reference file does not exist" if (not -e $input_file);
-
+	if (not defined $input_file)
+	{
+	    $logger->log("Invalid position file was not given. Skipping\n",0);
+	    return;
+	}
+	if (not -e $input_file)
+	{
+	    $logger->log("Invalid position file does not exist. Skipping\n",0);
+	    return;
+	}
 	copy($input_file, $output_file_path) or die "Could not copy \"$input_file\" to \"$output_file_path\"";
 
 	$logger->log("...done\n",0);
