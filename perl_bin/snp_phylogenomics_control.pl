@@ -517,7 +517,8 @@ snp_phylogenomics_control.pl:  Script to automate running of core SNP analysis.
 =item snp_phylogenomics_control.pl --mode prepare-fastq --input-dir sample_fastq/ --output out --reference ref.fasta [--config options.conf]
 
 
-=item snp_phylogenomics_control.pl --mode mapping --input-dir out/downsampled_fastq/ --output out --reference ref.fasta [--config options.conf]
+=item snp_phylogenomics_control.pl --mode mapping --input-dir out/downsampled_fastq/ --output out --reference ref.fasta [--config options.conf]  [--contig-dir contig_fasta] [--invalid-pos bad_pos.tsv]
+
 
 =back
 
