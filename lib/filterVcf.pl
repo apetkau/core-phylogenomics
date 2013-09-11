@@ -65,6 +65,11 @@ sub filterVcf{
       $info{$key}=$value;
     }
 
+    # If the cigar line has any indels indicated and indels are not wanted, move on.
+    # CIGAR is defined in the SAM specifications, http://samtools.sourceforge.net/SAMv1.pdf
+    $info{CIGAR}||=""; # make sure CIGAR is defined before testing it
+    next if(!$$settings{indels} && $info{CIGAR}=~/[ID]/);
+
     # multibase snps are printed to a line per position, but this works for single base calls too
     my @alt=split(//,$F[4]);
     my @ref=split(//,$F[3]);
