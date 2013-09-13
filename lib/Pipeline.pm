@@ -317,6 +317,44 @@ sub is_valid_stage
     return ((defined $stage) and (exists $self->{'stage'}->{'all_hash'}->{$stage}));
 }
 
+sub _get_git_commit_real
+{
+	my ($self,$git_dir) = @_;
+
+	if (-e $git_dir)
+	{
+		my $commit_value = `git --git-dir \"$git_dir\" rev-parse HEAD`;
+		chomp $commit_value;
+		if (defined $commit_value and $commit_value =~ /^[a-f,0-9]+$/)
+		{
+			return $commit_value;
+		}
+	}
+
+	return 'unknown';
+}
+
+sub _get_git_commits
+{
+	my ($self) = @_;
+
+	my $pipeline_git_commit = 'unknown';
+	my $vcf2pseudoalign_git_commit = 'unknown';
+
+	my $script_dir = $self->{'job_properties'}->get_script_dir;
+
+	if (defined $script_dir and -e $script_dir)
+	{
+		my $pipeline_git_dir = "$script_dir/../.git";
+		my $vcf2pseudoalign_git_dir = "$script_dir/../lib/vcf2pseudoalignment/.git";
+
+		$pipeline_git_commit = $self->_get_git_commit_real($pipeline_git_dir);
+		$vcf2pseudoalign_git_commit = $self->_get_git_commit_real($vcf2pseudoalign_git_dir);
+	}
+
+	return ($pipeline_git_commit,$vcf2pseudoalign_git_commit);
+}
+
 sub execute
 {
     my ($self) = @_;
@@ -338,6 +376,8 @@ sub execute
     unlink "$current_link_path" if (-e $current_link_path);
     symlink $current_link_dest,$current_link_path;
 
+    my ($pipeline_git_commit,$vcf2pseudoalign_git_commit) = $self->_get_git_commits;
+
     my $start_stage = $self->{'start_stage'};
     my $end_stage = $self->{'end_stage'};
 
@@ -352,6 +392,8 @@ sub execute
 
     open(my $out_fh, '>-') or die "Could not open STDOUT";
     $logger->log("Running core SNP phylogenomic pipeline on ".`date`,0);
+    $logger->log("Core Pipeline git Commit: $pipeline_git_commit\n",0);
+    $logger->log("vcf2pseudoalign git Commit: $vcf2pseudoalign_git_commit\n",0);
     $logger->log("\nParameters:\n",0);
     $logger->log($other_string."\n", 0);
     $logger->log($job_properties->write_properties_string."\n",0);
