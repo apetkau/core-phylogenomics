@@ -64,37 +64,10 @@ The core SNP pipeline proceeds through the following stages:
     1. If an invalid positions file is passed, remove any SNPs within the invalid positions.
 5. Building a phylogenetic tree with PhyML.
 
-Dependencies
+Installation
 ------------
 
-The Core SNP pipeline makes use of the following dependencies.
-
-### Software ###
-
-* [SAMTools](http://samtools.sourceforge.net/)
-* [BLAST](http://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=Download)
-* [ClustalW2](clustalw2)
-* [MUMMer](http://mummer.sourceforge.net/manual/)
-* [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
-* [Figtree](http://tree.bio.ed.ac.uk/software/figtree/)
-* [FreeBayes](https://github.com/ekg/freebayes)
-* [GView](https://www.gview.ca)
-* [Java](http://www.java.com/)
-* [PhyML](http://code.google.com/p/phyml/)
-* [GNU shuf](http://www.gnu.org/software/coreutils/manual/html_node/shuf-invocation.html)
-* [SMALT](http://www.sanger.ac.uk/resources/software/smalt/)
-* [Tabix](http://sourceforge.net/projects/samtools/files/tabix/)
-* [VCFtools](http://vcftools.sourceforge.net/)
-
-### PERL Modules ###
-
-* [Bioperl](http://www.bioperl.org/wiki/Main_Page)
-* [Parallel::ForkManager](http://search.cpan.org/~szabgab/Parallel-ForkManager-1.05/lib/Parallel/ForkManager.pm)
-* [Schedule::DRMAAc](http://search.cpan.org/~tharsch/Schedule-DRMAAc-0.81/Schedule_DRMAAc.pod)
-* [Set::Scalar](http://search.cpan.org/~davido/Set-Scalar-1.26/lib/Set/Scalar.pm)
-* [Tap::Harness](http://search.cpan.org/~ovid/Test-Harness-3.28/lib/TAP/Harness.pm)
-* [YAML::Tiny](http://search.cpan.org/~ether/YAML-Tiny-1.56/lib/YAML/Tiny.pm)
-* [Vcf](http://vcftools.sourceforge.net/)
+Please refer to the [Installation](Install.md) document.
 
 Details
 -------
@@ -155,7 +128,9 @@ Example:
 
 #### Output ####
 
-* __--output cleaned_out__:  Defines the output directory to store the files for each stage.  The directory structure is given below.
+* __--output cleaned_out__:  Defines the output directory to store the files for each stage.
+
+The output directory structure looks as follows:
 
 	cleaned_out/
 		downsampled_fastq/
@@ -165,6 +140,8 @@ Example:
 		reference/
 		run.properties
 		stages/
+
+A description of each of the directories and files are:
 
 * __downsampled_fastq/__:  A directory containing the quality-filtered and data reduced fastq files.
 * __fastqc/__:  A directory containing any of the FastQC results.
