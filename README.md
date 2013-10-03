@@ -44,13 +44,6 @@ The core SNP pipeline proceeds through the following stages:
 4. Aligning high-quality SNPs into a meta-alignment (pseudoalignment) of phylogenetically informative sites.
 5. Building a phylogenetic tree with PhyML.
 
-In addition, a pre-processing mode can be run to filter out poor-quality reads and reduce the size of the dataset.  This runs the following stages.
-
-1. Removes poor quality reads and trims ends of reads.
-2. Randomly samples reads from FASTQ files to reduce the dataset size to a user-configurable maximum coverage (estimated based on the reference genome length).
-3. Runs FastQC on the quality-filtered and reduced reads dataset.
-4. Generates a report for each of the isolates.
-
 Dependencies
 ------------
 
@@ -86,20 +79,124 @@ The Core SNP pipeline makes use of the following dependencies.
 Details
 -------
 
-### Input ###
+The core SNP pipeline has a number of different modes of operation in addition to building core SNP phylogenies from reference mapping and variant calling.  These modes of operation are controlled by the __--mode__ parameter.  A list of these different modes of operation is given below.
+
+* __prepare-fastq__:  Can be used to remove low-quality reads from FASTQ files and reduce the data size.  This can be used for a basic quality check of reads before performing reference mapping and variant calling.
+* __mapping__:  Builds a core SNP phylogeny using reference mapping and variant calling.
+* __orthomcl__:  Builds a core orthologous gene SNP phylogeny by multiply aligning orthologs identified using OrthoMCL and extracting phylogenetically informative sites.
+* __blast__:  Builds a core orthologous gene SNP phylogeny by multiply aligning orthologs identified using a single-directional BLAST and extracting phylogenetically informative sites.
+
+### Mode: Prepare-FASTQ ###
+
+This mode can be used to do some basic quality checks on FASTQ files before running through the reference mapping pipeline.  The stages that are run are as follows:
+
+1. Removes poor quality reads and trims ends of reads.
+2. Randomly samples reads from FASTQ files to reduce the dataset size to a user-configurable maximum coverage (estimated based on the reference genome length).
+3. Runs FastQC on the quality-filtered and reduced reads dataset.
+4. Generates a report for each of the isolates.
+
+#### Command ####
+
+To run this mode, the following command can be used.
+
+	snp_phylogenomics_control --mode prepare-fastq --input-dir fastq/ --output cleaned_out --reference reference.fasta --config options.conf
+
+The main output you will want to use includes:
+* __cleaned_out/fastqc/fastqc_stats.csv__: A tab-deliminated report from FastQC on each isolate.
+* __cleaned_out/downsampled_fastq__:  A directory containing all the cleaned and reduced FASTQ files.  This directory can be used as input to the mapping mode of the pipeline.
+
+#### Input ####
+
+The following is a list of input files and formats for the __prepare-fastq__ mode of the pipeline.
+
+* __--input-dir fastq_reads/__:  A directory containing FASTQ-formatted DNA sequence reads.  Only one file per isolate (paired-end mapping not supported).
+
+Example:
+
+	fastq_reads/
+		isolate1.fastq
+		isolate2.fastq
+		isolate3.fastq
+
+* __--reference reference.fasta__:  A reference FASTA file.  This is used to estimate the coverage of each isolate for reducing the amount of data in each FASTQ file.
+* __--config options.conf__:  A configuration file in [YAML](http://yaml.org/) format.  This is used to defined specific parameters for each stage of the _prepare-fastq_ mode.
+
+Example:
+
+	%YAML 1.1
+	---
+	max_coverage: 200
+	trim_clean_params: '--numcpus 4 --min_quality 20 --bases_to_trim 10 --min_avg_quality 25 --min_length 36 -p 1'
+	drmaa_params:
+		general: "-V"
+		trimClean: "-pe smp 4"
+
+#### Output ####
+
+* __--output cleaned_out__:  Defines the output directory to store the files for each stage.  The directory structure is given below.
+
+
+
+### Mode: Mapping ###
+
+#### Input ####
 
 The following is a list of input files and formats for the pipeline.
 
-* __--input-dir fastq_reads/__:  A directory containing FASTQ-formatted DNA sequence reads.  Only one file per isolate (paired-end mapping not supported).
-* __--contig-dir contig_fasta/__: A directory containing assembled contigs to include for analysis.  Variants will be called using MUMMer.  Only one file per isolate.  Must be named *.fasta.
-* __--invalid-pos bad_positions.tsv__: A tab-separated values file format containing a list of positions to exclude from the analysis.  Any SNPs in these positions will be marked as 'invalid' in the variant table and will be excluded from the matrix of SNP distances and the alignment used to generate the phylogeny.  An example of this format (anything after a # symbol is ignored):
-```
-#ContigID	Start	End
-contig1	1	500
-contig2	50	100
-```
+* __--reference reference.fasta__:  A FASTA file containing the genome to be used for reference mapping.
 
-### Output ###
+Example:
+
+	>contig1
+	ATCGATCGATCGATCG
+	ATCGATCGATCGATCG
+
+* __--input-dir fastq_reads/__:  A directory containing FASTQ-formatted DNA sequence reads.  Only one file per isolate (paired-end mapping not supported).  The file name is used as the name in the final phylogenetic tree.
+
+Example:
+
+	fastq_reads/
+		isolate1.fastq
+		isolate2.fastq
+		isolate3.fastq
+
+* __--contig-dir contig_fasta/__: A directory containing assembled contigs to include for analysis.  Variants will be called using MUMMer.  Only one file per isolate.
+
+Example:
+
+	contig_fasta/
+		isolate1.fasta
+		isolate2.fasta
+		isolate3.fasta
+
+* __--invalid-pos bad_positions.tsv__: A tab-separated values file format containing a list of positions to exclude from the analysis.  Any SNPs in these positions will be marked as 'invalid' in the variant table and will be excluded from the matrix of SNP distances and the alignment used to generate the phylogeny.  The contig IDs used in this file must correspond to the IDs used in the reference FASTA file.
+
+Example:
+
+	#ContigID	Start	End
+	contig1	1	500
+	contig2	50	100
+
+* __--config options.conf__:  A configuration file which can be used to override the default parameters for the different stages.  This file must be in [YAML](http://yaml.org/) format.
+
+Example:
+
+	%YAML 1.1
+	---
+	min_coverage: 15
+	freebayes_params: '--pvar 0 --ploidy 1 --left-align-indels --min-mapping-quality 30 --min-base-quality 30 --min-alternate-fraction 0.75'
+	smalt_index: '-k 13 -s 6'
+	smalt_map: '-n 24 -f samsoft -r -1'
+	vcf2pseudo_numcpus: 4
+	vcf2core_numcpus: 24
+	trim_clean_params: '--numcpus 4 --min_quality 20 --bases_to_trim 10 --min_avg_quality 25 --min_length 36 -p 1'
+	drmaa_params:
+		general: "-V"
+		vcf2pseudoalign: "-pe smp 4"
+		vcf2core: "-pe smp 24"
+		trimClean: "-pe smp 4"
+
+#### Output ####
 
 The detailed output directory tree looks as follows:
 
