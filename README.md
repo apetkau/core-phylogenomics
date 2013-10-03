@@ -67,7 +67,7 @@ The core SNP pipeline proceeds through the following stages:
 Installation
 ------------
 
-Please refer to the [Installation](Install.md) document.
+Please refer to the [Installation](INSTALL.md) document.
 
 Details
 -------
