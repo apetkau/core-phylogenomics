@@ -6,7 +6,6 @@ The NML Core SNP phylogenomics pipeline provides a pipeline for identifying high
 Quick Start
 -----------
 
-
 ### Command ###
 
 If you have a set of DNA sequencing reads, __fastq_reads/*.fastq__, and a reference file containing the DNA sequence of the genome to use for reference mapping, __reference.fasta__, then the following command can be used to generate a core SNP phylogeny.
@@ -18,9 +17,23 @@ If you have a set of DNA sequencing reads, __fastq_reads/*.fastq__, and a refere
 Once the pipeline is finished main output files you will want to look at include:
 
 * __pipeline_out/pseudoalign/pseudoalign-positions.tsv__: A tab-separated file containing all variants identified and the positions of each variant on the reference genome.
+
+Example:
+
+	#Chromosome	Position	Status	Reference	isolate1	isolate2
+	contig1	20	valid	A	A	T
+	contig2	30	filtered-coverage	A	-	A
+
 * __pipeline_out/pseudoalign/matrix.csv__:  A tab-separated file containing a matrix of high-quality SNP distances between isolates.
+
+Example:
+
+	strain	isolate1	isolate2
+	isolate1	0	5
+	isolate2	5	0
+
 * __pipeline_out/pseudoalign/pseudoalign.phy__: An alignment of variants for each input isolate in phylip format.
-* __pipeline_out/phylogeny/pseudoalign.phy_phyml_tree.txt__:  A phylogenetic tree of the above alignment file generated using [ PhyML](http://code.google.com/p/phyml/).
+* __pipeline_out/phylogeny/pseudoalign.phy_phyml_tree.txt__:  A phylogenetic tree of the above alignment file generated using [PhyML](http://code.google.com/p/phyml/).
 
 ### Alternative Commands ###
 
@@ -32,6 +45,12 @@ In addition, if you have a pre-defined set of positions on the reference genome 
 
 	snp_phylogenomics_control --mode mapping --input-dir fastq_reads/ --contig-dir fasta_contigs/  --invalid-pos bad_positions.tsv --output pipeline_out --reference reference.fasta
 
+bad_positions.tsv:
+
+	#Contig	start	end
+	contig1	50	100
+	contig2	75	100
+
 Stages
 ------
 
@@ -39,9 +58,10 @@ The core SNP pipeline proceeds through the following stages:
 
 1. Reference mapping using SMALT.
 2. Variant calling using FreeBayes.
- a. For any assembled contigs passed to the pipeline, generates variant call files (VCF) using MUMMer alignments.
+    1. For any assembled contigs passed to the pipeline, generates variant call files (VCF) using MUMMer alignments.
 3. Checking variant calls and depth of coverage using SAMTools.
 4. Aligning high-quality SNPs into a meta-alignment (pseudoalignment) of phylogenetically informative sites.
+    1. If an invalid positions file is passed, remove any SNPs within the invalid positions.
 5. Building a phylogenetic tree with PhyML.
 
 Dependencies
@@ -85,6 +105,8 @@ The core SNP pipeline has a number of different modes of operation in addition t
 * __mapping__:  Builds a core SNP phylogeny using reference mapping and variant calling.
 * __orthomcl__:  Builds a core orthologous gene SNP phylogeny by multiply aligning orthologs identified using OrthoMCL and extracting phylogenetically informative sites.
 * __blast__:  Builds a core orthologous gene SNP phylogeny by multiply aligning orthologs identified using a single-directional BLAST and extracting phylogenetically informative sites.
+
+In addition to the above modes, data analysis can be re-submitted from any stage using the __--resubmit__ parameter.
 
 ### Mode: Prepare-FASTQ ###
 
@@ -135,7 +157,22 @@ Example:
 
 * __--output cleaned_out__:  Defines the output directory to store the files for each stage.  The directory structure is given below.
 
+	cleaned_out/
+		downsampled_fastq/
+		fastqc/
+		initial_fastq_dir/
+		log/
+		reference/
+		run.properties
+		stages/
 
+* __downsampled_fastq/__:  A directory containing the quality-filtered and data reduced fastq files.
+* __fastqc/__:  A directory containing any of the FastQC results.
+* __initial_fastq_dir/__:  A directory containing links to the initial input fastq files.
+* __log/__:  A directory containing log files for each of the stages.
+* __reference/__:  A directory containing the input reference file.
+* __run.properties__:  A file containing all the parameters used to quality-filter the fastq files.
+* __stages/__:  A directory containing files used to defined which stages of the _prepare-fastq_ mode have been completed.
 
 ### Mode: Mapping ###
 
@@ -207,7 +244,14 @@ The detailed output directory tree looks as follows:
 		mapping/
 		mpileup/
 		phylogeny/
+			pseudoalign.phy_phyml_stats.txt
+			pseudoalign.phy_phyml_tree.txt
+			pseudoalign.phy_phyml_tree.txt.pdf
 		pseudoalign/
+			matrix.csv
+			pseudoalign.fasta
+			pseudoalign.phy
+			pseudoalign-positions.tsv
 		reference/
 		run.properties
 		sam/
@@ -224,7 +268,14 @@ The description of each of these directories/files are as follows:
 * __mapping/__:  Files for each isolate containing the [SMALT](http://www.sanger.ac.uk/resources/software/smalt/) reference-mapping information.
 * __mpileup/__:  Files generated from 'samtools mpileup' for each isolate.
 * __phylogeny/__:  Files generated from PhyML when building the phylogeny.
+    * __pseudoalign.phy_phyml_stats.txt__:  A statistics file generated by PhyML.
+    * __pseudoalign.phy_phyml_tree.txt__:  The phylogenetic tree generated by PhyML in Newick format.
+    * __pseudoalign.phy_phyml_tree.txt.pdf__:  A PDF of the phylogenetic tree, rendered using Figtree.
 * __pseudoalign/__:  Contains the "pseudoalignment" of only phylogenetically informative sites used to generate the phylogeny, as well as other information about each of the sites.
+    * __matrix.csv__:  A matrix of SNP distances between each isolate.
+    * __pseudoalign.fasta__:  An alignment of phylogenetically informative sites in FASTA format.
+    * __pseudoalign.phy__:  An alignment of phylogenetically informative sites, in phylip format.
+    * __pseudoalign-positions.tsv__: A tab-separated values file containing a list of all positions identified by the pipeline.
 * __reference/__:  A directory containing links to the reference FASTA file used by some of the tools.
 * __run.properties__:  A properties file containing all the parameters used for the pipeline, in [YAML](http://yaml.org/) format.
 * __sam/__:  SAM formated files generated by SMALT.
@@ -232,3 +283,31 @@ The description of each of these directories/files are as follows:
 * __vcf/__:  The VCF files produced by [FreeBayes](https://github.com/ekg/freebayes).
 * __vcf2core/__:  Files used to generate an image of the core genome.
 * __vcf-split/__:  VCF files split up so that one single SNP is represented by one line.
+
+The __matrix.csv__ file lists high-quality SNP distances between each combination of isolates.  An example of this file is given below.
+
+Example: matrix.csv
+
+	strain	isolate1	isolate2
+	isolate1	0	5
+	isolate2	5	0
+
+The __pseudoalign-positions.tsv__ file lists all SNPs found within the pipeline and the corresponding contig/position combination.  The __status__ column lists the status of each position.  Only _valid_ position statuses are used to generate the alignment files.  The _filtered-coverage_ status defines a position (indicated by a - character) which had insufficient coverage to be included as a core SNP.  The _filtered-mpileup_ status defines a position (indicated by an N) which had conflicting variant calls between FreeBayes and SAMTools mpileup.  The _filtered-invalid_ status indicates that this position was filtered out due to belonging to one of the invalid position regions passed to the pipeline.
+
+Example: pseudoalign-positions.tsv
+
+	#Chromosome	Position	Status	Reference	isolate1	isolate2
+	contig1	20	valid	A	A	T
+	contig2	5	filtered-coverage	A	-	A
+	contig2	35	filtered-mpileup	A	N	A
+	contig2	40	filtered-invalid	A	C	A
+
+### Resubmitting ###
+
+In order to resubmit a particular run of the pipeline for data analysis from a particular stage the following command can be used.
+
+	snp_phylogenomics_control --resubmit output_dir/ --start-stage starting-stage
+
+The _output_dir/_ is the directory containing all the results of a previous run of the pipeline.  The _start-stage_ defines the starting stage for the new analysis.  For more details on the particular stages to use please run the command:
+
+	snp_phylogenomics_control --help
