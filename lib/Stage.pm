@@ -145,7 +145,7 @@ sub _submit_jobs
 							"\tcommand: ".$job_ids{$job_id_out}->{'command'}."\n".
 							"\t\tout: ".$job_ids{$job_id_out}->{'out'}."\n".
 							"\t\terr: ".$job_ids{$job_id_out}->{'err'}."\n".
-							" died with exit code $exit_status";
+							" died with exit code 'unknown'";
 				$logger->log($message,0);
 				die "$message";
 			}
