@@ -235,6 +235,8 @@ The detailed output directory tree looks as follows:
 		stages/
 		vcf/
 		vcf2core/
+			contig1.gff
+			contig1.png
 		vcf-split/
         
 The description of each of these directories/files are as follows:
@@ -259,11 +261,13 @@ The description of each of these directories/files are as follows:
 * __stages/__:  A directory of files indicating which stages have been completed by the pipeline.
 * __vcf/__:  The VCF files produced by [FreeBayes](https://github.com/ekg/freebayes).
 * __vcf2core/__:  Files used to generate an image of the core genome.
+    * __contig1.gff__:  A GFF formatted file listing core genome locations on each contig.
+    * __contig1.png__:  An image showing the core genome locations for each contig rendered using GView.
 * __vcf-split/__:  VCF files split up so that one single SNP is represented by one line.
 
 The __matrix.csv__ file lists high-quality SNP distances between each combination of isolates.  An example of this file is given below.
 
-Example: matrix.csv
+Example: _matrix.csv_
 
 	strain	isolate1	isolate2
 	isolate1	0	5
@@ -271,13 +275,20 @@ Example: matrix.csv
 
 The __pseudoalign-positions.tsv__ file lists all SNPs found within the pipeline and the corresponding contig/position combination.  The __status__ column lists the status of each position.  Only _valid_ position statuses are used to generate the alignment files.  The _filtered-coverage_ status defines a position (indicated by a - character) which had insufficient coverage to be included as a core SNP.  The _filtered-mpileup_ status defines a position (indicated by an N) which had conflicting variant calls between FreeBayes and SAMTools mpileup.  The _filtered-invalid_ status indicates that this position was filtered out due to belonging to one of the invalid position regions passed to the pipeline.
 
-Example: pseudoalign-positions.tsv
+Example: _pseudoalign-positions.tsv_
 
 	#Chromosome	Position	Status	Reference	isolate1	isolate2
 	contig1	20	valid	A	A	T
 	contig2	5	filtered-coverage	A	-	A
 	contig2	35	filtered-mpileup	A	N	A
 	contig2	40	filtered-invalid	A	C	A
+
+The __vcf2core/*.gff__ files list the coordinates that were deteremend to be part of the core genome (based on the minimum coverage).
+
+Example: _contig1.gff_
+
+	task_2	.	region	10	100	100	+	0	
+	task_2	.	region	150	200	100	+	0
 
 ### Resubmitting ###
 
