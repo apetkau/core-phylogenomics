@@ -93,3 +93,4 @@ The core SNP pipeline comes with a number of tests to check the installation.  T
 	./t/run_tests.pl --tmp-dir /path/to/cluster-shared-dir
 
 The parameter __--tmp-dir__ defines the location to a common shared file system among all nodes of the cluster and will contain the temporary files for the tests.
+

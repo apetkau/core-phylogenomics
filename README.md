@@ -299,3 +299,4 @@ In order to resubmit a particular run of the pipeline for data analysis from a p
 The _output_dir/_ is the directory containing all the results of a previous run of the pipeline.  The _start-stage_ defines the starting stage for the new analysis.  For more details on the particular stages to use please run the command:
 
 	snp_phylogenomics_control --help
+
