@@ -64,6 +64,11 @@ The core SNP pipeline proceeds through the following stages:
     1. If an invalid positions file is passed, remove any SNPs within the invalid positions.
 5. Building a phylogenetic tree with PhyML.
 
+Tutorial
+--------
+
+For a step-by-step tutorial on how to run the core SNP pipeline with some example data, please see http://gitlab.corefacility.ca/public/projects/aaron.petkau/core-phylogenomics-tutorial.
+
 Installation
 ------------
 
