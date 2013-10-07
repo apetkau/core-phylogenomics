@@ -522,6 +522,12 @@ snp_phylogenomics_control.pl:  Script to automate running of core SNP analysis.
 
 =back
 
+=head2 More Documentation
+
+For more documentation, please see the README.md file or go to http://gitlab/public/projects/aaron.petkau/core-phylogenomics
+
+=back
+
 =head1 DESCRIPTION
 
 Runs the core SNP phylogenomic analysis stages.  The input is either a directory containing the FASTQ files to analyize, the multi-fasta file to analyze, or the raw reads to analyze.  The output is the pseudoalign.phy alignment file and the snpreport.txt. The intermediate files are kept under a directory (named using --output), and can be used to resubmit the analysis at different stages later.
