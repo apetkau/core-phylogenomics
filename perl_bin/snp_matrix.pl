@@ -43,7 +43,7 @@ else
 	$out_h = *STDOUT;
 }
 
-my $in =  new Bio::AlignIO(-file=>$input_file, -format=>"phylip");
+my $in =  new Bio::AlignIO(-file=>$input_file, -format=>"phylip",-idlength=>30);
 die "Could not open $input_file as phylip formatted file\n" if (not defined $in);
 
 my $aln = $in->next_aln;
