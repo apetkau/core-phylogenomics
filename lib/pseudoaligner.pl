@@ -77,7 +77,7 @@ sub run
     #		my $strain = shift @quals;
     #		$qualmap{$strain} = \@quals;
     #	}
-    	my $in = new Bio::AlignIO(-file=>"$file", -format=>"clustalw");
+    	my $in = new Bio::AlignIO(-file=>"$file", -format=>"clustalw",-idlength=>30);
     	my $aln = $in->next_aln;
     	for my $seq ($aln->each_alphabetically) {
     	my @nucleotides = split //, $seq->seq;
@@ -171,7 +171,7 @@ sub run
     }
     my $pseudolength;
     my @accessions = sort {$a cmp $b} keys %longseq;
-    my $newaln = new Bio::SimpleAlign;
+    my $newaln = new Bio::SimpleAlign(-idlength=>30);
     for my $seqstr (@newseqs) {
     	my $acc = shift @accessions;
     	my $seq = new Bio::LocatableSeq;
@@ -193,7 +193,7 @@ sub run
     }
     
     my $pseudo_out = "$output_dir/pseudoalign.phy";
-    my $out = new Bio::AlignIO (-file=>">$pseudo_out", -format=>"phylip");
+    my $out = new Bio::AlignIO (-file=>">$pseudo_out", -format=>"phylip",-idlength=>30);
     $out->write_aln($newaln);
     print $out_fh "there are ", length($pseudoalign[0]), " strains in the pseudoalignment.\n";
     print $out_fh "there are $pseudolength snps in the alignment\n";
