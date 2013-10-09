@@ -1,0 +1,133 @@
+
+FeatureFilter
+{
+	set1 : feature-filter(sequenceName("task_3"));
+	set0 : feature-filter(sequenceName("task_2"));
+}
+
+background
+{
+	color : color("white");
+}
+
+backbone
+{
+	color : color(85,85,85,255);
+	thickness : 5.0;
+	backbone-effect : shape-effect("basic");
+}
+
+ruler
+{
+	major-tick-color : color("black");
+	minor-tick-color : color("black");
+	label-color : color("black");
+	label-background-color : color(0,0,0,0);
+	label-location : "below";
+	major-tick-length : 5.0;
+	minor-tick-length : 2.0;
+	tick-density : 1.0;
+	tick-thickness : 2.0;
+	tick-padding : 10.0;
+	label-font : font("SansSerif","plain",12);
+	tick-effect : shape-effect("basic");
+}
+
+tooltip
+{
+	text-color : color("black");
+	outline-color : color(0,0,0,128);
+	background-color : color(134,134,255,255);
+	font : font("SansSerif","plain",12);
+}
+
+slot
+{
+	spacing : 4.0;
+}
+
+slot#-1
+{
+	color : color("blue");
+	feature-effect : shape-effect("standard");
+	feature-shape : shape("block");
+	thickness : 8.0;
+}
+
+slot#-1 labels
+{
+	text-color : color("red");
+	background-color : color(255,255,255,200);
+	font : font("Arial","plain",14);
+	label-extractor : text-extractor(stringbuilder("%s",annotation("gene")));
+	show-labels : "true";
+}
+
+slot#1
+{
+	color : color(200,200,200,255);
+	feature-effect : shape-effect("standard");
+	feature-shape : shape("block");
+	thickness : 12.0;
+}
+
+slot#1 labels
+{
+	text-color : color("black");
+	background-color : color("none");
+	font : font("SansSerif","plain",14);
+	label-extractor : text-extractor("location");
+	show-labels : "false";
+}
+
+slot#1 FeatureSet#set0
+{
+	color : color(185,246,247,255);
+	feature-effect : shape-effect("standard");
+	feature-shape : shape("block");
+	thickness-proportion : 1.0;
+}
+
+slot#1 FeatureSet#set0 labels
+{
+	text-color : color(185,246,247,255);
+	background-color : color(255,255,255,0);
+	font : font("SansSerif","plain",14);
+	label-extractor : text-extractor("location");
+	show-labels : "false";
+}
+
+slot#2
+{
+	color : color(200,200,200,255);
+	feature-effect : shape-effect("standard");
+	feature-shape : shape("block");
+	thickness : 12.0;
+}
+
+slot#2 labels
+{
+	text-color : color("black");
+	background-color : color("none");
+	font : font("SansSerif","plain",14);
+	label-extractor : text-extractor("location");
+	show-labels : "false";
+}
+
+slot#2 FeatureSet#set1
+{
+	color : color(114,0,255,255);
+	feature-effect : shape-effect("standard");
+	feature-shape : shape("block");
+	thickness-proportion : 1.0;
+	tooltip-text : text-extractor("location");
+}
+
+slot#2 FeatureSet#set1 labels
+{
+	text-color : color(114,0,255,255);
+	background-color : color(255,255,255,0);
+	font : font("SansSerif","plain",14);
+	label-extractor : text-extractor("location");
+	show-labels : "false";
+}
