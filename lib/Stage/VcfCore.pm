@@ -45,6 +45,10 @@ sub execute
 		$self->{'_perl_libs'} = "$vcftools_lib";
 	}
 
+	my $pseudoalign_dir = $job_properties->get_dir('pseudoalign_dir');
+	my $valid_positions = "$pseudoalign_dir/pseudoalign-positions.tsv";
+	die "Could not find pseudoalign-positions.tsv file" if (! $valid_positions || not -e $valid_positions);
+
 	my $gview = $job_properties->get_file('gview');
 	die "Could not find gview jar file" if (not -e $gview);
 
@@ -58,6 +62,8 @@ sub execute
 
 	my $log_dir = $job_properties->get_dir('log_dir');
 
+	my $invalid_file = $job_properties->get_file_dir('invalid_pos_dir','invalid');
+
 	my $min_cov = $job_properties->get_property('min_coverage');
         my $num_cpus = $job_properties->get_property('vcf2core_numcpus');
 	my $drmaa_params_string = $drmaa_params->{'vcf2core'}; #TODO add to config
@@ -69,7 +75,8 @@ sub execute
 		$logger->log("warning: minimum coverage not defined, defaulting to $min_cov",0);
 	}
 
-        if ( not defined $num_cpus) {
+        if ( not defined $num_cpus)
+	{
             $num_cpus= 1;
         }
 	die "Output directory $core_dir does not exist" if (not -e $core_dir);
@@ -78,8 +85,12 @@ sub execute
 	$logger->log("Running vcf2core ...\n",0);
 
 	my @core_params = ['--mpileup-dir', $mpileup_dir, '-o', $core_dir,
-				  '-i', $reference_file,'--gview_path' , $gview, '--gview_style' , $gview_style, '-c', $min_cov, '-v','--numcpus',$num_cpus];
-
+				  '-i', $reference_file,'--gview_path' , $gview, '--gview_style' , $gview_style, '-c', $min_cov, '-v','--numcpus',$num_cpus,'--positions',$valid_positions];
+	if ($invalid_file)
+	{
+	    push @{$core_params[0]},'--invalid_pos';
+	    push @{$core_params[0]},$invalid_file
+	}
 	$logger->log("\tSubmitting vcf2core job for execution ...\n",1);
 	$self->_submit_jobs($vcf2core_launch, 'vcf2core', \@core_params, $drmaa_params_string);
 
