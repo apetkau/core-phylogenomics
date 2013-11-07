@@ -24,7 +24,7 @@ die "Error: bam not defined" if (not defined $bam);
 die "Error: bam does not exist" if (not -e $bam);
 die "Error: no out-vcf defined" if (not defined $vcf);
 
-my $command = "$samtools mpileup -uf \"$reference\" \"$bam\" | $bcftools view -cg - > \"$vcf\"";
+my $command = "$samtools mpileup -BQ0 -d10000000 -uf \"$reference\" \"$bam\" | $bcftools view -cg - > \"$vcf\"";
 print "Running $command\n";
 system($command) == 0 or die "Could not run $command";
 
