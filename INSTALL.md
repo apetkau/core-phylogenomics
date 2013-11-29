@@ -8,7 +8,7 @@ Obtaining the code
 
 The checkout the latest version of the pipeline, please use the following command:
 
-	$ git clone --recursive [insert_link_here]
+	$ git clone --recursive https://github.com/apetkau/core-phylogenomics.git
 
 Dependencies
 ------------

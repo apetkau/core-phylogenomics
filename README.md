@@ -3,6 +3,11 @@ Core SNP Phylogenomics
 
 The Core SNP phylogenomics pipeline provides a pipeline for identifying high-quality core SNPs among a set of bacterial isolates and generating phylogenetic trees from these SNPs.  The pipeline takes as input a reference genome (in FASTA format) and a set of DNA sequencing reads (in FASTQ format) and proceeds through a number of different stages to find core SNPs.
 
+Authors
+-------
+
+The Core SNP Pipeline was developed by the following individuals:  Aaron Petkau, Gary Van Domselaar, Philip Mabon, and Lee Katz.
+
 Quick Start
 -----------
 
@@ -305,7 +310,3 @@ The _output_dir/_ is the directory containing all the results of a previous run 
 
 	snp_phylogenomics_control --help
 
-Authors
-=======
-
-The Core SNP Pipeline was developed by the following individuals:  Aaron Petkau, Gary Van Domselaar, Philip Mabon, Lee Katz.
