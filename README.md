@@ -1,7 +1,7 @@
 Core SNP Phylogenomics
 ======================
 
-The NML Core SNP phylogenomics pipeline provides a pipeline for identifying high-quality core SNPs among a set of bacterial isolates and generating phylogenetic trees from these SNPs.  The pipeline takes as input a reference genome (in FASTA format) and a set of DNA sequencing reads (in FASTQ format) and proceeds through a number of different stages to find core SNPs.
+The Core SNP phylogenomics pipeline provides a pipeline for identifying high-quality core SNPs among a set of bacterial isolates and generating phylogenetic trees from these SNPs.  The pipeline takes as input a reference genome (in FASTA format) and a set of DNA sequencing reads (in FASTQ format) and proceeds through a number of different stages to find core SNPs.
 
 Quick Start
 -----------
@@ -67,7 +67,7 @@ The core SNP pipeline proceeds through the following stages:
 Tutorial
 --------
 
-For a step-by-step tutorial on how to run the core SNP pipeline with some example data, please see http://gitlab.corefacility.ca/public/projects/aaron.petkau/core-phylogenomics-tutorial.
+For a step-by-step tutorial on how to run the core SNP pipeline with some example data, please see https://github.com/apetkau/core-phylogenomics-tutorial.
 
 Installation
 ------------
@@ -305,3 +305,7 @@ The _output_dir/_ is the directory containing all the results of a previous run 
 
 	snp_phylogenomics_control --help
 
+Authors
+=======
+
+The Core SNP Pipeline was developed by the following individuals:  Aaron Petkau, Gary Van Domselaar, Philip Mabon, Lee Katz.

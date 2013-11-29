@@ -1,7 +1,14 @@
 Installation
 ============
 
-The core SNP phylogenomics pipeline is designed to work within a Linux cluster computing environmnet and requires the installation of a lot of different programs as dependencies.
+The core SNP phylogenomics pipeline is written in PERL, designed to work within a Linux cluster computing environmnet and requires the installation of a lot of different programs as dependencies.
+
+Obtaining the code
+------------------
+
+The checkout the latest version of the pipeline, please use the following command:
+
+	$ git clone --recursive [insert_link_here]
 
 Dependencies
 ------------
@@ -56,16 +63,16 @@ An example of the __pipeline.conf__ file is:
 		bgzip: /path/to/bgzip
 		tabix: /path/to/tabix
 		freebayes: /path/to/freebayes
-		vcftools-lib: /path/to/vcftools-lib/perl/
-		fastqc: /path/to/fastqc
-		java: /path/to/java
-		shuf: /path/to/shuf
-		gview: /path/to/gview
+		vcftools-lib: /path/to/vcftools/perl
+		fastqc: /path/to/FastQC/fastqc
+		java: /path/to/bin/java
+		shuf: /path/to/bin/shuf
+		gview: /path/to/gview.jar
 		nucmer: /path/to/mummer/nucmer
 		delta-filter: /path/to/mummer/delta-filter
 		show-aligns: /path/to/mummer/show-aligns
 		show-snps: /path/to/mummer/show-snps
-		mummer2vcf: /path/to/core-pipeline/lib/mummer2Vcf.pl
+		mummer2vcf: /path/to/core-phylogenomics/lib/mummer2Vcf.pl
 	
 	processors: 24
 	
@@ -73,24 +80,36 @@ An example of the __pipeline.conf__ file is:
 	max_coverage: 200
 	freebayes_params: '--pvar 0 --ploidy 1 --left-align-indels --min-mapping-quality 30 --min-base-quality 30 --min-alternate-fraction 0.75'
 	smalt_index: '-k 13 -s 6'
-	smalt_map: '-n 24 -f samsoft -r -1'
+	smalt_map: '-n 24 -f samsoft -r -1 -y 0.5'
 	vcf2pseudo_numcpus: 4
-	vcf2core_numcpus: 24
+	vcf2core_numcpus: 4
 	trim_clean_params: '--numcpus 4 --min_quality 20 --bases_to_trim 10 --min_avg_quality 25 --min_length 36 -p 1'
-	gview_style: '/path/to/core-pipeline/etc/original.gss'
+	gview_style: '/path/to/core-phylogenomics/etc/original.gss'
 	
 	drmaa_params:
 		general: "-V"
 		vcf2pseudoalign: "-pe smp 4"
-		vcf2core: "-pe smp 24"
+		vcf2core: "-pe smp 4"
 		trimClean: "-pe smp 4"
+
+In addition, the file __etc/original.gss.default__, which is used to render an image of the core genome using GView, should be moved to __etc/original.gss__.
 
 Testing
 -------
 
 The core SNP pipeline comes with a number of tests to check the installation.  To run the tests please use the command:
 
-	./t/run_tests.pl --tmp-dir /path/to/cluster-shared-dir
+	$ ./t/run_tests.pl --tmp-dir /path/to/cluster-shared-dir
+	pseudoalign ............ ok    
+	snp_matrix ............. ok    
+	variant_calls .......... ok    
+	pipeline_blast ......... ok   
+	pipeline_ortho ......... ok    
+	pipeline_mapping ....... ok   
+	pipeline_preparefastq .. ok   
+	All tests successful.
+	Files=7, Tests=154, 115 wallclock secs ( 0.17 usr  0.01 sys + 17.40 cusr  3.15 csys = 20.73 CPU)
+	Result: PASS
 
 The parameter __--tmp-dir__ defines the location to a common shared file system among all nodes of the cluster and will contain the temporary files for the tests.
 
