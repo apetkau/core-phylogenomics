@@ -1,7 +1,7 @@
 Installation
 ============
 
-The core SNP phylogenomics pipeline is written in PERL, designed to work within a Linux cluster computing environmnet and requires the installation of a lot of different programs as dependencies.
+The core SNP phylogenomics pipeline is written in Perl, designed to work within a Linux cluster computing environmnet and requires the installation of a lot of different programs as dependencies.
 
 Obtaining the code
 ------------------
@@ -32,7 +32,7 @@ The Core SNP pipeline makes use of the following dependencies.
 * [Tabix](http://sourceforge.net/projects/samtools/files/tabix/)
 * [VCFtools](http://vcftools.sourceforge.net/)
 
-### PERL Modules ###
+### Perl Modules ###
 
 * [Bioperl](http://www.bioperl.org/wiki/Main_Page)
 * [Parallel::ForkManager](http://search.cpan.org/~szabgab/Parallel-ForkManager-1.05/lib/Parallel/ForkManager.pm)
