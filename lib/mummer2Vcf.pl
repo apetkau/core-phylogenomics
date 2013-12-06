@@ -114,9 +114,15 @@ sub complete_indel() {
     $indel_query_start = 0;
 }
 sub complete_snp($$$$) {
+
     if ($o_type ne "INDEL") {
         my ($ref, $pos, $orig, $alt) = @_;
-        print STDOUT join("\t", $ref, $pos, '.',$orig, $alt,'9999','.', "TYPE=SNP"), "\n";
+        #also need to be a 'A,T,G,C', no ambigious base pairs!
+        if ( $alt =~ /[ATCG]/) {
+            print STDOUT join("\t", $ref, $pos, '.',$orig, $alt,'9999','.', "TYPE=SNP"), "\n";
+        }
+
+
     }
 }
 
