@@ -3,15 +3,27 @@ Installation
 
 The core SNP phylogenomics pipeline is written in Perl, designed to work within a Linux cluster computing environmnet and requires the installation of a lot of different programs as dependencies.
 
-Obtaining the code
-------------------
+Steps
+-----
+
+In brief, the installation procedure involves performing the following steps:
+
+1. Obtain code from github
+2. Install all dependency software as well as dependency Perl modules.
+3. Create a file __etc/pipeline.conf__ with the default configuration details and paths to all dependency software.
+4. Create file __bin/snp_phylogenomics_control__ to launch the pipeline.
+5. Add the __bin/__ directory to the PATH.
+6. Test installation.
+
+1. Obtaining the code
+---------------------
 
 The checkout the latest version of the pipeline, please use the following command:
 
 	$ git clone --recursive https://github.com/apetkau/core-phylogenomics.git
 
-Dependencies
-------------
+2. Dependencies
+---------------
 
 The Core SNP pipeline makes use of the following dependencies.
 
@@ -42,8 +54,8 @@ The Core SNP pipeline makes use of the following dependencies.
 * [YAML::Tiny](http://search.cpan.org/~ether/YAML-Tiny-1.56/lib/YAML/Tiny.pm)
 * [Vcf](http://vcftools.sourceforge.net/)
 
-Configuration
--------------
+3. Configuration
+----------------
 
 The file __etc/pipeline.conf.default__ contains an example configuration file in [YAML](http://yaml.org/) format.  To setup the pipeline, please copy this file to __etc/pipeline.conf__ and add the locations for the dependency software and default parameters.  The locations for all the dependency software must be pointed towards a common path shared by all nodes on the cluster.
 
@@ -92,10 +104,42 @@ An example of the __pipeline.conf__ file is:
 		vcf2core: "-pe smp 4"
 		trimClean: "-pe smp 4"
 
-In addition, the file __etc/original.gss.default__, which is used to render an image of the core genome using GView, should be moved to __etc/original.gss__.
+4. Main pipeline script
+-----------------------
 
-Testing
--------
+Once the configuration file is setup, the main pipeline script must be modified in order to run the pipeline.  This can be done using the following command:
+
+	$ cp bin/snp_phylogenomics_control.example bin/snp_phylogenomics_control
+	
+	# Modify snp_phylogenomics_control to include any necessary Perl libraries.
+
+The __bin/snp_phylogenomics_control__ was created under the assumption that some dependency Perl modules may not be installed globally or there may be multiple Perl versions installed on the cluster (using http://perlbrew.pl/).  This script looks like:
+
+```bash
+	#!/bin/bash
+	
+	# Used only to be able to set extra perl5lib paths and then launch application
+	# Rename to snp_phylogenomics_control (or whatever other name you want the executable to be
+	# Note: if parametes contain any spaces and you quote them, won't be passed on properly
+	
+	SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+	
+	#export PERL5LIB=$SCRIPT_DIR/../cpanlib/lib/perl5:$PERL5LIB
+	
+	$SCRIPT_DIR/../perl_bin/snp_phylogenomics_control.pl $@
+```
+
+This script simply sets up any custom environment variables necessary, then launches the "real" script at __perl_bin/snp_phylogenomics_control.pl__.
+
+5. Set up PATH
+--------------
+
+In order to quickly launch the pipeline, the __bin/__ directory can be added to the PATH environment variable.  This can be done with a command similar to:
+
+	export PATH=/path/to/pipeline/bin:$PATH
+
+6. Testing
+----------
 
 The core SNP pipeline comes with a number of tests to check the installation.  To run the tests please use the command:
 
@@ -112,4 +156,3 @@ The core SNP pipeline comes with a number of tests to check the installation.  T
 	Result: PASS
 
 The parameter __--tmp-dir__ defines the location to a common shared file system among all nodes of the cluster and will contain the temporary files for the tests.
-
