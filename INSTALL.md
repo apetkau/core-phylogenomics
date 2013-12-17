@@ -156,3 +156,71 @@ The core SNP pipeline comes with a number of tests to check the installation.  T
 	Result: PASS
 
 The parameter __--tmp-dir__ defines the location to a common shared file system among all nodes of the cluster and will contain the temporary files for the tests.
+
+Notes
+-----
+
+FigTree can be downloaded from [Figtree](http://tree.bio.ed.ac.uk/software/figtree/) and extracted to a directory structure that looks like:
+
+	$ tree FigTree_v1.4.0
+	FigTree_v1.4.0
+	├── bin
+	│   └── figtree
+	├── carnivore.tree
+	├── images
+	│   └── figtree.png
+	├── influenza.tree
+	├── lib
+	│   └── figtree.jar
+	└── README.txt
+
+The figtree path that needs to be put into the configuration file should point to the __FigTree_v1.4.0/bin/figtree__ file.  For example:
+
+	%YAML 1.1
+	---
+	path:
+		...
+		figtree: /path/to/FigTree_v1.4.0/bin/figtree
+		...
+
+However, the __bin/figtree__ file won't properly execute the figtree Java Jar.  In order to fix this issue, replace the __bin/figtree__ file with the contents given below:
+
+bin/figtree:
+```shell
+#!/bin/sh
+
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+java -Xms64m -Xmx512m -jar $ROOT_DIR/../lib/figtree.jar $*
+```
+
+This will properly setup the correct directories and run the 'java' command with the appropriate figtree.jar file.  Please also mark this file as executable with:
+
+	$ chmod +x bin/figtree
+
+To test out this fix, run the script with:
+
+	$ ./bin/figtree -help
+	                 FigTree v1.4.0, 2006-2012
+	                  Tree Figure Drawing Tool
+	                       Andrew Rambaut
+	
+	             Institute of Evolutionary Biology
+	                  University of Edinburgh
+	                     a.rambaut@ed.ac.uk
+	
+	                 http://tree.bio.ed.ac.uk/
+	     Uses the Java Evolutionary Biology Library (JEBL)
+	                http://jebl.sourceforge.net/
+	 Thanks to Alexei Drummond, Joseph Heled, Philippe Lemey, 
+	Tulio de Oliveira, Oliver Pybus, Beth Shapiro & Marc Suchard
+	
+	  Usage: figtree [-graphic <PDF|SVG|SWF|PS|EMF|GIF>] [-width <i>] [-height <i>] [-help] [<tree-file-name>] [<graphic-file-name>]
+	    -graphic produce a graphic with the given format
+	    -width the width of the graphic in pixels
+	    -height the height of the graphic in pixels
+	    -help option to print this message
+	
+	  Example: figtree test.tree
+	  Example: figtree -graphic PDF test.tree test.pdf
+	  Example: figtree -graphic GIF -width 320 -height 320 test.tree test.gif
