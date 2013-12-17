@@ -187,11 +187,11 @@ However, the __bin/figtree__ file won't properly execute the figtree Java Jar.  
 
 bin/figtree:
 ```bash
-	#!/bin/sh
-	
-	ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-	
-	java -Xms64m -Xmx512m -jar $ROOT_DIR/../lib/figtree.jar $*
+#!/bin/sh
+
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+java -Xms64m -Xmx512m -jar $ROOT_DIR/../lib/figtree.jar $*
 ```
 
 This will properly setup the correct directories and run the 'java' command with the appropriate figtree.jar file.  Please also mark this file as executable with:
