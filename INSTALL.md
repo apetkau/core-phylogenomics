@@ -187,7 +187,7 @@ However, the __bin/figtree__ file won't properly execute the figtree Java Jar.  
 
 bin/figtree:
 ```bash
-#!/bin/sh
+#!/bin/bash
 
 ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
