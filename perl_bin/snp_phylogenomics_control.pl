@@ -524,7 +524,7 @@ snp_phylogenomics_control.pl:  Script to automate running of core SNP analysis.
 
 =head2 More Documentation
 
-For more documentation, please see the README.md file or go to http://gitlab/public/projects/aaron.petkau/core-phylogenomics
+For more documentation, please see the README.md file or go to https://github.com/apetkau/core-phylogenomics
 
 =back
 
