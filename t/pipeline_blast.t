@@ -17,20 +17,24 @@ $ENV{'PERL5LIB'} .= "$old_env" if (defined $old_env);
 
 sub usage
 {
-	return "Usage: $0 --tmp-dir [tmp_directory]\n";
+	return "Usage: $0 --tmp-dir [tmp_directory] [--keep-tmp]\n";
 }
 
 ### MAIN ###
 
 my $tmp_dir;
 
-if (not GetOptions('t|tmp-dir=s' => \$tmp_dir))
+my $keep_tmp;
+if (not GetOptions('t|tmp-dir=s' => \$tmp_dir,
+		   'k|keep-tmp' => \$keep_tmp))
 {
 	die usage;
 }
 
 die "no tmp-dir defined\n".usage if (not defined $tmp_dir);
 die "tmp-dir does not exist\n".usage if (not (-e $tmp_dir));
+
+$keep_tmp = 0 if (not defined $keep_tmp);
 
 my $blast_dir = "$script_dir/data/pipeline/blast";
 
@@ -43,7 +47,8 @@ for my $job (@job_dirs)
 {
 	print "\n### Testing $job ###\n";
 
-	my $job_out = tempdir('snp_blast_pipelineXXXXXX', CLEANUP => 1, DIR => $tmp_dir) or die "Could not create temp directory";
+	my $job_out = tempdir('snp_blast_pipelineXXXXXX', CLEANUP => (not $keep_tmp), DIR => $tmp_dir) or die "Could not create temp directory";
+	print "results_tmp_directory=$job_out\n" if ($keep_tmp);
 	my $job_out_dir = "$job_out/out";
 
 	my $input_dir = "$blast_dir/$job/input";
@@ -57,7 +62,7 @@ for my $job (@job_dirs)
 
 	my $command = "$pipeline_bin --mode blast --input-dir $input_fasta --hsp-length 10 --output $job_out_dir --processors 1";
 
-	print "\tRunning pipeline for $input_dir ...";
+	print "Running pipeline for $input_dir ...";
 	if (not (system("$command 2>&1 1>$job_out/log.txt") == 0))
 	{
 		print STDERR "Error executing command \"$command\"\n";

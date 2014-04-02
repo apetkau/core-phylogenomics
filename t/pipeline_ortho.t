@@ -17,20 +17,24 @@ $ENV{'PERL5LIB'} .= $old_env if (defined $old_env);
 
 sub usage
 {
-        return "Usage: $0 --tmp-dir [tmp_directory]\n";
+        return "Usage: $0 --tmp-dir [tmp_directory] [--keep-tmp]\n";
 }
 
 ### MAIN ###
 
 my $tmp_dir;
 
-if (not GetOptions('t|tmp-dir=s' => \$tmp_dir))
+my $keep_tmp;
+if (not GetOptions('t|tmp-dir=s' => \$tmp_dir,
+		   'k|keep-tmp' => \$keep_tmp))
 {
         die usage;
 }
 
 die "no tmp-dir defined\n".usage if (not defined $tmp_dir);
 die "tmp-dir does not exist\n".usage if (not (-e $tmp_dir));
+
+$keep_tmp = 0 if (not defined $keep_tmp);
 
 my $ortho_dir = "$script_dir/data/pipeline/ortho";
 
@@ -43,7 +47,8 @@ for my $job (@job_dirs)
 {
 	print "\n### Testing $job ###\n";
 
-	my $job_out = tempdir('snp_ortho_pipelineXXXXXX', CLEANUP => 1, DIR => $tmp_dir) or die "Could not create temp directory";
+	my $job_out = tempdir('snp_ortho_pipelineXXXXXX', CLEANUP => (not $keep_tmp), DIR => $tmp_dir) or die "Could not create temp directory";
+	print "results temp dir=$job_out\n" if ($keep_tmp);
 	my $job_out_dir = "$job_out/out";
 
 	my $input_dir = "$ortho_dir/$job/input";
@@ -58,7 +63,7 @@ for my $job (@job_dirs)
 	my $command = "$pipeline_bin --mode orthomcl --input-dir $input_fasta --output $job_out_dir ".
 			"--orthomcl-groups $input_groups";
 
-	print "\tRunning pipeline for $input_dir ...";
+	print "Running pipeline for $input_dir ...";
 	if (not (system("$command 2>&1 1>$job_out/log.txt") == 0))
 	{
 		print STDERR "Error executing command \"$command\"\n";
