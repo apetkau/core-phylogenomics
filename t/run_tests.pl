@@ -11,14 +11,16 @@ my $script_dir = $FindBin::Bin;
 
 sub usage
 {
-        return "Usage: $0 --tmp-dir [tmp_directory]\n";
+        return "Usage: $0 --tmp-dir [tmp_directory] [--keep-tmp]\n";
 }
 
 ### MAIN ###
 
 my $tmp_dir;
 
-if (not GetOptions('t|tmp-dir=s' => \$tmp_dir))
+my $keep_tmp;
+if (not GetOptions('t|tmp-dir=s' => \$tmp_dir,
+		   'k|keep-tmp' => \$keep_tmp))
 {
         die usage;
 }
@@ -26,14 +28,37 @@ if (not GetOptions('t|tmp-dir=s' => \$tmp_dir))
 die "no tmp-dir defined\n".usage if (not defined $tmp_dir);
 die "tmp-dir does not exist\n".usage if (not (-e $tmp_dir));
 
+$keep_tmp = 0 if (not defined $keep_tmp);
+
 # alias => args
-my %args = ('pipeline_blast' => ['--tmp-dir', $tmp_dir],
-	    'pipeline_ortho' => ['--tmp-dir', $tmp_dir],
-	    'pipeline_mapping' => ['--tmp-dir', $tmp_dir],
-	    'pipeline_preparefastq' => ['--tmp-dir', $tmp_dir],
-	    'pseudoalign' => [],
-	    'snp_matrix' => [],
-	    'variant_calls' => []);
+my %args;
+if ($keep_tmp)
+{
+	%args = ('pipeline_blast' => ['--tmp-dir', $tmp_dir, '--keep-tmp'],
+		    'pipeline_ortho' => ['--tmp-dir', $tmp_dir, '--keep-tmp'],
+		    'pipeline_mapping' => ['--tmp-dir', $tmp_dir, '--keep-tmp'],
+		    'pipeline_preparefastq' => ['--tmp-dir', $tmp_dir, '--keep-tmp']);
+}
+else
+{
+	%args = ('pipeline_blast' => ['--tmp-dir', $tmp_dir],
+		    'pipeline_ortho' => ['--tmp-dir', $tmp_dir],
+		    'pipeline_mapping' => ['--tmp-dir', $tmp_dir],
+		    'pipeline_preparefastq' => ['--tmp-dir', $tmp_dir]);
+}
+
+
+$args{'pseudoalign'} = [];
+$args{'snp_matrix'} = [];
+$args{'variant_calls'} = [];
+
+#if ($keep_tmp)
+#{
+#	push(@{$args{'pipelin_blast')}},'--keep-tmp');
+#	push(@{$args{'pipelin_ortho')}},'--keep-tmp');
+#	push(@{$args{'pipeline_mapping')}},'--keep-tmp');
+#	push(@{$args{'pipeline_preparefastq')}},'--keep-tmp');
+#}
 
 my $harness = TAP::Harness->new({'test_args' => \%args});
 
