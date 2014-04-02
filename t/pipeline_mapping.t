@@ -46,6 +46,7 @@ for my $job (@job_dirs)
 	print "\n### Testing $job ###\n";
 
 	my $job_out = tempdir('snp_mapping_pipelineXXXXXX', CLEANUP => (not $keep_tmp), DIR => $tmp_dir) or die "Could not create temp directory";
+	print "results temp directory=$job_out\n";
 	my $job_out_dir = "$job_out/out";
 
 	my $input_dir = "$mapping_dir/$job/input";
@@ -60,7 +61,7 @@ for my $job (@job_dirs)
 	my $command = "$pipeline_bin --mode mapping --input-dir $input_fastq --output $job_out_dir ".
 			"--reference $input_reference --config $config_file";
 
-	print "\tRunning pipeline for $input_dir ...";
+	print "Running pipeline for $input_dir ...";
 	if (not (system("$command 2>&1 1>$job_out/log.txt") == 0))
 	{
 		print STDERR "Error executing command \"$command\"\n";
