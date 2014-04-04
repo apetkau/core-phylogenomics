@@ -41,7 +41,34 @@ These Perl modules can be installed using [cpanm](http://search.cpan.org/dist/Ap
 
 	$ cpanm BioPerl Parallel::ForkManager Set::Scalar YAML::Tiny Test::Harness
 
-The module **Schedule::DRMAAc** must be installed manually and requires the setup of a grid engine.  A guide for how to setup a grid engine on Ubuntu can be found at http://scidom.wordpress.com/2012/01/18/sge-on-single-pc/.
+The module **Schedule::DRMAAc** must be installed manually and requires the setup of a grid engine.  A guide for how to setup a grid engine on Ubuntu can be found at http://scidom.wordpress.com/2012/01/18/sge-on-single-pc/.  In short, for Ubuntu, installing Schedule::DRMAAc involves the following commands:
+
+```bash
+# Installs a grid engine on Ubuntu
+# Based on instructions from http://scidom.wordpress.com/2012/01/18/sge-on-single-pc/
+sudo -s
+apt-get install gridengine-master gridengine-exec gridengine-common gridengine-qmon gridengine-client gridengine-drmaa-dev
+# modified /etc/hosts so that localhost and `hostname` point to 127.0.0.1
+# go through configuration process described in instructions, making sure to add 'root' and any other
+#  user to the list of users who can submit jobs
+
+# Install Schedule::DRMAAc
+wget http://search.cpan.org/CPAN/authors/id/T/TH/THARSCH/Schedule-DRMAAc-0.81.tar.gz
+tar -xvvzf Schedule-DRMAAc-0.81.tar.gz
+cd Schedule-DRMAAc-0.81
+export SGE_ROOT=/var/lib/gridengine
+
+# link up files from gridengine-drmaa package into SGE_ROOT to install module
+ln -s /usr/lib/gridengine-drmaa/* $SGE_ROOT/
+
+# link up header file
+ln -s $SGE_ROOT/include/drmaa.h .
+
+perl Makefile.PL
+make
+make test # tests need user 'root' or whoever is installing to be added to be able to submit jobs
+make install
+```
 
 The module **Vcf** must be installed manually from http://vcftools.sourceforge.net/ and must be added to your set of Perl library paths.  More information on this can be found in the https://github.com/apetkau/vcf2pseudoalignment documentation.
 
