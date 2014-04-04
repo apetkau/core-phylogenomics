@@ -27,11 +27,29 @@ The checkout the latest version of the pipeline, please use the following comman
 
 The Core SNP pipeline makes use of the following dependencies.
 
+### Perl Modules ###
+
+* [BioPerl](http://www.bioperl.org/wiki/Main_Page)
+* [Parallel::ForkManager](http://search.cpan.org/~szabgab/Parallel-ForkManager-1.05/lib/Parallel/ForkManager.pm)
+* [Set::Scalar](http://search.cpan.org/~davido/Set-Scalar-1.26/lib/Set/Scalar.pm)
+* [Test::Harness](http://search.cpan.org/~leont/Test-Harness/lib/TAP/Harness.pm)
+* [YAML::Tiny](http://search.cpan.org/~ether/YAML-Tiny-1.56/lib/YAML/Tiny.pm)
+* [Vcf](http://vcftools.sourceforge.net/)
+* [Schedule::DRMAAc](http://search.cpan.org/~tharsch/Schedule-DRMAAc-0.81/Schedule_DRMAAc.pod)
+
+These Perl modules can be installed using [cpanm](http://search.cpan.org/dist/App-cpanminus/lib/App/cpanminus.pm) with the following command:
+
+	$ cpanm BioPerl Parallel::ForkManager Set::Scalar YAML::Tiny Test::Harness
+
+The module **Schedule::DRMAAc** must be installed manually and requires the setup of a grid engine.  A guide for how to setup a grid engine on Ubuntu can be found at http://scidom.wordpress.com/2012/01/18/sge-on-single-pc/.
+
+The module **Vcf** must be installed manually from http://vcftools.sourceforge.net/ and must be added to your set of Perl library paths.  More information on this can be found in the https://github.com/apetkau/vcf2pseudoalignment documentation.
+
 ### Software ###
 
 * [SAMTools](http://samtools.sourceforge.net/)
 * [BLAST](http://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=Download)
-* [ClustalW2](clustalw2)
+* [ClustalW2](https://www.ebi.ac.uk/Tools/phylogeny/clustalw2_phylogeny/help/)
 * [MUMMer](http://mummer.sourceforge.net/manual/)
 * [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
 * [Figtree](http://tree.bio.ed.ac.uk/software/figtree/)
@@ -43,16 +61,6 @@ The Core SNP pipeline makes use of the following dependencies.
 * [SMALT](http://www.sanger.ac.uk/resources/software/smalt/)
 * [Tabix](http://sourceforge.net/projects/samtools/files/tabix/)
 * [VCFtools](http://vcftools.sourceforge.net/)
-
-### Perl Modules ###
-
-* [Bioperl](http://www.bioperl.org/wiki/Main_Page)
-* [Parallel::ForkManager](http://search.cpan.org/~szabgab/Parallel-ForkManager-1.05/lib/Parallel/ForkManager.pm)
-* [Schedule::DRMAAc](http://search.cpan.org/~tharsch/Schedule-DRMAAc-0.81/Schedule_DRMAAc.pod)
-* [Set::Scalar](http://search.cpan.org/~davido/Set-Scalar-1.26/lib/Set/Scalar.pm)
-* [Tap::Harness](http://search.cpan.org/~ovid/Test-Harness-3.28/lib/TAP/Harness.pm)
-* [YAML::Tiny](http://search.cpan.org/~ether/YAML-Tiny-1.56/lib/YAML/Tiny.pm)
-* [Vcf](http://vcftools.sourceforge.net/)
 
 3. Configuration
 ----------------
