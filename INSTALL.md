@@ -161,10 +161,10 @@ The __bin/snp_phylogenomics_control__ was created under the assumption that some
 	
 	#export PERL5LIB=$SCRIPT_DIR/../cpanlib/lib/perl5:$PERL5LIB
 	
-	$SCRIPT_DIR/../perl_bin/snp_phylogenomics_control.pl $@
+	$SCRIPT_DIR/../scripts/snp_phylogenomics_control.pl $@
 ```
 
-This script simply sets up any custom environment variables necessary, then launches the "real" script at __perl_bin/snp_phylogenomics_control.pl__.
+This script simply sets up any custom environment variables necessary, then launches the "real" script at __scripts/snp_phylogenomics_control.pl__.
 
 5. Set up PATH
 --------------
