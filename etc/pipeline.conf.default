@@ -24,20 +24,20 @@ path:
 	show-snps: /path/to/mummer/show-snps
 	mummer2vcf: /path/to/core-phylogenomics/lib/mummer2Vcf.pl
 
-processors: 24
+processors: 1
 
 min_coverage: 15
 max_coverage: 200
 freebayes_params: '--pvar 0 --ploidy 1 --left-align-indels --min-mapping-quality 30 --min-base-quality 30 --min-alternate-fraction 0.75'
 smalt_index: '-k 13 -s 6'
 smalt_map: '-n 24 -f samsoft -r -1 -y 0.5'
-vcf2pseudo_numcpus: 4
-vcf2core_numcpus: 4
+vcf2pseudo_numcpus: 1
+vcf2core_numcpus: 1
 trim_clean_params: '--numcpus 4 --min_quality 20 --bases_to_trim 10 --min_avg_quality 25 --min_length 36 -p 1'
 gview_style: '/path/to/core-phylogenomics/etc/original.gss'
 
 drmaa_params:
 	general: "-V"
-	vcf2pseudoalign: "-pe smp 4"
-	vcf2core: "-pe smp 4"
-	trimClean: "-pe smp 4"
+	vcf2pseudoalign: ""
+	vcf2core: ""
+	trimClean: ""
