@@ -1,0 +1,6 @@
+#!/bin/bash
+
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# added line '-Djava.awt.headless=true' so figtree doesn't need a graphics environment
+java -Djava.awt.headless=true -Xms64m -Xmx512m -jar $ROOT_DIR/../lib/figtree.jar $*
