@@ -7,9 +7,12 @@ use FindBin;
 use Test::More;
 use File::Temp 'tempdir';
 use Getopt::Long;
+use lib $FindBin::Bin.'/lib';
+
+use CompareFiles;
 
 my $script_dir = $FindBin::Bin;
-my $pipeline_bin = "$script_dir/../perl_bin/snp_phylogenomics_control.pl";
+my $pipeline_bin = "$script_dir/../scripts/snp_phylogenomics_control.pl";
 
 my $old_env = $ENV{'PERL5LIB'};
 $ENV{'PERL5LIB'} = "$script_dir/../lib:$script_dir/../cpanlib/lib/perl5:";
@@ -82,13 +85,9 @@ for my $job (@job_dirs)
 	ok(-e "$job_out_dir/run.properties", "run.properties exists");
 	ok(-e $actual_pseudoalign_file, "pseudoalign.phy file exists");
 
-	        my $test_command = "diff $expected_pseudoalign_file $actual_pseudoalign_file";
-        my $results = `$test_command`;
-        my $return_value = $?;
-        if ($return_value != 0 or (defined $results and $results ne ''))
+        if (not CompareFiles::compare_phylip_files($expected_pseudoalign_file, $actual_pseudoalign_file))
         {
-                fail("expected file $expected_pseudoalign_file differs from actual file $actual_pseudoalign_file : diff\n");
-                print STDERR $results;
+                fail("expected file $expected_pseudoalign_file differs from actual file $actual_pseudoalign_file\n");
         }
         else
         {
