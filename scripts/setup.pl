@@ -1,7 +1,6 @@
 #!/usr/bin/env perl
 # setup.pl
 # Checks for Core Phylogenomics Pipeline dependencies and attempts to write a configuration file.
-# Usage: check.pl > etc/pipeline.conf
 
 use FindBin;
 use YAML::Tiny;
@@ -21,11 +20,33 @@ use Schedule::DRMAAc;
 my $script_dir = $FindBin::Bin;
 my $config_dir = "$script_dir/../etc";
 my $config_file = "$config_dir/pipeline.conf.default";
+my $out_config_file = "$config_dir/pipeline.conf";
 my $bin_dir = "$script_dir/../bin";
 my $out_pipelinebin_file_default = "$bin_dir/snp_phylogenomics_control.example";
 my $out_pipelinebin_file = "$bin_dir/snp_phylogenomics_control";
 my $out_matrixbin_file_default = "$bin_dir/snp_matrix.example";
 my $out_matrixbin_file = "$bin_dir/snp_matrix";
+
+my $usage = "Usage: ".basename($0)." [--force] [--help]\n".
+"Checks for software dependencies and generates configuration files and binary files in etc/ and bin/\n".
+"Options:\n".
+"--force: Force overwrite of configuration files\n".
+"-h|--help:  Print usage statement\n";
+
+my $force;
+my $help;
+if (not GetOptions('h|help' => \$help,
+                'f|force' => \$force))
+{
+        die $usage;
+}
+
+$force = 0 if (not defined $force);
+if (defined $help and $help)
+{
+        print $usage;
+        exit 0;
+}
 
 # reading example configuration file
 my $yaml = YAML::Tiny->read($config_file);
@@ -47,10 +68,28 @@ else
 	$config->{'gview_style'} = $gview_style_path;
 }
 
-print STDERR "Writing example etc/pipeline.conf file to STDOUT\n";
-print $yaml->write_string;
+if (not $force and -e $out_config_file)
+{
+        print "Warning: file $out_config_file already exists ... overwrite? (Y/N) ";
+        my $choice = <STDIN>;
+        chomp $choice;
+        if ("yes" eq lc($choic) or "y" eq lc($choice))
+        {
+                $yaml->write($out_config_file);
+                print "Wrote new configuration to $out_config_file\n";
+        }
+        else
+        {
+                print "Did not write any new configuration file\n";
+        }
+}
+else
+{
+        $yaml->write($out_config_file);
+        print "Wrote new configuration to $out_config_file\n";
+}
 
-if (not -e $out_pipelinebin_file)
+if ((not -e $out_pipelinebin_file) or $force)
 {
 	copy($out_pipelinebin_file_default,$out_pipelinebin_file) or die "Could not copy ".
 		"$out_pipelinebin_file_default to $out_pipelinebin_file";
@@ -60,7 +99,7 @@ if (not -e $out_pipelinebin_file)
 	print STDERR "Please add directory $bin_dir to PATH\n";
 }
 
-if (not -e $out_matrixbin_file)
+if ((not -e $out_matrixbin_file) or $force)
 {
 	copy($out_matrixbin_file_default,$out_matrixbin_file) or die "Could not copy ".
 		"$out_matrixbin_file_default to $out_matrixbin_file";
