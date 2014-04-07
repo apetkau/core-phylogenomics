@@ -22,8 +22,10 @@ my $script_dir = $FindBin::Bin;
 my $config_dir = "$script_dir/../etc";
 my $config_file = "$config_dir/pipeline.conf.default";
 my $bin_dir = "$script_dir/../bin";
-my $out_bin_file_default = "$bin_dir/snp_phylogenomics_control.example";
-my $out_bin_file = "$bin_dir/snp_phylogenomics_control";
+my $out_pipelinebin_file_default = "$bin_dir/snp_phylogenomics_control.example";
+my $out_pipelinebin_file = "$bin_dir/snp_phylogenomics_control";
+my $out_matrixbin_file_default = "$bin_dir/snp_matrix.example";
+my $out_matrixbin_file = "$bin_dir/snp_matrix";
 
 # reading example configuration file
 my $yaml = YAML::Tiny->read($config_file);
@@ -48,15 +50,25 @@ else
 print STDERR "Writing example etc/pipeline.conf file to STDOUT\n";
 print $yaml->write_string;
 
-#if (not -e $out_bin_file)
-#{
-#	copy($out_bin_file_default,$out_bin_file) or die "Could not copy ".
-#		"$out_bin_file_default to $out_bin_file";
-#	chmod 0766, $out_bin_file;
-#
-#	print "Wrote executable file to $out_bin_file\n";
-#	print "Please add directory $bin_dir to PATH\n";
-#}
+if (not -e $out_pipelinebin_file)
+{
+	copy($out_pipelinebin_file_default,$out_pipelinebin_file) or die "Could not copy ".
+		"$out_pipelinebin_file_default to $out_pipelinebin_file";
+	chmod 0766, $out_pipelinebin_file;
+
+	print STDERR "Wrote executable file to $out_pipelinebin_file\n";
+	print STDERR "Please add directory $bin_dir to PATH\n";
+}
+
+if (not -e $out_matrixbin_file)
+{
+	copy($out_matrixbin_file_default,$out_matrixbin_file) or die "Could not copy ".
+		"$out_matrixbin_file_default to $out_matrixbin_file";
+	chmod 0766, $out_matrixbin_file;
+
+	print STDERR "Wrote executable file to $out_matrixbin_file\n";
+	print STDERR "Please add directory $bin_dir to PATH\n";
+}
 
 # checks software dependencies and fills in paths in YAML data structure
 sub check_software
