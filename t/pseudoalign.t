@@ -4,9 +4,12 @@ use warnings;
 use strict;
 
 use FindBin;
+use lib $FindBin::Bin.'/lib';
 use Test::More;
 use File::Temp 'tempdir';
 use File::Spec;
+
+use CompareFiles;
 
 my $script_dir = $FindBin::Bin;
 
@@ -43,20 +46,17 @@ for my $file (@in_files)
 	my $command = "$pseudoaligner -i $test_dir -o $test_out_dir -l /dev/null";
 	system($command) == 0 or die "Could not execute $command\n";
 	
-	my $test_command = "diff $expected_align_file $actual_align_file";
-	my $results = `$test_command`;
-	if (defined $results and $results ne '')
+	if (not CompareFiles::compare_phylip_files($expected_align_file, $actual_align_file))
 	{
-		fail("expected file $expected_align_file differs from actual file $actual_align_file : diff\n");
-		print STDERR $results;
+		fail("expected file $expected_align_file differs from actual file $actual_align_file\n");
 	}
 	else
 	{
 		pass("expected file $expected_align_file eq actual file $actual_align_file");
 	}
 
-	$test_command = "diff $expected_report_file $actual_report_file";
-	$results = `$test_command`;
+	my $test_command = "diff $expected_report_file $actual_report_file";
+	my $results = `$test_command`;
 	if (defined $results and $results ne '')
 	{
 		fail("expected file $expected_report_file differs from actual file $actual_report_file : diff\n");
