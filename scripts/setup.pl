@@ -96,7 +96,6 @@ if ((not -e $out_pipelinebin_file) or $force)
 	chmod 0766, $out_pipelinebin_file;
 
 	print STDERR "Wrote executable file to $out_pipelinebin_file\n";
-	print STDERR "Please add directory $bin_dir to PATH\n";
 }
 
 if ((not -e $out_matrixbin_file) or $force)
@@ -106,8 +105,9 @@ if ((not -e $out_matrixbin_file) or $force)
 	chmod 0766, $out_matrixbin_file;
 
 	print STDERR "Wrote executable file to $out_matrixbin_file\n";
-	print STDERR "Please add directory $bin_dir to PATH\n";
 }
+
+print STDERR "Please add directory $bin_dir to PATH\n";
 
 # checks software dependencies and fills in paths in YAML data structure
 sub check_software

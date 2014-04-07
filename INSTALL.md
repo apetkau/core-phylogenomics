@@ -89,10 +89,42 @@ The module **Vcf** must be installed manually from http://vcftools.sourceforge.n
 * [Tabix](http://sourceforge.net/projects/samtools/files/tabix/)
 * [VCFtools](http://vcftools.sourceforge.net/)
 
-3. Configuration
-----------------
+3. Dependency Check and Configuration
+-------------------------------------
 
-The file __etc/pipeline.conf.default__ contains an example configuration file in [YAML](http://yaml.org/) format.  To setup the pipeline, please copy this file to __etc/pipeline.conf__ and add the locations for the dependency software and default parameters.  The locations for all the dependency software must be pointed towards a common path shared by all nodes on the cluster.
+The script __scripts/check.pl__ can be used to automatically check for any of these dependencies and generate the required configuration files.  This script assumes the above dependency software are installed and available on the PATH.  To run this script, please use:
+
+	$ perl setup.pl
+	Checking for Software dependencies...
+	Checking for nucmer ...OK
+	Checking for freebayes ...OK
+	Checking for show-aligns ...OK
+	Checking for formatdb ...OK
+	Checking for blastall ...OK
+	Checking for figtree ...OK
+	Checking for bcftools ...OK
+	Checking for shuf ...OK
+	Checking for bgzip ...OK
+	Checking for java ...OK
+	Checking for tabix ...OK
+	Checking for smalt ...OK
+	Checking for delta-filter ...OK
+	Checking for clustalw2 ...OK
+	Checking for fastqc ...OK
+	Checking for samtools ...OK
+	Checking for phyml ...OK
+	Checking for show-snps ...OK
+	Checking for GView ...OK
+	Checking for mummer2Vcf ...OK
+	Checking for vcftools-lib ...OK
+	Wrote new configuration to scripts/../etc/pipeline.conf
+	Wrote executable file to scripts/../bin/snp_phylogenomics_control
+	Wrote executable file to scripts/../bin/snp_matrix
+	Please add directory scripts/../bin to PATH
+
+### Configuration ###
+
+This script automatically attempts to write the configuration file __etc/pipeline.conf__.  This file is written in the [YAML](http://yaml.org/) format and may require some adjustments afterwards depending on the system you are installing the pipeline on.  In particular, you may want to adjust __processors__ and __*numcpus__ which defines the number of processors to use at certain stages of the pipeline as well as the __drmaa_params__ which defines specific DRMAAc parameters to pass when submitting to the cluster.  If these parameters do not apply the specific lines can easily be deleted.
 
 An example of the __pipeline.conf__ file is:
 
@@ -139,14 +171,9 @@ An example of the __pipeline.conf__ file is:
 		vcf2core: "-pe smp 4"
 		trimClean: "-pe smp 4"
 
-4. Main pipeline script
------------------------
+### Main Pipeline Script ###
 
-Once the configuration file is setup, the main pipeline script must be modified in order to run the pipeline.  This can be done using the following command:
-
-	$ cp bin/snp_phylogenomics_control.example bin/snp_phylogenomics_control
-	
-	# Modify snp_phylogenomics_control to include any necessary Perl libraries.
+The __scripts/setup.pl__ script also attempts to automatically setup the wrappper pipeline scripts within __bin/__ used to run the pipeline.  These scripts are __bin/snp_phylogenomics_control__ and __bin/snp_matrix__.
 
 The __bin/snp_phylogenomics_control__ was created under the assumption that some dependency Perl modules may not be installed globally or there may be multiple Perl versions installed on the cluster (using http://perlbrew.pl/).  This script looks like:
 
@@ -164,7 +191,9 @@ The __bin/snp_phylogenomics_control__ was created under the assumption that some
 	$SCRIPT_DIR/../scripts/snp_phylogenomics_control.pl $@
 ```
 
-This script simply sets up any custom environment variables necessary, then launches the "real" script at __scripts/snp_phylogenomics_control.pl__.
+This script simply sets up any custom environment variables necessary, then launches the "real" script at __scripts/snp_phylogenomics_control.pl__.  The same is true of the __bin/snp_matrix__ script.
+
+Please make sure these scripts make sense for your environment setup.
 
 5. Set up PATH
 --------------
@@ -190,7 +219,7 @@ The core SNP pipeline comes with a number of tests to check the installation.  T
 	Files=7, Tests=154, 115 wallclock secs ( 0.17 usr  0.01 sys + 17.40 cusr  3.15 csys = 20.73 CPU)
 	Result: PASS
 
-The parameter __--tmp-dir__ defines the location to a common shared file system among all nodes of the cluster and will contain the temporary files for the tests.
+The parameter __--tmp-dir__ defines the location to a common shared file system among all nodes of the cluster and will contain the temporary files for the tests.  If something is wrong, the parameter __--keep-tmp__ can be used to keep all temporary data and log files for further inspection.
 
 Notes
 -----
