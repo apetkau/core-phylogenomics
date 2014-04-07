@@ -15,6 +15,8 @@ In brief, the installation procedure involves performing the following steps:
 5. Add the __bin/__ directory to the PATH.
 6. Test installation.
 
+A full example of the steps need to install the pipeline in Ubuntu 13.04 can be found at [ubuntu-install-instructions.sh](doc/install-ubuntu/ubuntu-install-instructions.sh).
+
 1. Obtaining the code
 ---------------------
 
