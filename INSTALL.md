@@ -10,8 +10,8 @@ In brief, the installation procedure involves performing the following steps:
 
 1. Obtain code from github
 2. Install all dependency software as well as dependency Perl modules.
-3. Create a file __etc/pipeline.conf__ with the default configuration details and paths to all dependency software.
-4. Create file __bin/snp_phylogenomics_control__ to launch the pipeline.
+3. Run __scripts/setup.pl__ to check for dependencies, create configuration files and create executable wrapper scripts.
+4. Check configuration and executable wrapper scripts for proper setup.
 5. Add the __bin/__ directory to the PATH.
 6. Test installation.
 
