@@ -64,7 +64,8 @@ my %longseq;
 open (OUT, ">locusreport.txt");
 my $locuscounter = 1;
 for my $file (@files) {
-	my $in = new Bio::AlignIO(-file=>"$input_dir_trimmed/$file", -format=>"clustalw",-idlength=>30);
+	my $in = new Bio::AlignIO(-file=>"$input_dir_trimmed/$file", -format=>"clustalw",-longid=>1);
+	$in->interleaved(0);
     $file =~ /(.*?)\.aln.trimmed$/;
 	my $seqin = new Bio::SeqIO(-file=>"$input_dir_seq/$1",-format=>"fasta");
 	my %desc_recorder;
