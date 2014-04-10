@@ -78,7 +78,6 @@ sub run
     #		$qualmap{$strain} = \@quals;
     #	}
     	my $in = new Bio::AlignIO(-file=>"$file", -format=>"clustalw",-longid=>1);
-	$in->interleaved(0);
     	my $aln = $in->next_aln;
     	for my $seq ($aln->each_alphabetically) {
     	my @nucleotides = split //, $seq->seq;

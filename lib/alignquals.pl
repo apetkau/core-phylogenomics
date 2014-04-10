@@ -20,7 +20,6 @@ for my $file (@files) {
 	my $newqualfile = "quals$id.aln";
 	open QUAL, ">$newqualfile" || die "no open $newqualfile: $!\n";
  	my $alnin = new Bio::AlignIO(-file=>$file, -format=>"clustalw",-longid=>1);
-	$alnin->interleaved(0);
 	my $aln = $alnin->next_aln;
 	# get each locus id from each strain in the file and get the quality info from it, then align it.
 	my @loci = @{$locusmap{$id}};
