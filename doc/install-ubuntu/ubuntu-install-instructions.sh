@@ -115,3 +115,5 @@ perl t/run_tests.pl --tmp-dir /tmp
 
 # add to PATH
 export PATH=/opt/core-phylogenomics/bin:$PATH
+# add vcf2pseudoalignment scripts to PATH
+export PATH=/opt/core-phylogenomics/lib/vcf2pseudoalignment:$PATH
