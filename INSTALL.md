@@ -31,7 +31,7 @@ The Core SNP pipeline makes use of the following dependencies.
 
 ### Perl Modules ###
 
-* [BioPerl](http://www.bioperl.org/wiki/Main_Page)
+* [BioPerl 1.6.901](http://search.cpan.org/~cjfields/BioPerl-1.6.901/)
 * [Parallel::ForkManager](http://search.cpan.org/~szabgab/Parallel-ForkManager-1.05/lib/Parallel/ForkManager.pm)
 * [Set::Scalar](http://search.cpan.org/~davido/Set-Scalar-1.26/lib/Set/Scalar.pm)
 * [Test::Harness](http://search.cpan.org/~leont/Test-Harness/lib/TAP/Harness.pm)
@@ -41,7 +41,8 @@ The Core SNP pipeline makes use of the following dependencies.
 
 These Perl modules can be installed using [cpanm](http://search.cpan.org/dist/App-cpanminus/lib/App/cpanminus.pm) with the following command:
 
-	$ cpanm BioPerl Parallel::ForkManager Set::Scalar YAML::Tiny Test::Harness
+	$ cpanm Parallel::ForkManager Set::Scalar YAML::Tiny Test::Harness
+	$ cpanm http://search.cpan.org/CPAN/authors/id/C/CJ/CJFIELDS/BioPerl-1.6.901.tar.gz
 
 The module **Schedule::DRMAAc** must be installed manually and requires the setup of a grid engine.  A guide for how to setup a grid engine on Ubuntu can be found at http://scidom.wordpress.com/2012/01/18/sge-on-single-pc/.  In short, for Ubuntu, installing Schedule::DRMAAc involves the following commands:
 

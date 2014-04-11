@@ -38,7 +38,7 @@ make install
 cd /opt
 
 # Install Perl modules
-cpanm -S BioPerl Parallel::ForkManager Set::Scalar YAML::Tiny Test::Harness
+cpanm -S Parallel::ForkManager Set::Scalar YAML::Tiny Test::Harness
 
 # Begin building all dependencies
 apt-get install samtools blast2 clustalw mummer fastqc figtree phyml tabix vcftools
@@ -81,6 +81,13 @@ git clone https://github.com/apetkau/core-phylogenomics.git
 cd core-phylogenomics
 git checkout development # checkout development branch
 git submodule update --init --recursive
+
+# Install BioPerl version 1.006901 specifically for pipeline
+mkdir bioperl-1.006901
+cpanm -S -L bioperl-1.006901 http://search.cpan.org/CPAN/authors/id/C/CJ/CJFIELDS/BioPerl-1.6.901.tar.gz
+export PERL5LIB=/opt/bioperl-1.006901/lib/perl5/:$PERL5LIB
+# add this to global profile to restrict to specific bioperl
+echo "export PERL5LIB=/opt/bioperl-1.006901/lib/perl5/:\$PERL5LIB" >> /etc/profile.d/bioperl.sh
 
 # In order to get pipeline to run and autogenerate figtree images we have to customize figtree
 # to not require a graphics environment when running.  However, we want to enable the graphics environment
