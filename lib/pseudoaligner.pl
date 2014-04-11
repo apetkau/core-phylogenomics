@@ -194,7 +194,6 @@ sub run
     
     my $pseudo_out = "$output_dir/pseudoalign.phy";
     my $out = new Bio::AlignIO (-file=>">$pseudo_out", -format=>"phylip",-longid=>1);
-    $out->interleaved(0);
     $out->write_aln($newaln);
     print $out_fh "there are ", length($pseudoalign[0]), " strains in the pseudoalignment.\n";
     print $out_fh "there are $pseudolength snps in the alignment\n";
