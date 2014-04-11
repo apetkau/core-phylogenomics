@@ -53,7 +53,7 @@ sub run
     	my $alignfile = "$input_dir/snps" . $locusid . ".aln";
             my $alignfile_out = "$output_dir/snps${locusid}.aln.trimmed";
     	print $out_fh "$alignfile\n";
-            my $in = Bio::AlignIO->new(-file =>$alignfile, -format=>"clustalw",-idlength=>30);
+            my $in = Bio::AlignIO->new(-file =>$alignfile, -format=>"clustalw",-longid=>1);
     	my $aln = $in->next_aln;
     
     	my @starts;
@@ -71,7 +71,7 @@ sub run
     	$start = shift @starts;
     	$end = shift @ends;
     	next locus unless $start < $end;
-    	my $newalign = new Bio::SimpleAlign(-idlength=>30);
+    	my $newalign = new Bio::SimpleAlign(-longid=>1);
     	my $counter = 1;
     	for my $seq ($aln->each_alphabetically) {
         	# trim the alignments
@@ -80,6 +80,7 @@ sub run
     		$seq->end(length( $newstr) - scalar (@{[$newstr =~ /(-)/g]}));
     		$newalign->add_seq($seq);		
     	}
-    	new Bio::AlignIO(-file=>">$alignfile_out", -format=>"clustalw",-idlength=>30)->write_aln($newalign);
+    	my $write_aln_obj = new Bio::AlignIO(-file=>">$alignfile_out", -format=>"clustalw",-longid=>1);
+        $write_aln_obj->write_aln($newalign);
     }
 }
