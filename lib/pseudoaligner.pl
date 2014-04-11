@@ -172,7 +172,6 @@ sub run
     my $pseudolength;
     my @accessions = sort {$a cmp $b} keys %longseq;
     my $newaln = new Bio::SimpleAlign(-longid=>1);
-    $newaln->interleaved(0);
     for my $seqstr (@newseqs) {
     	my $acc = shift @accessions;
     	my $seq = new Bio::LocatableSeq;

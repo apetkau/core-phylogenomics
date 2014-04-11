@@ -72,7 +72,6 @@ sub run
     	$end = shift @ends;
     	next locus unless $start < $end;
     	my $newalign = new Bio::SimpleAlign(-longid=>1);
-        $newalign->interleaved(0);
     	my $counter = 1;
     	for my $seq ($aln->each_alphabetically) {
         	# trim the alignments
