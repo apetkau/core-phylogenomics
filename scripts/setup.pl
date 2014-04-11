@@ -8,6 +8,13 @@ use File::Copy;
 use File::Basename;
 
 # dependency modules
+# restrict version of bioperl due to differences in parsing files (phylip files and tests)
+BEGIN {
+	my $version = "1.006901";
+	use Bio::Root::Version;
+	die "Invalid BioPerl version $Bio::Root::Version::VERSION\nPlease install version $version"
+		unless $Bio::Root::Version::VERSION eq $version;
+}
 use Bio::SeqIO;
 use Getopt::Long;
 use Parallel::ForkManager;
