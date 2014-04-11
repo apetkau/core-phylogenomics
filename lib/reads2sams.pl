@@ -124,7 +124,7 @@ for (@filestore) {
     print "running $samtools_command\n";
     system($samtools_command) == 0 or die "Could not execute $samtools_command";
 
-    $samtools_command = "$samtools_path sort -m 4000000000 \"$unsorted_bam_out\" \"$sorted_bam_base\""; 
+    $samtools_command = "$samtools_path sort -m 536870912 \"$unsorted_bam_out\" \"$sorted_bam_base\""; 
     print "running $samtools_command\n";
     system($samtools_command) == 0 or die "Could not execute $samtools_command";
 
