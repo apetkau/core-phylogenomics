@@ -100,7 +100,7 @@ if ((not -e $out_pipelinebin_file) or $force)
 {
 	copy($out_pipelinebin_file_default,$out_pipelinebin_file) or die "Could not copy ".
 		"$out_pipelinebin_file_default to $out_pipelinebin_file";
-	chmod 0766, $out_pipelinebin_file;
+	chmod 0755, $out_pipelinebin_file;
 
 	print STDERR "Wrote executable file to $out_pipelinebin_file\n";
 }
@@ -109,7 +109,7 @@ if ((not -e $out_matrixbin_file) or $force)
 {
 	copy($out_matrixbin_file_default,$out_matrixbin_file) or die "Could not copy ".
 		"$out_matrixbin_file_default to $out_matrixbin_file";
-	chmod 0766, $out_matrixbin_file;
+	chmod 0755, $out_matrixbin_file;
 
 	print STDERR "Wrote executable file to $out_matrixbin_file\n";
 }
