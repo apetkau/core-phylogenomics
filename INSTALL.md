@@ -20,9 +20,12 @@ A full example of the steps need to install the pipeline in Ubuntu 13.04 can be 
 1. Obtaining the code
 ---------------------
 
-The checkout the latest version of the pipeline, please use the following command:
+The checkout the latest version (on development branch) of the pipeline, please use the following command:
 
-	$ git clone --recursive https://github.com/apetkau/core-phylogenomics.git
+	$ git clone https://github.com/apetkau/core-phylogenomics.git
+	$ cd core-phylogenomics
+	$ git checkout development
+	$ git submodule update --init --recursive
 
 2. Dependencies
 ---------------
