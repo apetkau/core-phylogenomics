@@ -8,6 +8,13 @@ Authors
 
 The Core SNP Pipeline was developed by the following individuals:  Aaron Petkau, Gary Van Domselaar, Philip Mabon, and Lee Katz.
 
+Tutorial
+--------
+
+For a step-by-step tutorial on how to run the core SNP pipeline with some example data, please see https://github.com/apetkau/microbial-informatics-2014/tree/master/labs/core-snp.  A description of the data used for this tutorial as well as a virtual machine to run all the necessary software can be found at https://github.com/apetkau/microbial-informatics-2014/.
+
+An additional tutorial which uses simulated data can be found at https://github.com/apetkau/core-phylogenomics-tutorial.
+
 Quick Start
 -----------
 
@@ -69,10 +76,6 @@ The core SNP pipeline proceeds through the following stages:
     1. If an invalid positions file is passed, remove any SNPs within the invalid positions.
 5. Building a phylogenetic tree with PhyML.
 
-Tutorial
---------
-
-For a step-by-step tutorial on how to run the core SNP pipeline with some example data, please see https://github.com/apetkau/core-phylogenomics-tutorial.
 
 Installation
 ------------
