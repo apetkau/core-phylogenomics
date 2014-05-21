@@ -82,6 +82,8 @@ Installation
 
 Please refer to the [Installation](INSTALL.md) document.
 
+In addition, a virtual machine with all the necessary software to run the pipeline can be installed by following the instructions on https://github.com/apetkau/microbial-informatics-2014#running-the-labs.
+
 Details
 -------
 
