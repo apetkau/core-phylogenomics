@@ -11,7 +11,7 @@ use JobProperties;
 use File::Basename qw(basename dirname);
 use File::Copy qw(copy move);
 use File::Path qw(rmtree);
-use Cwd qw(abs_path);
+use Cwd qw(abs_path getcwd);
 
 sub new
 {
@@ -323,7 +323,10 @@ sub _get_git_commit_real
 
 	if (-e $git_dir)
 	{
-		my $commit_value = `git --git-dir \"$git_dir\" rev-parse HEAD`;
+		my $curr_dir = getcwd;
+		chdir($git_dir);
+		my $commit_value = `git rev-parse HEAD`;
+		chdir($curr_dir);
 		chomp $commit_value;
 		if (defined $commit_value and $commit_value =~ /^[a-f,0-9]+$/)
 		{
@@ -345,8 +348,8 @@ sub _get_git_commits
 
 	if (defined $script_dir and -e $script_dir)
 	{
-		my $pipeline_git_dir = "$script_dir/../.git";
-		my $vcf2pseudoalign_git_dir = "$script_dir/../lib/vcf2pseudoalignment/.git";
+		my $pipeline_git_dir = "$script_dir/../";
+		my $vcf2pseudoalign_git_dir = "$script_dir/../lib/vcf2pseudoalignment/";
 
 		$pipeline_git_commit = $self->_get_git_commit_real($pipeline_git_dir);
 		$vcf2pseudoalign_git_commit = $self->_get_git_commit_real($vcf2pseudoalign_git_dir);
