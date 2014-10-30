@@ -133,6 +133,13 @@ for (@filestore) {
     $samtools_command = "$samtools_path index \"$final_bam_file\"";
     print "running $samtools_command\n";
     system($samtools_command) == 0 or die "Could not execute $samtools_command";
+
+    # cleanup unneeded files
+    unless ($keep_tmp_files) {
+        unlink "$unsorted_bam_out" || die "Couldn't remove $unsorted_bam_out: $!\n";
+        unlink "$new_out_file" || die "Couldn't remove $new_out_file: $!\n";
+        unlink "$out_sam_file" || die "Couldn't remove $out_sam_file: $!\n";
+    }
 }
 
 unless ($keep_tmp_files) {
