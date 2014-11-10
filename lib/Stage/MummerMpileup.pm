@@ -53,7 +53,6 @@ sub execute
 	my $ref_path = "$reference_dir/$reference_file";
 	my $invalid_file = $job_properties->get_file_dir('invalid_pos_dir','invalid');
 	die "Output directory $mpileup_dir does not exist" if (not -e $mpileup_dir);
-	die "Invalid position file '$invalid_file' does not exist" if (not -e $invalid_file);
 
 	$logger->log("\nStage: $stage\n",0);
 	$logger->log("Running mummer_pileup ...\n",0);
@@ -71,6 +70,7 @@ sub execute
 	$showaligns_path = "show-aligns" if ((not defined $showaligns_path) or (not -e $showaligns_path));
 
 
+
 	my @vcf_files = ();
 
 	for my $file (@contig_files)
@@ -79,9 +79,15 @@ sub execute
 		my $out_mpileup = "$mpileup_dir/$vcf_name.vcf";
 		push(@vcf_files,$out_mpileup);
 		push(@mummer_pileup_params, [ '--reference', $ref_path,'--contig' ,$file,,'-s',$nucmer_path,
-					   '--show-align-path', $showaligns_path, '--contig' , $file , '--invalid' , $invalid_file,
+					   '--show-align-path', $showaligns_path, '--contig' , $file,
 				      '--bgzip-path', $bgzip_path, '--tabix-path', $tabix_path, '--out-vcf', $out_mpileup]);
 	}
+
+
+	if ($invalid_file) {
+	    push @{$mummer_pileup_params[0]},$invalid_file;
+	}
+
 
 	$logger->log("\tSubmitting mummer_pileup jobs for execution ...\n",1);
 	$self->_submit_jobs($mummer_pileup_launch, 'mummer_pileup', \@mummer_pileup_params);

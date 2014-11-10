@@ -26,8 +26,10 @@ die "Error: contig not defined" if (not defined $contig);
 die "Error: contig does not exist" if (not -e $contig);
 die "Error: no out-vcf defined" if (not defined $vcf);
 
-die "Error: no invalid file defined" if (not defined $invalid);
-die "Error: invalid does not exist" if (not -e $invalid);
+if (defined $invalid){
+    die "Error: invalid does not exist" if (not -e $invalid);
+}
+
 
 my $basename =$contig;
 
@@ -48,9 +50,11 @@ my $bp={};
 my $ref_length = fasta_length($reference);
 my $contig_length = fasta_length($contig);
 
-my $invalid_pos;
+my $invalid_pos={};
 
-$invalid_pos = parse_invalid($invalid);
+if ($invalid){
+    $invalid_pos = parse_invalid($invalid);
+}
 
 
 #foreach with different combination
