@@ -65,6 +65,16 @@ print STDERR "Checking for Software dependencies...\n";
 my $paths = $config->{'path'};
 check_software($paths);
 
+my $gview_style_path = "$script_dir/../etc/original.gss";
+if (not -e $gview_style_path)
+{
+	die "error; could not find gview style in $gview_style_path";
+}
+else
+{
+	$config->{'gview_style'} = $gview_style_path;
+}
+
 if (not $force and -e $out_config_file)
 {
         print "Warning: file $out_config_file already exists ... overwrite? (Y/N) ";
@@ -112,6 +122,7 @@ sub check_software
 	my ($paths) = @_;
 	
 	# remote special paths where key name does not correspond to binary name
+	delete $paths->{'gview'};
 	delete $paths->{'mummer2vcf'};
 	delete $paths->{'vcftools-lib'};
 
@@ -130,6 +141,20 @@ sub check_software
 			print STDERR "OK\n";
 			$paths->{$binary_name} = $binary_path;
 		}
+	}
+
+	print STDERR "Checking for GView ...";
+	my $binary_name = "gview";
+	my $binary_path = `which gview.jar`;
+	chomp $binary_path;
+	if (not -e $binary_path)
+	{
+		die "error: $binary_name could not be found on PATH";
+	}
+	else
+	{
+		print STDERR "OK\n";
+		$paths->{$binary_name} = $binary_path;
 	}
 
 	print STDERR "Checking for mummer2Vcf ...";
