@@ -17,7 +17,6 @@ path:
 	fastqc: /path/to/FastQC/fastqc
 	java: /path/to/bin/java
 	shuf: /path/to/bin/shuf
-	gview: /path/to/gview.jar
 	nucmer: /path/to/mummer/nucmer
 	delta-filter: /path/to/mummer/delta-filter
 	show-aligns: /path/to/mummer/show-aligns
@@ -34,7 +33,7 @@ smalt_map: '-n 24 -f samsoft -r -1 -y 0.5'
 vcf2pseudo_numcpus: 1
 vcf2core_numcpus: 1
 trim_clean_params: '--numcpus 4 --min_quality 20 --bases_to_trim 10 --min_avg_quality 25 --min_length 36 -p 1'
-gview_style: '/path/to/core-phylogenomics/etc/original.gss'
+
 
 drmaa_params:
 	general: "-V"
