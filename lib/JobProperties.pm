@@ -129,10 +129,10 @@ sub _set_defaults
 	my $fastqc = $defaults->{'path'}->{'fastqc'};
 	my $java = $defaults->{'path'}->{'java'};
 	my $shuf = $defaults->{'path'}->{'shuf'};
-	
+	my $gview = $defaults->{'path'}->{'gview'};
         my $vcf2pseudo_numcpus = $defaults->{'vcf2pseudo_numcpus'};
         my $vcf2core_numcpus = $defaults->{'vcf2core_numcpus'};
-	
+	my $gview_style = $defaults->{'gview_style'};
 	my $nucmer = $defaults->{'path'}->{'nucmer'};
 	my $delta_filter = $defaults->{'path'}->{'delta-filter'};
 	my $show_aligns = $defaults->{'path'}->{'show-aligns'};
@@ -145,7 +145,7 @@ sub _set_defaults
 	$self->set_property('drmaa_params',$drmaa_params) if (defined $drmaa_params);
         $self->set_property('vcf2pseudo_numcpus',$vcf2pseudo_numcpus) if (defined $vcf2pseudo_numcpus);
         $self->set_property('vcf2core_numcpus',$vcf2core_numcpus) if (defined $vcf2core_numcpus);
-        
+        $self->set_property('gview_style',$gview_style) if (defined $gview_style);
 
 	if (defined $freebayes_params)
 	{
@@ -188,7 +188,7 @@ sub _set_defaults
 	$self->set_file('fastqc', $fastqc) if ((defined $fastqc) and (-e $fastqc));
 	$self->set_file('java', $java) if ((defined $java) and (-e $java));
 	$self->set_file('shuf', $shuf) if ((defined $shuf) and (-e $shuf));
-	
+	$self->set_file('gview', $gview) if ((defined $gview) and (-e $gview));
 	$self->set_file('nucmer', $nucmer) if ((defined $nucmer) and (-e $nucmer));
 	$self->set_file('delta-filter', $delta_filter) if ((defined $delta_filter) and (-e $delta_filter));
 	$self->set_file('show-aligns', $show_aligns) if ((defined $show_aligns) and (-e $show_aligns));
