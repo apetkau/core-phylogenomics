@@ -87,7 +87,6 @@ The module **Vcf** must be installed manually from http://vcftools.sourceforge.n
 * [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
 * [Figtree](http://tree.bio.ed.ac.uk/software/figtree/)
 * [FreeBayes](https://github.com/ekg/freebayes)
-* [GView](https://www.gview.ca)
 * [Java](http://www.java.com/)
 * [PhyML](http://code.google.com/p/phyml/)
 * [GNU shuf](http://www.gnu.org/software/coreutils/manual/html_node/shuf-invocation.html)
@@ -120,7 +119,6 @@ The script __scripts/check.pl__ can be used to automatically check for any of th
 	Checking for samtools ...OK
 	Checking for phyml ...OK
 	Checking for show-snps ...OK
-	Checking for GView ...OK
 	Checking for mummer2Vcf ...OK
 	Checking for vcftools-lib ...OK
 	Wrote new configuration to scripts/../etc/pipeline.conf
@@ -152,7 +150,6 @@ An example of the __pipeline.conf__ file is:
 		fastqc: /path/to/FastQC/fastqc
 		java: /path/to/bin/java
 		shuf: /path/to/bin/shuf
-		gview: /path/to/gview.jar
 		nucmer: /path/to/mummer/nucmer
 		delta-filter: /path/to/mummer/delta-filter
 		show-aligns: /path/to/mummer/show-aligns
@@ -169,7 +166,6 @@ An example of the __pipeline.conf__ file is:
 	vcf2pseudo_numcpus: 4
 	vcf2core_numcpus: 4
 	trim_clean_params: '--numcpus 4 --min_quality 20 --bases_to_trim 10 --min_avg_quality 25 --min_length 36 -p 1'
-	gview_style: '/path/to/core-phylogenomics/etc/original.gss'
 	
 	drmaa_params:
 		general: "-V"

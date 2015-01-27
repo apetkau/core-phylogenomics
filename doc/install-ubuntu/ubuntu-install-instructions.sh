@@ -58,13 +58,6 @@ make
 make # compiles successfully on second make
 export PATH=/opt/freebayes/bin:$PATH
 
-# gview
-cd /opt
-wget https://www.gview.ca/files/release/1.7/gview-1.7.zip
-unzip gview-1.7.zip
-chmod +x /opt/gview/gview.jar
-export PATH=/opt/gview/:$PATH
-
 # SMALT
 cd /opt
 git clone git://git.code.sf.net/p/smalt/code smalt-code
