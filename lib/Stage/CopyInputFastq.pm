@@ -6,6 +6,7 @@ use Stage;
 
 use File::Copy;
 use File::Basename;
+use Logger;
 
 use strict;
 use warnings;
@@ -31,13 +32,14 @@ sub new
 sub verify_unique_file_names
 {
 	my ($self, $fastq_names, $ref_name) = @_;
+	my $logger = $self->{'_logger'};
 	my %hashCounter=();
 	$hashCounter{basename($ref_name, '.fasta')} = 1;
     for my $name (@$fastq_names)
 	{
 		if(defined $hashCounter{ basename($name, '.fastq') })
 		{
-			print STDERR "Error: Duplicate file name found in fastq/reference input files. Please rename the file: $name.fastq\n";
+			$logger->log("Error: Duplicate file name found in fastq input files.  Please rename the file: $name.fastq", 0);
 			die "Error: Duplicate file name found in fastq/reference input files. Please rename the file: $name.fastq";
 		}
 		$hashCounter{basename($name, '.fastq')} = 1;
