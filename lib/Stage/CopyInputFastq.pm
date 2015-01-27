@@ -29,6 +29,7 @@ sub new
 #input:
 #	$fastq_names: Array of Strings describing the URL for each input fastq file.
 #	$ref_name: URL of the input reference.fasta file.
+#output: returns 1 upon success
 sub verify_unique_file_names
 {
 	my ($self, $fastq_names, $ref_name) = @_;
@@ -39,11 +40,12 @@ sub verify_unique_file_names
 	{
 		if(defined $hashCounter{ basename($name, '.fastq') })
 		{
-			$logger->log("Error: Duplicate file name found in fastq input files.  Please rename the file: $name.fastq", 0);
-			die "Error: Duplicate file name found in fastq/reference input files. Please rename the file: $name.fastq";
+			$logger->log("Error: Duplicate file name found in fastq input files.  Please rename the file: $name"."\n", 0);
+			die "Error: Duplicate file name found in fastq/reference input files. Please rename the file: $name"."\n";
 		}
 		$hashCounter{basename($name, '.fastq')} = 1;
-	} 
+	}
+	return 1;
 }
 
 sub execute

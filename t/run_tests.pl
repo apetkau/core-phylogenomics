@@ -51,6 +51,7 @@ else
 $args{'pseudoalign'} = [];
 $args{'snp_matrix'} = [];
 $args{'variant_calls'} = [];
+$args{'copy_input_fastq'}=[];
 
 #if ($keep_tmp)
 #{
@@ -68,6 +69,7 @@ my $aggregator = $harness->runtests(["$script_dir/pseudoalign.t", 'pseudoalign']
 				    ["$script_dir/pipeline_blast.t", 'pipeline_blast'],
 				    ["$script_dir/pipeline_ortho.t", 'pipeline_ortho'],
 				    ["$script_dir/pipeline_mapping.t", 'pipeline_mapping'],
-				    ["$script_dir/pipeline_preparefastq.t", 'pipeline_preparefastq']
+				    ["$script_dir/pipeline_preparefastq.t", 'pipeline_preparefastq'],
+				    ["$script_dir/copy_input_fastq.t", 'copy_input_fastq']
 		   );
 
