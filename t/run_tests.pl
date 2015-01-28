@@ -37,21 +37,22 @@ if ($keep_tmp)
 	%args = ('pipeline_blast' => ['--tmp-dir', $tmp_dir, '--keep-tmp'],
 		    'pipeline_ortho' => ['--tmp-dir', $tmp_dir, '--keep-tmp'],
 		    'pipeline_mapping' => ['--tmp-dir', $tmp_dir, '--keep-tmp'],
-		    'pipeline_preparefastq' => ['--tmp-dir', $tmp_dir, '--keep-tmp']);
+		    'pipeline_preparefastq' => ['--tmp-dir', $tmp_dir, '--keep-tmp'],
+		    'copy_input_fastq' => ['--tmp-dir', $tmp_dir, '--keep-tmp']);
 }
 else
 {
 	%args = ('pipeline_blast' => ['--tmp-dir', $tmp_dir],
 		    'pipeline_ortho' => ['--tmp-dir', $tmp_dir],
 		    'pipeline_mapping' => ['--tmp-dir', $tmp_dir],
-		    'pipeline_preparefastq' => ['--tmp-dir', $tmp_dir]);
+		    'pipeline_preparefastq' => ['--tmp-dir', $tmp_dir],
+		    'copy_input_fastq' => ['--tmp-dir', $tmp_dir]);
 }
 
 
 $args{'pseudoalign'} = [];
 $args{'snp_matrix'} = [];
 $args{'variant_calls'} = [];
-$args{'copy_input_fastq'}=[];
 
 #if ($keep_tmp)
 #{
