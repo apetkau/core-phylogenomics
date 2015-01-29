@@ -2,8 +2,7 @@
 use warnings;
 use strict;
 
-use lib '/Warehouse/Users/csieffert/core-phylogenomics/lib';
-use lib '/Warehouse/Users/csieffert/core-phylogenomics/lib/Stage';
+use lib $FindBin::Bin.'../lib';
 use Test::More;
 use Test::Exception;
 use Stage::CopyInputFastq;
