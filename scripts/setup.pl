@@ -55,7 +55,7 @@ if (defined $help and $help)
         exit 0;
 }
 
-# reading example configuration file
+# reading example configuration file.
 my $yaml = YAML::Tiny->read($config_file);
 die "Error: coult not read $config_file" if (not defined $yaml);
 my $config = $yaml->[0];

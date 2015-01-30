@@ -6,6 +6,7 @@ use Stage;
 
 use File::Copy;
 use File::Basename;
+use Logger;
 
 use strict;
 use warnings;
@@ -23,9 +24,33 @@ sub new
         return $self;
 }
 
+#Method to verify that all input fastq files and the reference fasta file have unique file names.
+#If duplicate names are found, die is called and an error message is logged/printed to STDERR.
+#input:
+#	$fastq_names: Array of Strings describing the URL for each input fastq file.
+#	$ref_name: URL of the input reference.fasta file.
+#output: returns 1 upon success
+sub verify_unique_file_names
+{
+	my ($self, $fastq_names, $ref_name) = @_;
+	my $logger = $self->{'_logger'};
+	my %hashCounter=();
+	$hashCounter{basename($ref_name, '.fasta')} = 1;
+    for my $name (@$fastq_names)
+	{
+		if(defined $hashCounter{ basename($name, '.fastq') })
+		{
+			$logger->log("Error: Duplicate file name found in fastq input files.  Please rename the file: $name"."\n", 0);
+			die "Error: Duplicate file name found in fastq/reference input files. Please rename the file: $name"."\n";
+		}
+		$hashCounter{basename($name, '.fastq')} = 1;
+	}
+	return 1;
+}
+
 sub execute
 {
-        my ($self) = @_;
+    my ($self) = @_;
 
 	my $logger = $self->{'_logger'};
 	my $stage = $self->get_stage_name;
@@ -45,6 +70,9 @@ sub execute
 	my @files = grep {/\.fastq$/i} readdir($input_dir);
 	closedir($input_dir);
 
+	#verify that all input files have unique names:
+	$self->verify_unique_file_names(\@files, $job_properties->get_abs_file('input_reference'));
+	
 	# sub copy as series of cluster jobs
 	if ($do_copy)
 	{
