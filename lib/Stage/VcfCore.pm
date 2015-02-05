@@ -49,12 +49,6 @@ sub execute
 	my $valid_positions = "$pseudoalign_dir/pseudoalign-positions.tsv";
 	die "Could not find pseudoalign-positions.tsv file" if (! $valid_positions || not -e $valid_positions);
 
-	my $gview = $job_properties->get_file('gview');
-	die "Could not find gview jar file" if (not -e $gview);
-
-	my $gview_style = $job_properties->get_property('gview_style');
-	die "Could not find gview stylesheet file" if (not -e $gview_style);
-
 	my $mpileup_dir = $job_properties->get_dir('mpileup_dir');
 	my $reference_file = $job_properties->get_file_dir('reference_dir','reference');
 
@@ -85,7 +79,7 @@ sub execute
 	$logger->log("Running vcf2core ...\n",0);
 
 	my @core_params = ['--mpileup-dir', $mpileup_dir, '-o', $core_dir,
-				  '-i', $reference_file,'--gview_path' , $gview, '--gview_style' , $gview_style, '-c', $min_cov, '-v','--numcpus',$num_cpus,'--positions',$valid_positions];
+				  '-i', $reference_file, '-c', $min_cov, '-v','--numcpus',$num_cpus,'--positions',$valid_positions];
 	if ($invalid_file)
 	{
 	    push @{$core_params[0]},'--invalid_pos';
