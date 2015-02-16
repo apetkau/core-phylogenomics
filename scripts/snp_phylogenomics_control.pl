@@ -696,10 +696,6 @@ Once data is prepared, the out/downsampled_fastq directory will contain prepared
 
 =item B<variant-calling>:  Variant calling using freebayes.
 
-=item B<mummer-variant-calling>:  Mummer (show-snps) for contig based input.
-
-=item B<mummer-align-calling>:  Mummer (show-aligns) for contig based input.
-
 =item B<pseudoalign>:  Generates pseudoalignment file.
 
 =item B<vcf2core>: Computes percent of genome used for analysis.

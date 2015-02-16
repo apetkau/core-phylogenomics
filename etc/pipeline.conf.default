@@ -17,11 +17,6 @@ path:
 	fastqc: /path/to/FastQC/fastqc
 	java: /path/to/bin/java
 	shuf: /path/to/bin/shuf
-	nucmer: /path/to/mummer/nucmer
-	delta-filter: /path/to/mummer/delta-filter
-	show-aligns: /path/to/mummer/show-aligns
-	show-snps: /path/to/mummer/show-snps
-	mummer2vcf: /path/to/core-phylogenomics/lib/mummer2Vcf.pl
 
 processors: 1
 

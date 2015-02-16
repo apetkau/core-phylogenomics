@@ -83,7 +83,6 @@ The module **Vcf** must be installed manually from http://vcftools.sourceforge.n
 * [SAMTools](http://samtools.sourceforge.net/)
 * [BLAST](http://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=Download)
 * [ClustalW2](https://www.ebi.ac.uk/Tools/phylogeny/clustalw2_phylogeny/help/)
-* [MUMMer](http://mummer.sourceforge.net/manual/)
 * [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
 * [Figtree](http://tree.bio.ed.ac.uk/software/figtree/)
 * [FreeBayes](https://github.com/ekg/freebayes)
@@ -119,7 +118,6 @@ The script __scripts/check.pl__ can be used to automatically check for any of th
 	Checking for samtools ...OK
 	Checking for phyml ...OK
 	Checking for show-snps ...OK
-	Checking for mummer2Vcf ...OK
 	Checking for vcftools-lib ...OK
 	Wrote new configuration to scripts/../etc/pipeline.conf
 	Wrote executable file to scripts/../bin/snp_phylogenomics_control
@@ -150,12 +148,7 @@ An example of the __pipeline.conf__ file is:
 		fastqc: /path/to/FastQC/fastqc
 		java: /path/to/bin/java
 		shuf: /path/to/bin/shuf
-		nucmer: /path/to/mummer/nucmer
-		delta-filter: /path/to/mummer/delta-filter
-		show-aligns: /path/to/mummer/show-aligns
-		show-snps: /path/to/mummer/show-snps
-		mummer2vcf: /path/to/core-phylogenomics/lib/mummer2Vcf.pl
-	
+
 	processors: 24
 	
 	min_coverage: 15

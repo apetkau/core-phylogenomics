@@ -112,7 +112,6 @@ sub check_software
 	my ($paths) = @_;
 	
 	# remote special paths where key name does not correspond to binary name
-	delete $paths->{'mummer2vcf'};
 	delete $paths->{'vcftools-lib'};
 
 	# Check for all other dependencies using the Unix `which` command
@@ -132,18 +131,6 @@ sub check_software
 		}
 	}
 
-	print STDERR "Checking for mummer2Vcf ...";
-	my $binary_name = "mummer2Vcf.pl";
-	my $binary_path = "$script_dir/../lib/$binary_name";
-	if (not -e $binary_path)
-	{
-		die "error: $binary_name could not be found in $binary_path";
-	}
-	else
-	{
-		print STDERR "OK\n";
-		$paths->{$binary_name} = $binary_path;
-	}
 
 	print STDERR "Checking for vcftools-lib ...";
 	my $vcftools_lib = $INC{'Vcf.pm'};

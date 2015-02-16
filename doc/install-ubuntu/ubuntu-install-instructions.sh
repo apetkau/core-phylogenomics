@@ -41,7 +41,7 @@ cd /opt
 cpanm -S Parallel::ForkManager Set::Scalar YAML::Tiny Test::Harness
 
 # Begin building all dependencies
-apt-get install samtools blast2 clustalw mummer fastqc figtree phyml tabix vcftools
+apt-get install samtools blast2 clustalw fastqc figtree phyml tabix vcftools
 
 # link up executable clustalw (version 2) to clustalw2
 ln -s /usr/bin/clustalw /usr/bin/clustalw2

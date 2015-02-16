@@ -137,7 +137,6 @@ sub _set_defaults
 	my $delta_filter = $defaults->{'path'}->{'delta-filter'};
 	my $show_aligns = $defaults->{'path'}->{'show-aligns'};
 	my $show_snps = $defaults->{'path'}->{'show-snps'};
-	my $mummer2vcf = $defaults->{'path'}->{'mummer2vcf'};
 
 	$self->set_property('smalt_index', $smalt_index_params) if (defined $smalt_index_params);
 	$self->set_property('smalt_map', $smalt_map_params) if (defined $smalt_map_params);
@@ -193,7 +192,6 @@ sub _set_defaults
 	$self->set_file('delta-filter', $delta_filter) if ((defined $delta_filter) and (-e $delta_filter));
 	$self->set_file('show-aligns', $show_aligns) if ((defined $show_aligns) and (-e $show_aligns));
 	$self->set_file('show-snps', $show_snps) if ((defined $show_snps) and (-e $show_snps));
-	$self->set_file('mummer2vcf', $mummer2vcf) if ((defined $mummer2vcf) and (-e $mummer2vcf));
 
 }
 
