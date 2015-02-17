@@ -133,7 +133,6 @@ sub _set_defaults
         my $vcf2pseudo_numcpus = $defaults->{'vcf2pseudo_numcpus'};
         my $vcf2core_numcpus = $defaults->{'vcf2core_numcpus'};
 	
-	my $nucmer = $defaults->{'path'}->{'nucmer'};
 
 	$self->set_property('smalt_index', $smalt_index_params) if (defined $smalt_index_params);
 	$self->set_property('smalt_map', $smalt_map_params) if (defined $smalt_map_params);
@@ -185,7 +184,6 @@ sub _set_defaults
 	$self->set_file('java', $java) if ((defined $java) and (-e $java));
 	$self->set_file('shuf', $shuf) if ((defined $shuf) and (-e $shuf));
 	
-	$self->set_file('nucmer', $nucmer) if ((defined $nucmer) and (-e $nucmer));
 }
 
 sub set_property
