@@ -24,8 +24,6 @@ use Stage::VcfPseudoalignment;
 use Stage::FastQC;
 use Stage::MappingFinal;
 use Stage::VcfCore;
-use Stage::MummerSNPS;
-use Stage::MummerMpileup;
 use Stage::CopyInputInvalid;
 use File::Basename qw(basename dirname);
 use File::Copy qw(copy move);
@@ -166,8 +164,6 @@ sub _setup_stage_tables
 			  'copy-input-invalid-positions',
 			  'copy-input-fastq',
 			  'copy-input-fasta',
-	                  'mummer-variant-calling',
-	                  'mummer-align-calling',
 			  'reference-mapping',
 			  'mpileup',
 			  'variant-calling',
@@ -181,8 +177,6 @@ sub _setup_stage_tables
 	$stage->{'all_hash'} = \%all_hash;
 	
 	$stage->{'user'} = [
-                            'mummer-variant-calling',
-	                    'mummer-align-calling',
 			    'reference-mapping',
 			    'mpileup',
 			    'variant-calling',
@@ -222,8 +216,6 @@ sub _initialize
 			'reference-mapping' => new Stage::SmaltMapping($job_properties, $logger),
 			'mpileup' => new Stage::Mpileup($job_properties, $logger),
 			'variant-calling' => new Stage::VariantCalling($job_properties, $logger),
-			'mummer-variant-calling' => new Stage::MummerSNPS($job_properties, $logger),
-			'mummer-align-calling' => new Stage::MummerMpileup($job_properties, $logger),
 			'pseudoalign' => new Stage::VcfPseudoalignment($job_properties, $logger),
 			'vcf2core' => new Stage::VcfCore($job_properties, $logger),
                         'build-phylogeny' => new Stage::BuildPhylogeny($job_properties, $logger),

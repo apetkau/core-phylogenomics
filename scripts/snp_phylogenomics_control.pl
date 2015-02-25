@@ -156,17 +156,6 @@ sub parse_mapping_opts
 	{
 		die "Error: reference not defined";
 	}
-	if (defined $options->{'contig-dir'})
-	{
-	    #determine number of contig in directory, will only includes files with extension '.fasta'
-	    opendir my ($dh), $options->{'contig-dir'};
-	    my @dirs = readdir $dh;
-	    closedir $dh;
-	    
-	    #removing both '.' and '..' files and putting back the full path to a list
-	    my $count= scalar  grep { /\.fasta$/ }  grep { !/^\.\.?/} @dirs;
-	    handle_input_fasta($pipeline,$options->{'contig-dir'},$count);
-	}
 	if (defined $options->{'invalid-pos'})
 	{
 	    $pipeline->set_input_invalid_positions($options->{'invalid-pos'});
@@ -407,7 +396,6 @@ if (!GetOptions(\%options,
 	'config=s',
 	'h|help',
 	'copy-input',
-	'contig-dir=s',
 	'force-output-dir',
 	'orthomcl-groups=s',
 	'invalid-pos=s',
@@ -517,7 +505,7 @@ snp_phylogenomics_control.pl:  Script to automate running of core SNP analysis.
 =item snp_phylogenomics_control.pl --mode prepare-fastq --input-dir sample_fastq/ --output out --reference ref.fasta [--config options.conf]
 
 
-=item snp_phylogenomics_control.pl --mode mapping --input-dir out/downsampled_fastq/ --output out --reference ref.fasta [--config options.conf]  [--contig-dir contig_fasta] [--invalid-pos bad_pos.tsv]
+=item snp_phylogenomics_control.pl --mode mapping --input-dir out/downsampled_fastq/ --output out --reference ref.fasta [--config options.conf] [--invalid-pos bad_pos.tsv]
 
 
 =back
@@ -650,9 +638,6 @@ Once data is prepared, the out/downsampled_fastq directory will contain prepared
 
 =item B<--reference>:  The reference file (multi-fasta, one entry per chromosome) to map to.
 
-
-=item B<--contig-dir [directory]>:  The input directory containing the fasta files to process. 
-
 =item B<--invalid-pos [file]>:  A TSV file contain a list of range(s) (one per line) of positions to ignore reference(s). 
 
 
@@ -710,10 +695,6 @@ Once data is prepared, the out/downsampled_fastq directory will contain prepared
 =item B<mpileup>:  Runs mpileup (for error checking/validating SNPs).
 
 =item B<variant-calling>:  Variant calling using freebayes.
-
-=item B<mummer-variant-calling>:  Mummer (show-snps) for contig based input.
-
-=item B<mummer-align-calling>:  Mummer (show-aligns) for contig based input.
 
 =item B<pseudoalign>:  Generates pseudoalignment file.
 

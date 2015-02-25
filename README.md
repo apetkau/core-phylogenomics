@@ -49,13 +49,9 @@ Example:
 
 ### Alternative Commands ###
 
-Alternatively, in addition to the above files, if you have a set of assembled contigs from isolates, __fasta_contigs/*.fasta__, that you wish to include in the analysis, you can run the pipeline with:
-
-	snp_phylogenomics_control --mode mapping --input-dir fastq_reads/ --contig-dir fasta_contigs/  --output pipeline_out --reference reference.fasta
-
 In addition, if you have a pre-defined set of positions on the reference genome you wish to exclude (repetitive regions, etc) in a tab-separated values file format (see detailed documentation below for a description of the file format) you can run the pipeline with the command:
 
-	snp_phylogenomics_control --mode mapping --input-dir fastq_reads/ --contig-dir fasta_contigs/  --invalid-pos bad_positions.tsv --output pipeline_out --reference reference.fasta
+	snp_phylogenomics_control --mode mapping --input-dir fastq_reads/ --invalid-pos bad_positions.tsv --output pipeline_out --reference reference.fasta
 
 bad_positions.tsv:
 
@@ -70,7 +66,6 @@ The core SNP pipeline proceeds through the following stages:
 
 1. Reference mapping using SMALT.
 2. Variant calling using FreeBayes.
-    1. For any assembled contigs passed to the pipeline, generates variant call files (VCF) using MUMMer alignments.
 3. Checking variant calls and depth of coverage using SAMTools.
 4. Aligning high-quality SNPs into a meta-alignment (pseudoalignment) of phylogenetically informative sites.
     1. If an invalid positions file is passed, remove any SNPs within the invalid positions.
@@ -189,15 +184,6 @@ Example:
 		isolate2.fastq
 		isolate3.fastq
 
-* __--contig-dir contig_fasta/__: A directory containing assembled contigs to include for analysis.  Variants will be called using MUMMer.  Only one file per isolate.
-
-Example:
-
-	contig_fasta/
-		isolate1.fasta
-		isolate2.fasta
-		isolate3.fasta
-
 * __--invalid-pos bad_positions.tsv__: A tab-separated values file format containing a list of positions to exclude from the analysis.  Any SNPs in these positions will be marked as 'invalid' in the variant table and will be excluded from the matrix of SNP distances and the alignment used to generate the phylogeny.  The contig IDs used in this file must correspond to the IDs used in the reference FASTA file.
 
 Example:
@@ -251,7 +237,6 @@ The detailed output directory tree looks as follows:
 		vcf/
 		vcf2core/
 			contig1.gff
-			contig1.png
 		vcf-split/
         
 The description of each of these directories/files are as follows:
@@ -277,7 +262,6 @@ The description of each of these directories/files are as follows:
 * __vcf/__:  The VCF files produced by [FreeBayes](https://github.com/ekg/freebayes).
 * __vcf2core/__:  Files used to generate an image of the core genome.
     * __contig1.gff__:  A GFF formatted file listing core genome locations on each contig.
-    * __contig1.png__:  An image showing the core genome locations for each contig rendered using GView.
 * __vcf-split/__:  VCF files split up so that one single SNP is represented by one line.
 
 The __matrix.csv__ file lists high-quality SNP distances between each combination of isolates.  An example of this file is given below.

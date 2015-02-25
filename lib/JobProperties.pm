@@ -133,11 +133,6 @@ sub _set_defaults
         my $vcf2pseudo_numcpus = $defaults->{'vcf2pseudo_numcpus'};
         my $vcf2core_numcpus = $defaults->{'vcf2core_numcpus'};
 	
-	my $nucmer = $defaults->{'path'}->{'nucmer'};
-	my $delta_filter = $defaults->{'path'}->{'delta-filter'};
-	my $show_aligns = $defaults->{'path'}->{'show-aligns'};
-	my $show_snps = $defaults->{'path'}->{'show-snps'};
-	my $mummer2vcf = $defaults->{'path'}->{'mummer2vcf'};
 
 	$self->set_property('smalt_index', $smalt_index_params) if (defined $smalt_index_params);
 	$self->set_property('smalt_map', $smalt_map_params) if (defined $smalt_map_params);
@@ -189,12 +184,6 @@ sub _set_defaults
 	$self->set_file('java', $java) if ((defined $java) and (-e $java));
 	$self->set_file('shuf', $shuf) if ((defined $shuf) and (-e $shuf));
 	
-	$self->set_file('nucmer', $nucmer) if ((defined $nucmer) and (-e $nucmer));
-	$self->set_file('delta-filter', $delta_filter) if ((defined $delta_filter) and (-e $delta_filter));
-	$self->set_file('show-aligns', $show_aligns) if ((defined $show_aligns) and (-e $show_aligns));
-	$self->set_file('show-snps', $show_snps) if ((defined $show_snps) and (-e $show_snps));
-	$self->set_file('mummer2vcf', $mummer2vcf) if ((defined $mummer2vcf) and (-e $mummer2vcf));
-
 }
 
 sub set_property
